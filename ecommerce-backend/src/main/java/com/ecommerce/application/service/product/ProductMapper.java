@@ -16,6 +16,7 @@ interface ProductMapper {
     @Mapping(target = "otherImages", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "weightGram", source = "weightGram", defaultValue = "0")
     void apply(CreateProductRequestDto requestDto, @MappingTarget Product product);
 
     GetProductResponseDto toResponseDto(Product product);

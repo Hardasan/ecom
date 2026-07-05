@@ -6,6 +6,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * @author AmirHossein ZamanZade
@@ -15,6 +16,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @EnableJpaRepositories("com.ecommerce.persistence.repository")
 @EntityScan("com.ecommerce.persistence.entity")
 @EnableConfigurationProperties
+@EnableScheduling
 public class EcommerceApplication {
 
     static void main(String[] args) {

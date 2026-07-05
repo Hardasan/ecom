@@ -31,7 +31,11 @@ public enum ECOMErrorType {
     CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "error.cart.item.not.found"),
     PRODUCT_VARIANT_NOT_FOUND(HttpStatus.NOT_FOUND, "error.product.variant.not.found"),
     PRODUCT_NOT_AVAILABLE(HttpStatus.CONFLICT, "error.product.not.available"),
-    INSUFFICIENT_STOCK(HttpStatus.CONFLICT, "error.insufficient.stock");
+    INSUFFICIENT_STOCK(HttpStatus.CONFLICT, "error.insufficient.stock"),
+    ADDRESS_NOT_FOUND(HttpStatus.NOT_FOUND, "error.address.not.found"),
+    EMPTY_CART(HttpStatus.CONFLICT, "error.cart.empty"),
+    ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "error.order.not.found"),
+    ORDER_RESERVATION_EXPIRED(HttpStatus.GONE, "error.order.reservation.expired");
 
     private final HttpStatus httpStatus;
     private final String messageKey;

@@ -51,4 +51,7 @@ public class CreateProductRequestDto {
     @NotNull
     @PositiveOrZero
     private Integer inventoryCount;
+
+    @PositiveOrZero
+    private Integer weightGram;
 }

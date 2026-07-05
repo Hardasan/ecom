@@ -111,6 +111,9 @@ public class Product {
     @Column(name = "inventory_count", nullable = false)
     private Integer inventoryCount;
 
+    @Column(name = "weight_gram", nullable = false)
+    private Integer weightGram = 0;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     @CreationTimestamp
     private Date createdAt;

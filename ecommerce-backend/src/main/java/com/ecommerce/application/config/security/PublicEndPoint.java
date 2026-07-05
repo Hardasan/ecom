@@ -11,7 +11,8 @@ public class PublicEndPoint {
             API + "/user/check-registration",
             API + "/user/login",
             API + "/user/login-ticket",
-            API + "/user/login-ticket/validation"
+            API + "/user/login-ticket/validation",
+            API + "/checkout/guest"
     };
 
     static final String[] GET_PUBLIC_ENDPOINTS = {

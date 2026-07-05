@@ -48,6 +48,8 @@ public class GetProductResponseDto {
 
     private Integer inventoryCount;
 
+    private Integer weightGram;
+
     private Date createdAt;
 
     private Date updatedAt;

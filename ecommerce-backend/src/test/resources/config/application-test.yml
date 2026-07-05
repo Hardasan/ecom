@@ -30,3 +30,6 @@ app:
   # In-memory Caffeine cache instead of Redis.
   cache:
     type: caffeine
+  checkout:
+    reservation-timeout: 2s
+    scheduling.enabled: false

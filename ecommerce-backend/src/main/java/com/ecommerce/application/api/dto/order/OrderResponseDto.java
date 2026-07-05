@@ -53,6 +53,8 @@ public class OrderResponseDto {
 
     private ShippingZone shippingZone;
 
+    private Date reservedUntil;
+
     private Date createdAt;
 
     private Date updatedAt;

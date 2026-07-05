@@ -23,6 +23,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -60,7 +61,6 @@ class CheckoutService_guestCheckoutUTest extends BaseCheckoutServiceUTest {
         return dto;
     }
 
-    /** Stubs everything needed to place the order, except how the AppUser is resolved. */
     private void stubOrderPlacement() {
         AddressResponseDto created = new AddressResponseDto();
         created.setId(ADDRESS_ID);
@@ -73,7 +73,7 @@ class CheckoutService_guestCheckoutUTest extends BaseCheckoutServiceUTest {
     }
 
     @Test
-    void guest_checkout_creates_unregistered_user_and_places_order_from_catalog_price() {
+    void guest_checkout_creates_unregistered_user_places_order_and_decrements_inventory() {
         when(appUserRepository.findByMobile(GUEST_MOBILE)).thenReturn(Optional.empty());
         when(passwordEncoder.encode(any())).thenReturn("hashed");
         when(appUserRepository.save(any(AppUser.class))).thenAnswer(invocation -> {
@@ -89,6 +89,9 @@ class CheckoutService_guestCheckoutUTest extends BaseCheckoutServiceUTest {
         // catalog price 100 * qty 2 = 200
         assertEquals(0, response.getItemsCost().compareTo(BigDecimal.valueOf(200)));
         assertEquals(ShippingZone.INTRA_PROVINCE, response.getShippingZone());
+        assertNotNull(response.getReservedUntil());
+
+        verify(productRepository).decrementInventory(PRODUCT_ID, 2);
 
         ArgumentCaptor<AppUser> userCaptor = ArgumentCaptor.forClass(AppUser.class);
         verify(appUserRepository).save(userCaptor.capture());
@@ -125,7 +128,6 @@ class CheckoutService_guestCheckoutUTest extends BaseCheckoutServiceUTest {
 
         checkoutService.guestCheckout(request());
 
-        // existing password preserved -> encoder never invoked
         verify(passwordEncoder, never()).encode(any());
         ArgumentCaptor<AppUser> userCaptor = ArgumentCaptor.forClass(AppUser.class);
         verify(appUserRepository).save(userCaptor.capture());

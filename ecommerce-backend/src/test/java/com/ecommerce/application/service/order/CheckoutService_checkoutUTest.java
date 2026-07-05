@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -35,11 +36,10 @@ class CheckoutService_checkoutUTest extends BaseCheckoutServiceUTest {
     }
 
     @Test
-    void checkout_builds_order_snapshot_with_totals_and_clears_cart() {
+    void checkout_builds_order_from_catalog_prices_decrements_inventory_and_sets_reservation() {
         Product product = product(10, 500, ProductStatus.ACTIVE);
         when(userAddressRepository.findByIdAndUserId(ADDRESS_ID, USER_ID)).thenReturn(Optional.of(address()));
-        when(cartItemRepository.findByUserId(USER_ID))
-                .thenReturn(List.of(cartItem(2, BigDecimal.valueOf(100), BigDecimal.valueOf(80))));
+        when(cartItemRepository.findByUserId(USER_ID)).thenReturn(List.of(cartItem(2)));
         when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product));
         when(shippingCalculator.calculate(eq(Province.TEHRAN), anyInt()))
                 .thenReturn(new ShippingResult(ShippingZone.INTRA_PROVINCE, SHIPPING_COST));
@@ -48,26 +48,48 @@ class CheckoutService_checkoutUTest extends BaseCheckoutServiceUTest {
 
         assertEquals(OrderStatus.PENDING, response.getStatus());
         assertEquals(1, response.getItems().size());
-        // discount price wins: 80 * 2 = 160 items cost
-        assertEquals(0, response.getItemsCost().compareTo(BigDecimal.valueOf(160)));
+        // catalog price 100 * qty 2 = 200
+        assertEquals(0, response.getItemsCost().compareTo(BigDecimal.valueOf(200)));
         assertEquals(0, response.getShippingCost().compareTo(SHIPPING_COST));
-        assertEquals(0, response.getTotalCost().compareTo(SHIPPING_COST.add(BigDecimal.valueOf(160))));
+        assertEquals(0, response.getTotalCost().compareTo(SHIPPING_COST.add(BigDecimal.valueOf(200))));
         assertEquals(1000, response.getTotalWeightGram());
         assertEquals(ShippingZone.INTRA_PROVINCE, response.getShippingZone());
+        assertNotNull(response.getReservedUntil());
 
-        // address snapshot
-        assertEquals("Ali", response.getRecipientFirstName());
-        assertEquals(Province.TEHRAN, response.getProvince());
-
-        // order line snapshot
-        var line = response.getItems().getFirst();
-        assertEquals("Laptop", line.getProductName());
-        assertEquals("1-1", line.getProductCode());
-        assertEquals(0, line.getLineTotal().compareTo(BigDecimal.valueOf(160)));
-
-        // stock is NOT touched at checkout (only at payment); cart is emptied
-        assertEquals(10, product.getInventoryCount());
+        // inventory was decremented atomically
+        verify(productRepository).decrementInventory(PRODUCT_ID, 2);
         verify(cartItemRepository).deleteByUserId(USER_ID);
+    }
+
+    @Test
+    void checkout_uses_catalog_price_not_cart_snapshot() {
+        // Cart had price 90 (stale), but catalog price is now 150
+        Product product = productWithPrice(10, 500, ProductStatus.ACTIVE,
+                BigDecimal.valueOf(150), null);
+        when(userAddressRepository.findByIdAndUserId(ADDRESS_ID, USER_ID)).thenReturn(Optional.of(address()));
+        when(cartItemRepository.findByUserId(USER_ID)).thenReturn(List.of(cartItem(1)));
+        when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product));
+        when(shippingCalculator.calculate(eq(Province.TEHRAN), anyInt()))
+                .thenReturn(new ShippingResult(ShippingZone.INTRA_PROVINCE, SHIPPING_COST));
+
+        OrderResponseDto response = checkoutService.checkout(USER_ID, request());
+
+        assertEquals(0, response.getItemsCost().compareTo(BigDecimal.valueOf(150)));
+    }
+
+    @Test
+    void discount_price_wins_over_unit_price() {
+        Product product = productWithPrice(10, 500, ProductStatus.ACTIVE,
+                BigDecimal.valueOf(100), BigDecimal.valueOf(70));
+        when(userAddressRepository.findByIdAndUserId(ADDRESS_ID, USER_ID)).thenReturn(Optional.of(address()));
+        when(cartItemRepository.findByUserId(USER_ID)).thenReturn(List.of(cartItem(2)));
+        when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product));
+        when(shippingCalculator.calculate(eq(Province.TEHRAN), anyInt()))
+                .thenReturn(new ShippingResult(ShippingZone.INTRA_PROVINCE, SHIPPING_COST));
+
+        OrderResponseDto response = checkoutService.checkout(USER_ID, request());
+
+        assertEquals(0, response.getItemsCost().compareTo(BigDecimal.valueOf(140)));
     }
 
     @Test
@@ -96,8 +118,7 @@ class CheckoutService_checkoutUTest extends BaseCheckoutServiceUTest {
     @Test
     void inactive_product_throws_product_not_available() {
         when(userAddressRepository.findByIdAndUserId(ADDRESS_ID, USER_ID)).thenReturn(Optional.of(address()));
-        when(cartItemRepository.findByUserId(USER_ID))
-                .thenReturn(List.of(cartItem(1, BigDecimal.valueOf(100), null)));
+        when(cartItemRepository.findByUserId(USER_ID)).thenReturn(List.of(cartItem(1)));
         when(productRepository.findById(PRODUCT_ID))
                 .thenReturn(Optional.of(product(10, 500, ProductStatus.INACTIVE)));
 
@@ -109,12 +130,14 @@ class CheckoutService_checkoutUTest extends BaseCheckoutServiceUTest {
     }
 
     @Test
-    void quantity_above_inventory_throws_insufficient_stock() {
+    void atomic_decrement_fails_throws_insufficient_stock() {
         when(userAddressRepository.findByIdAndUserId(ADDRESS_ID, USER_ID)).thenReturn(Optional.of(address()));
-        when(cartItemRepository.findByUserId(USER_ID))
-                .thenReturn(List.of(cartItem(5, BigDecimal.valueOf(100), null)));
+        when(cartItemRepository.findByUserId(USER_ID)).thenReturn(List.of(cartItem(5)));
         when(productRepository.findById(PRODUCT_ID))
-                .thenReturn(Optional.of(product(3, 500, ProductStatus.ACTIVE)));
+                .thenReturn(Optional.of(product(10, 500, ProductStatus.ACTIVE)));
+        when(productRepository.decrementInventory(PRODUCT_ID, 5)).thenReturn(0);
+        when(shippingCalculator.calculate(eq(Province.TEHRAN), anyInt()))
+                .thenReturn(new ShippingResult(ShippingZone.INTRA_PROVINCE, SHIPPING_COST));
 
         EcommerceException exception = assertThrows(EcommerceException.class,
                 () -> checkoutService.checkout(USER_ID, request()));

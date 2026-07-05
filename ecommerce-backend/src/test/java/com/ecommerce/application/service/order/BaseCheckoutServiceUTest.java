@@ -1,5 +1,6 @@
 package com.ecommerce.application.service.order;
 
+import com.ecommerce.application.config.properties.CheckoutProperties;
 import com.ecommerce.application.service.address.AddressService;
 import com.ecommerce.application.service.shipping.ShippingCalculator;
 import com.ecommerce.persistence.entity.CartItem;
@@ -22,10 +23,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
@@ -51,16 +55,20 @@ abstract class BaseCheckoutServiceUTest {
     protected PasswordEncoder passwordEncoder;
     @Mock
     protected AddressService addressService;
+    @Mock
+    protected CheckoutProperties checkoutProperties;
 
     protected CheckoutService checkoutService;
 
     @BeforeEach
     void baseSetUp() {
+        lenient().when(checkoutProperties.getReservationTimeout()).thenReturn(Duration.ofMinutes(30));
         checkoutService = new CheckoutService(cartItemRepository, productRepository, userAddressRepository,
                 orderRepository, new OrderMapperImpl(), shippingCalculator, appUserRepository, passwordEncoder,
-                addressService);
+                addressService, checkoutProperties);
         lenient().when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
+        lenient().when(productRepository.decrementInventory(anyLong(), anyInt())).thenReturn(1);
     }
 
     protected Product product(int inventory, int weightGram, ProductStatus status) {
@@ -78,15 +86,30 @@ abstract class BaseCheckoutServiceUTest {
         return product;
     }
 
-    protected CartItem cartItem(int quantity, BigDecimal unitPrice, BigDecimal discountPrice) {
+    protected Product productWithPrice(int inventory, int weightGram, ProductStatus status,
+                                        BigDecimal priceValue, BigDecimal discountPrice) {
+        Product product = new Product();
+        product.setId(PRODUCT_ID);
+        product.setName("Laptop");
+        product.setCode("1-1");
+        product.setStatus(status);
+        product.setInventoryCount(inventory);
+        product.setWeightGram(weightGram);
+        Price price = new Price();
+        price.setVariantType(VariantType.COLOR);
+        price.setPrice(priceValue);
+        price.setDiscountPrice(discountPrice);
+        product.setPrices(new ArrayList<>(List.of(price)));
+        return product;
+    }
+
+    protected CartItem cartItem(int quantity) {
         CartItem item = new CartItem();
         item.setId(10L);
         item.setUserId(USER_ID);
         item.setProductId(PRODUCT_ID);
         item.setVariantType(VariantType.COLOR);
         item.setQuantity(quantity);
-        item.setUnitPrice(unitPrice);
-        item.setDiscountPrice(discountPrice);
         return item;
     }
 

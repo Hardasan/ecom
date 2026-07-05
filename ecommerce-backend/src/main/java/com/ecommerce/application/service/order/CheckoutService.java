@@ -7,10 +7,12 @@ import com.ecommerce.application.api.dto.order.GuestItemRequestDto;
 import com.ecommerce.application.api.dto.order.OrderResponseDto;
 import com.ecommerce.application.api.exception.ECOMErrorType;
 import com.ecommerce.application.api.exception.EcommerceException;
+import com.ecommerce.application.config.properties.CheckoutProperties;
 import com.ecommerce.application.service.address.AddressService;
 import com.ecommerce.application.service.shipping.ShippingCalculator;
 import com.ecommerce.application.service.shipping.ShippingResult;
 import com.ecommerce.persistence.entity.AppUser;
+import com.ecommerce.persistence.entity.CartItem;
 import com.ecommerce.persistence.entity.Order;
 import com.ecommerce.persistence.entity.OrderItem;
 import com.ecommerce.persistence.entity.Price;
@@ -33,7 +35,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,32 +57,21 @@ public class CheckoutService {
     private final AppUserRepository appUserRepository;
     private final PasswordEncoder passwordEncoder;
     private final AddressService addressService;
+    private final CheckoutProperties checkoutProperties;
 
-    /**
-     * Authenticated checkout: the order is built from the caller's saved cart (prices come from the
-     * cart's add-time snapshot) and shipped to one of their saved addresses; the cart is then cleared.
-     */
     @Transactional
     public OrderResponseDto checkout(Long userId, CheckoutRequestDto requestDto) {
         UserAddress address = userAddressRepository.findByIdAndUserId(requestDto.getAddressId(), userId)
                 .orElseThrow(() -> new EcommerceException(ECOMErrorType.ADDRESS_NOT_FOUND));
 
-        List<OrderLineSpec> lines = cartItemRepository.findByUserId(userId).stream()
-                .map(item -> new OrderLineSpec(item.getProductId(), item.getVariantType(), item.getQuantity(),
-                        item.getUnitPrice(), item.getDiscountPrice()))
-                .toList();
+        List<CartItem> cartItems = cartItemRepository.findByUserId(userId);
+        List<OrderLineSpec> lines = resolveCartLines(cartItems);
 
         Order order = placeOrder(userId, address, lines);
         cartItemRepository.deleteByUserId(userId);
         return orderMapper.toResponseDto(order);
     }
 
-    /**
-     * Guest checkout: no authentication and no server-side cart. The items, address and personal data
-     * are supplied in one request; an unregistered ({@code isRegistered=false}) AppUser is created (or
-     * reused) for the mobile so the order and address are persisted and can be claimed later via signup.
-     * Prices are taken from the catalog at order time (there is no earlier snapshot for a guest).
-     */
     @Transactional
     public OrderResponseDto guestCheckout(GuestCheckoutRequestDto requestDto) {
         AppUser guest = resolveGuestUser(requestDto);
@@ -88,7 +81,8 @@ public class CheckoutService {
         UserAddress address = userAddressRepository.findByIdAndUserId(created.getId(), userId)
                 .orElseThrow(() -> new EcommerceException(ECOMErrorType.ADDRESS_NOT_FOUND));
 
-        return orderMapper.toResponseDto(placeOrder(userId, address, resolveGuestLines(requestDto.getItems())));
+        List<OrderLineSpec> lines = resolveGuestLines(requestDto.getItems());
+        return orderMapper.toResponseDto(placeOrder(userId, address, lines));
     }
 
     @Transactional(readOnly = true)
@@ -118,20 +112,14 @@ public class CheckoutService {
         BigDecimal itemsCost = BigDecimal.ZERO;
         int totalWeightGram = 0;
         for (OrderLineSpec line : lines) {
-            Product product = findProductOrThrow(line.productId());
-            requirePurchasable(product);
-            // Availability is validated but stock is NOT decremented at order time, so an
-            // abandoned order never holds inventory. (Deduction will move to a future payment step.)
-            requireSufficientStock(product, line.quantity());
-
             BigDecimal effectivePrice = line.discountPrice() != null ? line.discountPrice() : line.unitPrice();
             BigDecimal lineTotal = effectivePrice.multiply(BigDecimal.valueOf(line.quantity()));
 
             OrderItem orderItem = new OrderItem();
             ProductSnapshot productSnapshot = orderItem.getProduct();
-            productSnapshot.setProductId(product.getId());
-            productSnapshot.setProductName(product.getName());
-            productSnapshot.setProductCode(product.getCode());
+            productSnapshot.setProductId(line.productId());
+            productSnapshot.setProductName(line.productName());
+            productSnapshot.setProductCode(line.productCode());
             orderItem.setVariantType(line.variant());
             orderItem.setQuantity(line.quantity());
             orderItem.setUnitPrice(line.unitPrice());
@@ -140,7 +128,7 @@ public class CheckoutService {
             order.addItem(orderItem);
 
             itemsCost = itemsCost.add(lineTotal);
-            totalWeightGram += weightOf(product) * line.quantity();
+            totalWeightGram += line.weightGram() * line.quantity();
         }
 
         ShippingResult shipping = shippingCalculator.calculate(order.getShippingAddress().getProvince(), totalWeightGram);
@@ -150,13 +138,38 @@ public class CheckoutService {
         order.setShippingCost(shipping.cost());
         order.setTotalCost(itemsCost.add(shipping.cost()));
 
+        for (OrderLineSpec line : lines) {
+            int updated = productRepository.decrementInventory(line.productId(), line.quantity());
+            if (updated == 0) {
+                throw new EcommerceException(ECOMErrorType.INSUFFICIENT_STOCK);
+            }
+        }
+
+        order.setReservedUntil(Date.from(Instant.now().plus(checkoutProperties.getReservationTimeout())));
+
         return orderRepository.save(order);
     }
 
-    /**
-     * Collapses the guest's requested items into one line per (product, variant) — quantities of a
-     * repeated pair are summed — and snapshots the catalog price for each.
-     */
+    private List<OrderLineSpec> resolveCartLines(List<CartItem> cartItems) {
+        Map<VariantKey, Integer> quantities = new LinkedHashMap<>();
+        for (CartItem item : cartItems) {
+            quantities.merge(new VariantKey(item.getProductId(), item.getVariantType()),
+                    item.getQuantity(), Integer::sum);
+        }
+
+        List<OrderLineSpec> lines = new ArrayList<>();
+        for (Map.Entry<VariantKey, Integer> entry : quantities.entrySet()) {
+            Product product = findProductOrThrow(entry.getKey().productId());
+            requirePurchasable(product);
+            Price price = findVariantPriceOrThrow(product, entry.getKey().variant());
+            lines.add(new OrderLineSpec(product.getId(), product.getName(), product.getCode(),
+                    entry.getKey().variant(), entry.getValue(),
+                    price.getPrice(), price.getDiscountPrice(),
+                    product.getWeightGram() == null ? 0 : product.getWeightGram()));
+        }
+        return lines;
+    }
+
     private List<OrderLineSpec> resolveGuestLines(List<GuestItemRequestDto> items) {
         Map<VariantKey, Integer> quantities = new LinkedHashMap<>();
         for (GuestItemRequestDto item : items) {
@@ -167,19 +180,16 @@ public class CheckoutService {
         List<OrderLineSpec> lines = new ArrayList<>();
         for (Map.Entry<VariantKey, Integer> entry : quantities.entrySet()) {
             Product product = findProductOrThrow(entry.getKey().productId());
+            requirePurchasable(product);
             Price price = findVariantPriceOrThrow(product, entry.getKey().variant());
-            lines.add(new OrderLineSpec(product.getId(), entry.getKey().variant(), entry.getValue(),
-                    price.getPrice(), price.getDiscountPrice()));
+            lines.add(new OrderLineSpec(product.getId(), product.getName(), product.getCode(),
+                    entry.getKey().variant(), entry.getValue(),
+                    price.getPrice(), price.getDiscountPrice(),
+                    product.getWeightGram() == null ? 0 : product.getWeightGram()));
         }
         return lines;
     }
 
-    /**
-     * Resolves the AppUser the guest order belongs to. A mobile that already belongs to a
-     * <b>registered</b> account is rejected — that person must log in rather than let an
-     * unauthenticated request act under their identity. An existing unregistered guest is reused (and
-     * refreshed); an unknown mobile creates a new {@code isRegistered=false} guest.
-     */
     private AppUser resolveGuestUser(GuestCheckoutRequestDto requestDto) {
         Optional<AppUser> existing = appUserRepository.findByMobile(requestDto.getMobile());
         if (existing.isPresent() && Boolean.TRUE.equals(existing.get().getIsRegistered())) {
@@ -193,7 +203,6 @@ public class CheckoutService {
         user.setEmail(requestDto.getEmail());
         user.setNationalId(requestDto.getNationalId());
         if (user.getPassword() == null) {
-            // Guests can't log in; signup later sets a real password. Store an unusable random hash.
             user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
         }
         user.setRole(UserRole.ROLE_APP_USER);
@@ -234,20 +243,12 @@ public class CheckoutService {
                 .orElseThrow(() -> new EcommerceException(ECOMErrorType.PRODUCT_VARIANT_NOT_FOUND));
     }
 
-    private void requireSufficientStock(Product product, int requestedQuantity) {
-        if (product.getInventoryCount() == null || requestedQuantity > product.getInventoryCount()) {
-            throw new EcommerceException(ECOMErrorType.INSUFFICIENT_STOCK);
-        }
-    }
-
-    private int weightOf(Product product) {
-        return product.getWeightGram() == null ? 0 : product.getWeightGram();
-    }
-
     private record VariantKey(Long productId, VariantType variant) {
     }
 
-    private record OrderLineSpec(Long productId, VariantType variant, int quantity,
-                                BigDecimal unitPrice, BigDecimal discountPrice) {
+    private record OrderLineSpec(Long productId, String productName, String productCode,
+                                  VariantType variant, int quantity,
+                                  BigDecimal unitPrice, BigDecimal discountPrice,
+                                  int weightGram) {
     }
 }

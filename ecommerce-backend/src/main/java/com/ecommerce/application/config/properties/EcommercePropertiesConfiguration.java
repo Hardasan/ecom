@@ -40,4 +40,11 @@ public class EcommercePropertiesConfiguration {
     public ShippingProperties shippingProperties() {
         return new ShippingProperties();
     }
+
+    @Bean
+    @Valid
+    @ConfigurationProperties(prefix = "app.checkout")
+    public CheckoutProperties checkoutProperties() {
+        return new CheckoutProperties();
+    }
 }

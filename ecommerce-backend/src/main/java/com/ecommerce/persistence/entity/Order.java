@@ -72,6 +72,9 @@ public class Order {
     @BatchSize(size = 25)
     private List<OrderItem> items = new ArrayList<>();
 
+    @Column(name = "reserved_until")
+    private Date reservedUntil;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     @CreationTimestamp
     private Date createdAt;

@@ -96,6 +96,35 @@ public abstract class AbstractCheckoutITest extends AbstractIntegrationITest {
         return createProduct(url, inventory, weightGram, ProductStatus.ACTIVE, VariantType.COLOR);
     }
 
+    protected Long createProductWithPrices(String url, int inventory, int weightGram,
+            BigDecimal unitPrice, BigDecimal discountPrice) throws Exception {
+        CreateProductRequestDto req = new CreateProductRequestDto();
+        req.setCategoryId(categoryId);
+        req.setUrl(url);
+        req.setName("Test Product " + url);
+        req.setStatus(ProductStatus.ACTIVE);
+        req.setInventoryStatus(InventoryStatus.IN_STOCK);
+        req.setInventoryCount(inventory);
+        req.setWeightGram(weightGram);
+
+        PriceDto price = new PriceDto();
+        price.setPrice(unitPrice);
+        price.setDiscountPrice(discountPrice);
+        price.setVariantType(VariantType.COLOR);
+        req.setPrices(List.of(price));
+
+        org.springframework.mock.web.MockPart part =
+                new org.springframework.mock.web.MockPart("data", objectMapper.writeValueAsBytes(req));
+        part.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+
+        MvcResult result = mockMvc.perform(multipart("/api/products")
+                        .part(part)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andReturn();
+        return json(result).get("id").asLong();
+    }
+
     // ---------------------------------------------------------------------------------------------
     // Cart / address / checkout HTTP helpers
     // ---------------------------------------------------------------------------------------------

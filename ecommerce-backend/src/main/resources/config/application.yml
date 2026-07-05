@@ -130,3 +130,7 @@ app:
       KHORASAN_RAZAVI: [ KHORASAN_NORTH, KHORASAN_SOUTH, SEMNAN ]
       KHORASAN_NORTH: [ KHORASAN_RAZAVI, SEMNAN, GOLESTAN ]
       GOLESTAN: [ MAZANDARAN, SEMNAN, KHORASAN_NORTH ]
+  # Checkout reservation: after checkout, inventory is reserved (decremented) for this
+  # duration. If the order is not paid before it expires, inventory is auto-released.
+  checkout:
+    reservation-timeout: 30m

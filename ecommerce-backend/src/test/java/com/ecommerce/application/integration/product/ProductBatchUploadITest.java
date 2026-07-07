@@ -14,6 +14,7 @@ import java.io.ByteArrayOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -67,9 +68,31 @@ class ProductBatchUploadITest extends AbstractProductITest {
                         .contentType(MediaType.MULTIPART_FORM_DATA))
                 .andExpect(status().isOk());
 
-        Integer count = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM product WHERE url = ?", Integer.class, "db-product-url");
-        assertEquals(1, count);
+        // Verify all columns
+        var row = jdbcTemplate.queryForMap("SELECT * FROM product WHERE url = ?", "db-product-url");
+        assertEquals("DB Product", row.get("name"));
+        assertEquals("محصول دیتابیس", row.get("local_name"));
+        assertEquals("db-product-url", row.get("url"));
+        assertEquals(categoryId, row.get("category_id"));
+        assertEquals("Desc", row.get("short_description"));
+        assertEquals("Full desc", row.get("full_description"));
+        assertEquals(15, row.get("inventory_count"));
+        assertEquals(200, row.get("weight_gram"));
+        assertEquals("ACTIVE", row.get("status"));
+        assertEquals("IN_STOCK", row.get("inventory_status"));
+        assertNotNull(row.get("created_at"));
+        assertNotNull(row.get("updated_at"));
+        // code format: {categoryId}-{seq}
+        String code = (String) row.get("code");
+        assertTrue(code.matches(categoryId + "-\\d+"), "Expected code like " + categoryId + "-N, got: " + code);
+
+        // Verify price in product_price table
+        var priceRow = jdbcTemplate.queryForMap(
+                "SELECT * FROM product_price WHERE product_id = ?", row.get("id"));
+        assertEquals(0, new java.math.BigDecimal("199000")
+                .compareTo((java.math.BigDecimal) priceRow.get("price")));
+        assertNull(priceRow.get("discount_price"));
+        assertEquals("COLOR", priceRow.get("variant_type"));
     }
 
     @Test
@@ -91,6 +114,24 @@ class ProductBatchUploadITest extends AbstractProductITest {
         int count = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM product WHERE url IN ('multi-1','multi-2','multi-3')", Integer.class);
         assertEquals(3, count);
+
+        // Verify Multi 2 has discount price and SIZE variant
+        var multi2 = jdbcTemplate.queryForMap("SELECT * FROM product WHERE url = ?", "multi-2");
+        assertEquals("Multi 2", multi2.get("name"));
+        assertEquals(8, multi2.get("inventory_count"));
+        assertEquals(150, multi2.get("weight_gram"));
+
+        var price2 = jdbcTemplate.queryForMap(
+                "SELECT * FROM product_price WHERE product_id = ?", multi2.get("id"));
+        assertEquals(0, new java.math.BigDecimal("200000")
+                .compareTo((java.math.BigDecimal) price2.get("price")));
+        assertEquals(0, new java.math.BigDecimal("180000")
+                .compareTo((java.math.BigDecimal) price2.get("discount_price")));
+        assertEquals("SIZE", price2.get("variant_type"));
+
+        // Verify Multi 1 has null local_name (empty in Excel → null in DB)
+        var multi1 = jdbcTemplate.queryForMap("SELECT * FROM product WHERE url = ?", "multi-1");
+        assertNull(multi1.get("local_name"));
     }
 
     @Test
@@ -191,13 +232,57 @@ class ProductBatchUploadITest extends AbstractProductITest {
                         .contentType(MediaType.MULTIPART_FORM_DATA))
                 .andExpect(status().isOk());
 
-        String specJson = jdbcTemplate.queryForObject(
-                "SELECT specification FROM product WHERE url = ?", String.class, "spec-prod-url");
+        var row = jdbcTemplate.queryForMap(
+                "SELECT * FROM product WHERE url = ?", "spec-prod-url");
+        assertEquals("Spec Product", row.get("name"));
+        assertEquals(7, row.get("inventory_count"));
+        assertEquals(150, row.get("weight_gram"));
+
+        String specJson = row.get("specification").toString();
         assertNotNull(specJson);
         assertTrue(specJson.contains("COLOR"));
         assertTrue(specJson.contains("Red"));
         assertTrue(specJson.contains("SIZE"));
         assertTrue(specJson.contains("XL"));
+
+        var priceRow = jdbcTemplate.queryForMap(
+                "SELECT * FROM product_price WHERE product_id = ?", row.get("id"));
+        assertEquals(0, new java.math.BigDecimal("75000")
+                .compareTo((java.math.BigDecimal) priceRow.get("price")));
+        assertEquals("COLOR", priceRow.get("variant_type"));
+    }
+
+    @Test
+    void upload_with_brand_and_subcategory_saves_their_ids() throws Exception {
+        Long subCatId = jdbcTemplate.queryForObject(
+                "INSERT INTO category (name) VALUES ('Mobile Accessories') RETURNING id", Long.class);
+
+        byte[] excelBytes = buildValidExcel(
+                row("Branded Product", "", "branded-url", "Electronics", "Mobile Accessories",
+                        "TestBrand", "SD", "FD", "50000", "45000", "COLOR", "10", "120",
+                        "ACTIVE", "IN_STOCK")
+        );
+
+        mockMvc.perform(multipart("/api/products/upload")
+                        .file(new MockMultipartFile("file", "products.xlsx",
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                excelBytes))
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isOk());
+
+        var row = jdbcTemplate.queryForMap("SELECT * FROM product WHERE url = ?", "branded-url");
+        assertEquals("Branded Product", row.get("name"));
+        assertEquals(categoryId, row.get("category_id"));
+        assertEquals(subCatId, row.get("sub_category_id"));
+        assertEquals(brandId, row.get("brand_id"));
+
+        var priceRow = jdbcTemplate.queryForMap(
+                "SELECT * FROM product_price WHERE product_id = ?", row.get("id"));
+        assertEquals(0, new java.math.BigDecimal("50000")
+                .compareTo((java.math.BigDecimal) priceRow.get("price")));
+        assertEquals(0, new java.math.BigDecimal("45000")
+                .compareTo((java.math.BigDecimal) priceRow.get("discount_price")));
     }
 
     @Test

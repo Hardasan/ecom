@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -30,4 +31,7 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     @Modifying
     @Query("UPDATE Product p SET p.inventoryCount = p.inventoryCount + :quantity WHERE p.id = :id")
     int incrementInventory(@Param("id") Long id, @Param("quantity") int quantity);
+
+    @Query("SELECT p.url FROM Product p")
+    List<String> findAllUrls();
 }

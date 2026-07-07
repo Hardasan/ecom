@@ -36,7 +36,10 @@ public enum ECOMErrorType {
     EMPTY_CART(HttpStatus.CONFLICT, "error.cart.empty"),
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "error.order.not.found"),
     ORDER_RESERVATION_EXPIRED(HttpStatus.GONE, "error.order.reservation.expired"),
-    CATEGORY_NAME_ALREADY_EXISTS(HttpStatus.CONFLICT, "error.category.name.already.exists");
+    CATEGORY_NAME_ALREADY_EXISTS(HttpStatus.CONFLICT, "error.category.name.already.exists"),
+    EXCEL_PARSING_ERROR(HttpStatus.BAD_REQUEST, "error.excel.parsing"),
+    EXCEL_EMPTY_FILE(HttpStatus.BAD_REQUEST, "error.excel.empty.file"),
+    EXCEL_INVALID_HEADER(HttpStatus.BAD_REQUEST, "error.excel.invalid.header");
 
     private final HttpStatus httpStatus;
     private final String messageKey;

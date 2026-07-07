@@ -1,0 +1,281 @@
+package com.ecommerce.application.integration.product;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.junit.jupiter.api.Test;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.web.servlet.MvcResult;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+class ProductBatchUploadITest extends AbstractProductITest {
+
+    @Test
+    void download_template_returns_valid_excel() throws Exception {
+        MvcResult result = mockMvc.perform(get("/api/products/template")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition",
+                        org.hamcrest.Matchers.containsString("product-template.xlsx")))
+                .andReturn();
+
+        byte[] content = result.getResponse().getContentAsByteArray();
+        assertTrue(content.length > 0);
+
+        try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(content))) {
+            Sheet sheet = workbook.getSheet("Products");
+            assertNotNull(sheet);
+            Row headerRow = sheet.getRow(0);
+            assertNotNull(headerRow);
+            assertEquals("Name", headerRow.getCell(0).getStringCellValue());
+            assertEquals("URL", headerRow.getCell(2).getStringCellValue());
+            assertEquals("Category", headerRow.getCell(3).getStringCellValue());
+        }
+    }
+
+    @Test
+    void download_template_requires_admin() throws Exception {
+        mockMvc.perform(get("/api/products/template")
+                        .header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void upload_valid_excel_saves_products_in_database() throws Exception {
+        byte[] excelBytes = buildValidExcel(
+                row("DB Product", "محصول دیتابیس", "db-product-url", "Electronics", "", "",
+                        "Desc", "Full desc", "199000", "", "COLOR", "15", "200", "ACTIVE", "IN_STOCK")
+        );
+
+        mockMvc.perform(multipart("/api/products/upload")
+                        .file(new MockMultipartFile("file", "products.xlsx",
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                excelBytes))
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isOk());
+
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM product WHERE url = ?", Integer.class, "db-product-url");
+        assertEquals(1, count);
+    }
+
+    @Test
+    void upload_multiple_products_all_saved() throws Exception {
+        byte[] excelBytes = buildValidExcel(
+                row("Multi 1", "", "multi-1", "Electronics", "", "", "D1", "F1", "100000", "", "COLOR", "5", "100", "ACTIVE", "IN_STOCK"),
+                row("Multi 2", "", "multi-2", "Electronics", "", "", "D2", "F2", "200000", "180000", "SIZE", "8", "150", "ACTIVE", "IN_STOCK"),
+                row("Multi 3", "", "multi-3", "Electronics", "", "", "D3", "F3", "300000", "", "STYLE", "12", "200", "ACTIVE", "IN_STOCK")
+        );
+
+        mockMvc.perform(multipart("/api/products/upload")
+                        .file(new MockMultipartFile("file", "products.xlsx",
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                excelBytes))
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isOk());
+
+        int count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM product WHERE url IN ('multi-1','multi-2','multi-3')", Integer.class);
+        assertEquals(3, count);
+    }
+
+    @Test
+    void upload_with_missing_required_fields_returns_errors() throws Exception {
+        byte[] excelBytes = buildValidExcel(
+                row("Incomplete", "", "", "", "", "", "", "", "", "", "", "", "", "", "")
+        );
+
+        MvcResult result = mockMvc.perform(multipart("/api/products/upload")
+                        .file(new MockMultipartFile("file", "products.xlsx",
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                excelBytes))
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        JsonNode json = json(result);
+        assertEquals(0, json.get("successCount").asInt());
+        assertTrue(json.get("failureCount").asInt() > 0);
+        assertNotNull(json.get("errors"));
+    }
+
+    @Test
+    void upload_with_duplicate_url_in_db_returns_error() throws Exception {
+        createProductAndGetId("already-exists-url");
+
+        byte[] excelBytes = buildValidExcel(
+                row("Duplicate URL Product", "", "already-exists-url", "Electronics", "", "",
+                        "Desc", "Full", "50000", "", "COLOR", "3", "100", "ACTIVE", "IN_STOCK")
+        );
+
+        MvcResult result = mockMvc.perform(multipart("/api/products/upload")
+                        .file(new MockMultipartFile("file", "products.xlsx",
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                excelBytes))
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        JsonNode json = json(result);
+        assertEquals(0, json.get("successCount").asInt());
+        assertEquals(1, json.get("failureCount").asInt());
+        assertTrue(json.get("errors").get(0).get("message").asText().contains("already exists"));
+    }
+
+    @Test
+    void upload_with_nonexistent_category_returns_error() throws Exception {
+        byte[] excelBytes = buildValidExcel(
+                row("Bad Category", "", "bad-cat-url", "FakeCategory", "", "",
+                        "Desc", "Full", "99000", "", "COLOR", "5", "100", "ACTIVE", "IN_STOCK")
+        );
+
+        MvcResult result = mockMvc.perform(multipart("/api/products/upload")
+                        .file(new MockMultipartFile("file", "products.xlsx",
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                excelBytes))
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        JsonNode json = json(result);
+        assertEquals(0, json.get("successCount").asInt());
+        assertEquals(1, json.get("failureCount").asInt());
+        assertTrue(json.get("errors").get(0).get("message").asText().contains("Category not found"));
+    }
+
+    @Test
+    void upload_requires_admin() throws Exception {
+        byte[] excelBytes = buildValidExcel(
+                row("Test", "", "test-url", "Electronics", "", "", "D", "F", "100", "", "COLOR", "10", "100", "ACTIVE", "IN_STOCK")
+        );
+
+        mockMvc.perform(multipart("/api/products/upload")
+                        .file(new MockMultipartFile("file", "products.xlsx",
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                excelBytes))
+                        .header("Authorization", "Bearer " + userToken)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void upload_with_specification_columns_saves_specs() throws Exception {
+        byte[] excelBytes = buildExcelWithSpecs(
+                row("Spec Product", "", "spec-prod-url", "Electronics", "", "",
+                        "Desc", "Full", "75000", "", "COLOR", "7", "150", "ACTIVE", "IN_STOCK",
+                        "Red", "XL")
+        );
+
+        mockMvc.perform(multipart("/api/products/upload")
+                        .file(new MockMultipartFile("file", "products.xlsx",
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                excelBytes))
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isOk());
+
+        String specJson = jdbcTemplate.queryForObject(
+                "SELECT specification FROM product WHERE url = ?", String.class, "spec-prod-url");
+        assertNotNull(specJson);
+        assertTrue(specJson.contains("COLOR"));
+        assertTrue(specJson.contains("Red"));
+        assertTrue(specJson.contains("SIZE"));
+        assertTrue(specJson.contains("XL"));
+    }
+
+    @Test
+    void upload_empty_file_returns_error() throws Exception {
+        var workbook = new XSSFWorkbook();
+        var sheet = workbook.createSheet();
+        writeHeaderRow(sheet);
+
+        var out = new ByteArrayOutputStream();
+        workbook.write(out);
+        workbook.close();
+
+        mockMvc.perform(multipart("/api/products/upload")
+                        .file(new MockMultipartFile("file", "products.xlsx",
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                out.toByteArray()))
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Helpers
+    // ---------------------------------------------------------------------------------------------
+
+    private String[] row(String... values) {
+        return values;
+    }
+
+    private byte[] buildValidExcel(String[]... rows) throws Exception {
+        var workbook = new XSSFWorkbook();
+        var sheet = workbook.createSheet();
+        writeHeaderRow(sheet);
+
+        for (int i = 0; i < rows.length; i++) {
+            var dataRow = sheet.createRow(i + 1);
+            for (int j = 0; j < rows[i].length; j++) {
+                dataRow.createCell(j).setCellValue(rows[i][j]);
+            }
+        }
+
+        var out = new ByteArrayOutputStream();
+        workbook.write(out);
+        workbook.close();
+        return out.toByteArray();
+    }
+
+    private byte[] buildExcelWithSpecs(String[]... rows) throws Exception {
+        var workbook = new XSSFWorkbook();
+        var sheet = workbook.createSheet();
+        writeHeaderRow(sheet);
+
+        var headerRow = sheet.getRow(0);
+        headerRow.createCell(15).setCellValue("Spec:COLOR");
+        headerRow.createCell(16).setCellValue("Spec:SIZE");
+
+        for (int i = 0; i < rows.length; i++) {
+            var dataRow = sheet.createRow(i + 1);
+            for (int j = 0; j < rows[i].length; j++) {
+                dataRow.createCell(j).setCellValue(rows[i][j]);
+            }
+        }
+
+        var out = new ByteArrayOutputStream();
+        workbook.write(out);
+        workbook.close();
+        return out.toByteArray();
+    }
+
+    private void writeHeaderRow(Sheet sheet) {
+        var row = sheet.createRow(0);
+        String[] headers = {
+                "Name", "Local Name", "URL", "Category", "Sub Category", "Brand",
+                "Short Description", "Full Description", "Price", "Discount Price",
+                "Variant Type", "Inventory Count", "Weight (grams)", "Status", "Inventory Status"
+        };
+        for (int i = 0; i < headers.length; i++) {
+            row.createCell(i).setCellValue(headers[i]);
+        }
+    }
+}

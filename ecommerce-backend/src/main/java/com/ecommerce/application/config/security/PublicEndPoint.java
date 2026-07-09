@@ -18,6 +18,8 @@ public class PublicEndPoint {
     static final String[] GET_PUBLIC_ENDPOINTS = {
             "/actuator/health",
             API + "/products",
-            API + "/products/**"
+            API + "/products/**",
+            API + "/categories",
+            API + "/categories/**"
     };
 }

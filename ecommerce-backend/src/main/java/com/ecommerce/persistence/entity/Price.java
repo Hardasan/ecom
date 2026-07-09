@@ -1,6 +1,6 @@
 package com.ecommerce.persistence.entity;
 
-import com.ecommerce.persistence.entity.enumeration.VariantType;
+import com.ecommerce.persistence.entity.enumeration.VariantValue;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.EnumType;
@@ -22,6 +22,6 @@ public class Price {
     private BigDecimal discountPrice;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "variant_type", nullable = false, length = 64)
-    private VariantType variantType;
+    @Column(name = "variant_value", length = 64)
+    private VariantValue variantValue;
 }

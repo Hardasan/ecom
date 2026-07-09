@@ -3,6 +3,7 @@ package com.ecommerce.persistence.entity;
 import com.ecommerce.persistence.entity.enumeration.InventoryStatus;
 import com.ecommerce.persistence.entity.enumeration.ProductStatus;
 import com.ecommerce.persistence.entity.enumeration.SpecificationKey;
+import com.ecommerce.persistence.entity.enumeration.VariantType;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.CascadeType;
@@ -29,11 +30,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Entity
 @Table(
@@ -70,6 +67,10 @@ public class Product {
 
     @Column(name = "url", nullable = false, length = 255)
     private String url;
+
+    @Column(name = "variant_type", length = 64)
+    @Enumerated(EnumType.STRING)
+    private VariantType variantType;
 
     @ElementCollection
     @CollectionTable(name = "product_price", joinColumns = @JoinColumn(name = "product_id"))

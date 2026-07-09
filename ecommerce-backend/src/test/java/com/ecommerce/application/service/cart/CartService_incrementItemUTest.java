@@ -20,7 +20,7 @@ class CartService_incrementItemUTest extends BaseCartServiceUTest {
     @Test
     void increment_increases_quantity_by_one() {
         Product product = product(PRODUCT_ID, 10);
-        CartItem cartItem = item(50L, PRODUCT_ID, VariantType.COLOR, 2, BigDecimal.valueOf(100), null);
+        CartItem cartItem = item(50L, PRODUCT_ID, VariantType.COLOR, DEFAULT_VARIANT_VALUE, 2, BigDecimal.valueOf(100), null);
         when(cartItemRepository.findByIdAndUserId(50L, USER_ID)).thenReturn(Optional.of(cartItem));
         when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product));
         stubUserItems(cartItem);
@@ -34,7 +34,7 @@ class CartService_incrementItemUTest extends BaseCartServiceUTest {
     @Test
     void increment_beyond_inventory_throws_insufficient_stock() {
         Product product = product(PRODUCT_ID, 2);
-        CartItem cartItem = item(50L, PRODUCT_ID, VariantType.COLOR, 2, BigDecimal.valueOf(100), null);
+        CartItem cartItem = item(50L, PRODUCT_ID, VariantType.COLOR, DEFAULT_VARIANT_VALUE, 2, BigDecimal.valueOf(100), null);
         when(cartItemRepository.findByIdAndUserId(50L, USER_ID)).thenReturn(Optional.of(cartItem));
         when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product));
 

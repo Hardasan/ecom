@@ -9,6 +9,7 @@ import com.ecommerce.persistence.entity.Price;
 import com.ecommerce.persistence.entity.Product;
 import com.ecommerce.persistence.entity.enumeration.ProductStatus;
 import com.ecommerce.persistence.entity.enumeration.VariantType;
+import com.ecommerce.persistence.entity.enumeration.VariantValue;
 import com.ecommerce.persistence.repository.CartItemRepository;
 import com.ecommerce.persistence.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -37,10 +38,24 @@ public class CartService {
     public CartResponseDto addItem(Long userId, AddCartItemRequestDto requestDto) {
         Product product = findProductOrThrow(requestDto.getProductId());
         requirePurchasable(product);
-        Price price = findVariantPriceOrThrow(product, requestDto.getVariantType());
+
+        VariantType variantType = requestDto.getVariantType();
+        VariantValue variantValue = requestDto.getVariantValue();
+
+        if (product.getVariantType() == null) {
+            if (variantType != null || variantValue != null) {
+                throw new EcommerceException(ECOMErrorType.PRODUCT_VARIANT_NOT_FOUND);
+            }
+        } else {
+            if (variantType != product.getVariantType() || variantValue == null
+                    || !variantValue.isAllowedFor(product.getVariantType())) {
+                throw new EcommerceException(ECOMErrorType.PRODUCT_VARIANT_NOT_FOUND);
+            }
+        }
+        Price price = findVariantPriceOrThrow(product, variantType, variantValue);
 
         CartItem item = cartItemRepository
-                .findByUserIdAndProductIdAndVariantType(userId, requestDto.getProductId(), requestDto.getVariantType())
+                .findCartLine(userId, product.getId(), variantType, variantValue)
                 .orElse(null);
 
         int newQuantity = (item != null ? item.getQuantity() : 0) + requestDto.getQuantity();
@@ -50,7 +65,8 @@ public class CartService {
             item = new CartItem();
             item.setUserId(userId);
             item.setProductId(product.getId());
-            item.setVariantType(requestDto.getVariantType());
+            item.setVariantType(variantType);
+            item.setVariantValue(variantValue);
             item.setUnitPrice(price.getPrice());
             item.setDiscountPrice(price.getDiscountPrice());
         }
@@ -123,9 +139,27 @@ public class CartService {
         }
     }
 
-    private Price findVariantPriceOrThrow(Product product, VariantType variantType) {
+    /**
+     * Picks the Price for the line. A variant-less product (both args null) gets the first row
+     * whose own variantValue is null; a variant-bearing request gets the row matching exactly.
+     * Throws {@code PRODUCT_VARIANT_NOT_FOUND} if no matching price exists.
+     */
+    private Price findVariantPriceOrThrow(Product product, VariantType variantType, VariantValue variantValue) {
+        if (product.getVariantType() == null) {
+            if (variantType != null || variantValue != null) {
+                throw new EcommerceException(ECOMErrorType.PRODUCT_VARIANT_NOT_FOUND);
+            }
+            return product.getPrices().stream()
+                    .filter(p -> p.getVariantValue() == null)
+                    .findFirst()
+                    .or(() -> product.getPrices().stream().findFirst())
+                    .orElseThrow(() -> new EcommerceException(ECOMErrorType.PRODUCT_VARIANT_NOT_FOUND));
+        }
+        if (product.getVariantType() != variantType) {
+            throw new EcommerceException(ECOMErrorType.PRODUCT_VARIANT_NOT_FOUND);
+        }
         return product.getPrices().stream()
-                .filter(p -> p.getVariantType() == variantType)
+                .filter(p -> variantValue.equals(p.getVariantValue()))
                 .findFirst()
                 .orElseThrow(() -> new EcommerceException(ECOMErrorType.PRODUCT_VARIANT_NOT_FOUND));
     }

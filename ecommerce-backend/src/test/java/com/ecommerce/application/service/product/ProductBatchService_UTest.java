@@ -63,6 +63,7 @@ class ProductBatchService_UTest {
         row1.put("Category", "Electronics");
         row1.put("Price", "100");
         row1.put("Inventory Count", "10");
+        row1.put("Variant Value", "RED");
 
         var row2 = new ExcelProductRow(3);
         row2.put("Name", "Product 2");
@@ -70,6 +71,7 @@ class ProductBatchService_UTest {
         row2.put("Category", "Electronics");
         row2.put("Price", "200");
         row2.put("Inventory Count", "5");
+        row2.put("Variant Value", "RED");
 
         when(parserService.parse(any(), any())).thenReturn(List.of(row1, row2));
 
@@ -108,6 +110,7 @@ class ProductBatchService_UTest {
         row1.put("Category", "Electronics");
         row1.put("Price", "100");
         row1.put("Inventory Count", "10");
+        row1.put("Variant Value", "RED");
 
         var row2 = new ExcelProductRow(3);
         row2.put("Name", ""); // Missing name
@@ -115,6 +118,7 @@ class ProductBatchService_UTest {
         row2.put("Category", "Electronics");
         row2.put("Price", "invalid"); // Bad price
         row2.put("Inventory Count", "5");
+        row2.put("Variant Value", "RED");
 
         var row3 = new ExcelProductRow(4);
         // Missing URL
@@ -122,6 +126,7 @@ class ProductBatchService_UTest {
         row3.put("Category", "Electronics");
         row3.put("Price", "150");
         row3.put("Inventory Count", "3");
+        row3.put("Variant Value", "RED");
 
         when(parserService.parse(any(), any())).thenReturn(List.of(row1, row2, row3));
 
@@ -152,6 +157,7 @@ class ProductBatchService_UTest {
         row1.put("Category", "Electronics");
         row1.put("Price", "100");
         row1.put("Inventory Count", "10");
+        row1.put("Variant Value", "RED");
 
         var row2 = new ExcelProductRow(3);
         row2.put("Name", "Second");
@@ -159,6 +165,7 @@ class ProductBatchService_UTest {
         row2.put("Category", "Electronics");
         row2.put("Price", "200");
         row2.put("Inventory Count", "5");
+        row2.put("Variant Value", "RED");
 
         when(parserService.parse(any(), any())).thenReturn(List.of(row1, row2));
 
@@ -189,6 +196,7 @@ class ProductBatchService_UTest {
         row.put("Category", "Electronics");
         row.put("Price", "100");
         row.put("Inventory Count", "10");
+        row.put("Variant Value", "RED");
 
         when(parserService.parse(any(), any())).thenReturn(List.of(row));
 
@@ -218,6 +226,7 @@ class ProductBatchService_UTest {
         row.put("Category", "NonExistent");
         row.put("Price", "100");
         row.put("Inventory Count", "10");
+        row.put("Variant Value", "RED");
 
         when(parserService.parse(any(), any())).thenReturn(List.of(row));
 
@@ -246,6 +255,7 @@ class ProductBatchService_UTest {
         row.put("Brand", "NonExistentBrand");
         row.put("Price", "100");
         row.put("Inventory Count", "10");
+        row.put("Variant Value", "RED");
 
         when(parserService.parse(any(), any())).thenReturn(List.of(row));
 
@@ -276,6 +286,7 @@ class ProductBatchService_UTest {
         row.put("Category", "Electronics");
         row.put("Price", "100");
         row.put("Inventory Count", "-5");
+        row.put("Variant Value", "RED");
 
         when(parserService.parse(any(), any())).thenReturn(List.of(row));
 
@@ -303,6 +314,7 @@ class ProductBatchService_UTest {
         row.put("Category", "Electronics");
         row.put("Price", "-1");
         row.put("Inventory Count", "10");
+        row.put("Variant Value", "RED");
 
         when(parserService.parse(any(), any())).thenReturn(List.of(row));
 
@@ -330,6 +342,7 @@ class ProductBatchService_UTest {
         row.put("Category", "Electronics");
         row.put("Price", "0");
         row.put("Inventory Count", "10");
+        row.put("Variant Value", "RED");
 
         when(parserService.parse(any(), any())).thenReturn(List.of(row));
 
@@ -357,6 +370,7 @@ class ProductBatchService_UTest {
         row.put("Category", "Electronics");
         row.put("Price", "100");
         row.put("Inventory Count", "10");
+        row.put("Variant Value", "RED");
         row.put("Variant Type", "INVALID_TYPE");
 
         when(parserService.parse(any(), any())).thenReturn(List.of(row));
@@ -385,6 +399,7 @@ class ProductBatchService_UTest {
         row.put("Category", "Electronics");
         row.put("Price", "100");
         row.put("Inventory Count", "10");
+        row.put("Variant Value", "RED");
         row.put("Status", "INVALID_STATUS");
 
         when(parserService.parse(any(), any())).thenReturn(List.of(row));
@@ -413,6 +428,7 @@ class ProductBatchService_UTest {
         row.put("Category", "Electronics");
         row.put("Price", "50");
         row.put("Inventory Count", "1");
+        row.put("Variant Value", "RED");
         // No status, no inventory status, no variant type, no weight
 
         when(parserService.parse(any(), any())).thenReturn(List.of(row));
@@ -450,6 +466,7 @@ class ProductBatchService_UTest {
         row.put("Category", "Electronics");
         row.put("Price", "100");
         row.put("Inventory Count", "10");
+        row.put("Variant Value", "RED");
 
         when(parserService.parse(any(), any())).thenReturn(List.of(row));
 

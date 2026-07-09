@@ -11,6 +11,7 @@ import com.ecommerce.persistence.entity.Product;
 import com.ecommerce.persistence.entity.ProductImage;
 import com.ecommerce.persistence.entity.ProductOtherImage;
 import com.ecommerce.persistence.entity.enumeration.ProductStatus;
+import com.ecommerce.persistence.entity.enumeration.VariantValue;
 import com.ecommerce.persistence.repository.BrandRepository;
 import com.ecommerce.persistence.repository.CategoryRepository;
 import com.ecommerce.persistence.repository.ProductRepository;
@@ -24,13 +25,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.Base64;
+import java.util.HashSet;
+import java.util.Set;
 
 import static com.ecommerce.application.util.SecurityUtil.isAdmin;
 
-/**
- * @author reza gholamzad
- * @since 6/16/26
- */
 @Service
 @RequiredArgsConstructor
 public class ProductService {
@@ -50,6 +49,7 @@ public class ProductService {
 
         var product = new Product();
         productMapper.apply(requestDto, product);
+        product.setPrices(ProductMapper.mapPrices(requestDto));
         product.setCode(generateCode(requestDto.getCategoryId()));
 
         if (mainImageFile != null) {
@@ -87,6 +87,7 @@ public class ProductService {
         validateProductRequestDto(requestDto);
 
         productMapper.apply(requestDto, product);
+        product.setPrices(ProductMapper.mapPrices(requestDto));
 
         return productMapper.toResponseDto(productRepository.save(product));
     }
@@ -170,6 +171,22 @@ public class ProductService {
         }
         if (requestDto.getBrandId() != null && !brandRepository.existsById(requestDto.getBrandId())) {
             throw new EcommerceException(ECOMErrorType.BRAND_NOT_FOUND);
+        }
+
+        // A variantValue on any Price row implies the product's variantType must be set and
+        // match that value's type. A null variantValue on a row is fine for both variant-less
+        // and variant-bearing products.
+        Set<VariantValue> values = new HashSet<>();
+        for (var price : requestDto.getPrices()) {
+            VariantValue value = price.getVariantValue();
+            if (value != null) {
+                if (requestDto.getVariantType() == null || !value.isAllowedFor(requestDto.getVariantType())) {
+                    throw new EcommerceException(ECOMErrorType.VALIDATION_ERROR);
+                }
+                if (!values.add(value)) {
+                    throw new EcommerceException(ECOMErrorType.VALIDATION_ERROR);
+                }
+            }
         }
     }
 }

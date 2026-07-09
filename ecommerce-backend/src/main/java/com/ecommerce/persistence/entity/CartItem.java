@@ -1,6 +1,7 @@
 package com.ecommerce.persistence.entity;
 
 import com.ecommerce.persistence.entity.enumeration.VariantType;
+import com.ecommerce.persistence.entity.enumeration.VariantValue;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -10,7 +11,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
@@ -20,12 +20,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 @Entity
-@Table(
-        name = "cart_item",
-        uniqueConstraints = @UniqueConstraint(
-                name = "uk_cart_item_user_product_variant",
-                columnNames = {"user_id", "product_id", "variant_type"})
-)
+@Table(name = "cart_item")
 @Getter
 @Setter
 public class CartItem {
@@ -43,8 +38,12 @@ public class CartItem {
     private Long productId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "variant_type", nullable = false, length = 64)
+    @Column(name = "variant_type", length = 64)
     private VariantType variantType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "variant_value", length = 64)
+    private VariantValue variantValue;
 
     @Column(name = "quantity", nullable = false)
     private Integer quantity;

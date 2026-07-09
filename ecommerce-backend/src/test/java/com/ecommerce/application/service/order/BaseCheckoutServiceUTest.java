@@ -3,6 +3,7 @@ package com.ecommerce.application.service.order;
 import com.ecommerce.application.config.properties.CheckoutProperties;
 import com.ecommerce.application.service.address.AddressService;
 import com.ecommerce.application.service.shipping.ShippingCalculator;
+import com.ecommerce.application.util.VariantValueResolver;
 import com.ecommerce.persistence.entity.CartItem;
 import com.ecommerce.persistence.entity.Order;
 import com.ecommerce.persistence.entity.Price;
@@ -38,6 +39,7 @@ abstract class BaseCheckoutServiceUTest {
     protected static final Long USER_ID = 7L;
     protected static final Long PRODUCT_ID = 100L;
     protected static final Long ADDRESS_ID = 55L;
+    protected static final String DEFAULT_VARIANT_VALUE = "RED";
 
     @Mock
     protected CartItemRepository cartItemRepository;
@@ -79,8 +81,9 @@ abstract class BaseCheckoutServiceUTest {
         product.setStatus(status);
         product.setInventoryCount(inventory);
         product.setWeightGram(weightGram);
+        product.setVariantType(VariantType.COLOR);
         Price price = new Price();
-        price.setVariantType(VariantType.COLOR);
+        price.setVariantValue(VariantValueResolver.parse(VariantType.COLOR, DEFAULT_VARIANT_VALUE));
         price.setPrice(BigDecimal.valueOf(100));
         product.setPrices(new ArrayList<>(List.of(price)));
         return product;
@@ -95,8 +98,9 @@ abstract class BaseCheckoutServiceUTest {
         product.setStatus(status);
         product.setInventoryCount(inventory);
         product.setWeightGram(weightGram);
+        product.setVariantType(VariantType.COLOR);
         Price price = new Price();
-        price.setVariantType(VariantType.COLOR);
+        price.setVariantValue(VariantValueResolver.parse(VariantType.COLOR, DEFAULT_VARIANT_VALUE));
         price.setPrice(priceValue);
         price.setDiscountPrice(discountPrice);
         product.setPrices(new ArrayList<>(List.of(price)));
@@ -109,8 +113,23 @@ abstract class BaseCheckoutServiceUTest {
         item.setUserId(USER_ID);
         item.setProductId(PRODUCT_ID);
         item.setVariantType(VariantType.COLOR);
+        item.setVariantValue(VariantValueResolver.parse(VariantType.COLOR, DEFAULT_VARIANT_VALUE));
         item.setQuantity(quantity);
         return item;
+    }
+
+    protected Product variantlessProduct(int inventory, int weightGram, ProductStatus status) {
+        Product product = new Product();
+        product.setId(PRODUCT_ID);
+        product.setName("Laptop");
+        product.setCode("1-1");
+        product.setStatus(status);
+        product.setInventoryCount(inventory);
+        product.setWeightGram(weightGram);
+        Price price = new Price();
+        price.setPrice(BigDecimal.valueOf(100));
+        product.setPrices(new ArrayList<>(List.of(price)));
+        return product;
     }
 
     protected UserAddress address() {

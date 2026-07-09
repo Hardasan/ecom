@@ -13,7 +13,7 @@ class CartService_getCartUTest extends BaseCartServiceUTest {
 
     @Test
     void get_returns_existing_items_with_totals() {
-        stubUserItems(item(50L, PRODUCT_ID, VariantType.COLOR, 2, BigDecimal.valueOf(100), null));
+        stubUserItems(item(50L, PRODUCT_ID, VariantType.COLOR, DEFAULT_VARIANT_VALUE, 2, BigDecimal.valueOf(100), null));
         stubProductsForDto(product(PRODUCT_ID, 10));
 
         CartResponseDto response = cartService.getCart(USER_ID);

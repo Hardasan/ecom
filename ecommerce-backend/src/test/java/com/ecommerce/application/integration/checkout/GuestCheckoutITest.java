@@ -5,7 +5,7 @@ import com.ecommerce.application.api.dto.order.GuestCheckoutRequestDto;
 import com.ecommerce.application.api.dto.order.GuestItemRequestDto;
 import com.ecommerce.persistence.entity.enumeration.ProductStatus;
 import com.ecommerce.persistence.entity.enumeration.Province;
-import com.ecommerce.persistence.entity.enumeration.VariantType;
+import com.ecommerce.persistence.entity.enumeration.VariantValue;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -34,7 +34,8 @@ class GuestCheckoutITest extends AbstractCheckoutITest {
 
         GuestItemRequestDto item = new GuestItemRequestDto();
         item.setProductId(productId);
-        item.setVariantType(VariantType.COLOR);
+        item.setVariantType(DEFAULT_VARIANT_TYPE);
+        item.setVariantValue(VariantValue.valueOf(DEFAULT_VARIANT_VALUE));
         item.setQuantity(quantity);
         dto.setItems(List.of(item));
         return dto;
@@ -59,10 +60,11 @@ class GuestCheckoutITest extends AbstractCheckoutITest {
         return dto;
     }
 
-    private GuestItemRequestDto item(Long productId, VariantType variant, int quantity) {
+    private GuestItemRequestDto item(Long productId, String variantValue, int quantity) {
         GuestItemRequestDto item = new GuestItemRequestDto();
         item.setProductId(productId);
-        item.setVariantType(variant);
+        item.setVariantType(DEFAULT_VARIANT_TYPE);
+        item.setVariantValue(VariantValue.valueOf(variantValue));
         item.setQuantity(quantity);
         return item;
     }
@@ -160,8 +162,8 @@ class GuestCheckoutITest extends AbstractCheckoutITest {
         String mobile = newMobile();
 
         GuestCheckoutRequestDto dto = guestRequestWithItems(mobile,
-                List.of(item(product1, VariantType.COLOR, 1),
-                        item(product2, VariantType.COLOR, 2)),
+                List.of(item(product1, DEFAULT_VARIANT_VALUE, 1),
+                        item(product2, DEFAULT_VARIANT_VALUE, 2)),
                 Province.TEHRAN);
 
         guestCheckout(dto)
@@ -177,8 +179,8 @@ class GuestCheckoutITest extends AbstractCheckoutITest {
         String mobile = newMobile();
 
         GuestCheckoutRequestDto dto = guestRequestWithItems(mobile,
-                List.of(item(productId, VariantType.COLOR, 2),
-                        item(productId, VariantType.COLOR, 3)),
+                List.of(item(productId, DEFAULT_VARIANT_VALUE, 2),
+                        item(productId, DEFAULT_VARIANT_VALUE, 3)),
                 Province.TEHRAN);
 
         guestCheckout(dto)
@@ -223,7 +225,7 @@ class GuestCheckoutITest extends AbstractCheckoutITest {
 
     @Test
     void guest_checkout_with_inactive_product_returns_409() throws Exception {
-        Long productId = createProduct("guest-inactive", 10, 500, ProductStatus.INACTIVE, VariantType.COLOR);
+        Long productId = createProduct("guest-inactive", 10, 500, ProductStatus.INACTIVE, DEFAULT_VARIANT_VALUE);
         String mobile = newMobile();
 
         guestCheckout(guestRequest(mobile, productId, 1, Province.TEHRAN))

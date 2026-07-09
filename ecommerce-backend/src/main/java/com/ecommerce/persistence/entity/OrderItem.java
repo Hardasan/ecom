@@ -2,6 +2,7 @@ package com.ecommerce.persistence.entity;
 
 import com.ecommerce.persistence.entity.embeddable.ProductSnapshot;
 import com.ecommerce.persistence.entity.enumeration.VariantType;
+import com.ecommerce.persistence.entity.enumeration.VariantValue;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -41,8 +42,12 @@ public class OrderItem {
     private ProductSnapshot product = new ProductSnapshot();
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "variant_type", nullable = false, length = 64)
+    @Column(name = "variant_type", length = 64)
     private VariantType variantType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "variant_value", length = 64)
+    private VariantValue variantValue;
 
     @Column(name = "quantity", nullable = false)
     private Integer quantity;

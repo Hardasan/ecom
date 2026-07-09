@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.ecommerce.persistence.entity.enumeration.InventoryStatus;
 import com.ecommerce.persistence.entity.enumeration.ProductStatus;
 import com.ecommerce.persistence.entity.enumeration.VariantType;
+import com.ecommerce.persistence.entity.enumeration.VariantValue;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -63,7 +64,7 @@ public abstract class AbstractProductITest extends AbstractIntegrationITest {
     CreateProductRequestDto validRequest(String url) {
         PriceDto price = new PriceDto();
         price.setPrice(BigDecimal.valueOf(100));
-        price.setVariantType(VariantType.COLOR);
+        price.setVariantValue(VariantValue.RED);
 
         CreateProductRequestDto req = new CreateProductRequestDto();
         req.setCategoryId(categoryId);
@@ -72,6 +73,7 @@ public abstract class AbstractProductITest extends AbstractIntegrationITest {
         req.setStatus(ProductStatus.ACTIVE);
         req.setInventoryStatus(InventoryStatus.IN_STOCK);
         req.setInventoryCount(10);
+        req.setVariantType(VariantType.COLOR);
         req.setPrices(List.of(price));
         return req;
     }

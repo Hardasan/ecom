@@ -10,6 +10,7 @@ import com.ecommerce.persistence.entity.enumeration.InventoryStatus;
 import com.ecommerce.persistence.entity.enumeration.ProductStatus;
 import com.ecommerce.persistence.entity.enumeration.Province;
 import com.ecommerce.persistence.entity.enumeration.VariantType;
+import com.ecommerce.persistence.entity.enumeration.VariantValue;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 public abstract class AbstractCheckoutITest extends AbstractIntegrationITest {
+
+    protected static final VariantType DEFAULT_VARIANT_TYPE = VariantType.COLOR;
+    protected static final String DEFAULT_VARIANT_VALUE = "RED";
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -61,7 +65,7 @@ public abstract class AbstractCheckoutITest extends AbstractIntegrationITest {
     // ---------------------------------------------------------------------------------------------
 
     protected Long createProduct(String url, int inventory, int weightGram, ProductStatus status,
-            VariantType... variants) throws Exception {
+            String... variantValues) throws Exception {
         CreateProductRequestDto req = new CreateProductRequestDto();
         req.setCategoryId(categoryId);
         req.setUrl(url);
@@ -70,12 +74,14 @@ public abstract class AbstractCheckoutITest extends AbstractIntegrationITest {
         req.setInventoryStatus(InventoryStatus.IN_STOCK);
         req.setInventoryCount(inventory);
         req.setWeightGram(weightGram);
+        req.setVariantType(DEFAULT_VARIANT_TYPE);
 
         List<PriceDto> prices = new ArrayList<>();
-        for (VariantType variant : variants) {
+        String[] values = variantValues.length == 0 ? new String[]{DEFAULT_VARIANT_VALUE} : variantValues;
+        for (String variantValue : values) {
             PriceDto price = new PriceDto();
             price.setPrice(BigDecimal.valueOf(100));
-            price.setVariantType(variant);
+            price.setVariantValue(VariantValue.valueOf(variantValue));
             prices.add(price);
         }
         req.setPrices(prices);
@@ -93,7 +99,7 @@ public abstract class AbstractCheckoutITest extends AbstractIntegrationITest {
     }
 
     protected Long createActiveProduct(String url, int inventory, int weightGram) throws Exception {
-        return createProduct(url, inventory, weightGram, ProductStatus.ACTIVE, VariantType.COLOR);
+        return createProduct(url, inventory, weightGram, ProductStatus.ACTIVE, DEFAULT_VARIANT_VALUE);
     }
 
     protected Long createProductWithPrices(String url, int inventory, int weightGram,
@@ -106,11 +112,12 @@ public abstract class AbstractCheckoutITest extends AbstractIntegrationITest {
         req.setInventoryStatus(InventoryStatus.IN_STOCK);
         req.setInventoryCount(inventory);
         req.setWeightGram(weightGram);
+        req.setVariantType(DEFAULT_VARIANT_TYPE);
 
         PriceDto price = new PriceDto();
         price.setPrice(unitPrice);
         price.setDiscountPrice(discountPrice);
-        price.setVariantType(VariantType.COLOR);
+        price.setVariantValue(VariantValue.valueOf(DEFAULT_VARIANT_VALUE));
         req.setPrices(List.of(price));
 
         org.springframework.mock.web.MockPart part =
@@ -129,10 +136,11 @@ public abstract class AbstractCheckoutITest extends AbstractIntegrationITest {
     // Cart / address / checkout HTTP helpers
     // ---------------------------------------------------------------------------------------------
 
-    protected void addToCart(String token, Long productId, VariantType variant, int quantity) throws Exception {
+    protected void addToCart(String token, Long productId, String variantValue, int quantity) throws Exception {
         AddCartItemRequestDto req = new AddCartItemRequestDto();
         req.setProductId(productId);
-        req.setVariantType(variant);
+        req.setVariantType(DEFAULT_VARIANT_TYPE);
+        req.setVariantValue(variantValue == null ? null : VariantValue.valueOf(variantValue));
         req.setQuantity(quantity);
         mockMvc.perform(withAuth(post("/api/cart/items"), token)
                         .contentType(MediaType.APPLICATION_JSON)

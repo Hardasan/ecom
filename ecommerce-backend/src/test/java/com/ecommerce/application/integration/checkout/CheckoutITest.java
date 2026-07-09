@@ -2,7 +2,6 @@ package com.ecommerce.application.integration.checkout;
 
 import com.ecommerce.persistence.entity.enumeration.ProductStatus;
 import com.ecommerce.persistence.entity.enumeration.Province;
-import com.ecommerce.persistence.entity.enumeration.VariantType;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -21,7 +20,7 @@ class CheckoutITest extends AbstractCheckoutITest {
     @Test
     void checkout_creates_pending_order_decrements_inventory_and_clears_cart() throws Exception {
         Long productId = createActiveProduct("laptop", 10, 500);
-        addToCart(userToken, productId, VariantType.COLOR, 2);
+        addToCart(userToken, productId, DEFAULT_VARIANT_VALUE, 2);
         long addressId = createAddressAndGetId(userToken, Province.TEHRAN);
 
         MvcResult result = checkout(userToken, addressId)
@@ -62,7 +61,7 @@ class CheckoutITest extends AbstractCheckoutITest {
     @Test
     void checkout_to_adjacent_province_uses_adjacent_tariff() throws Exception {
         Long productId = createActiveProduct("phone", 10, 300);
-        addToCart(userToken, productId, VariantType.COLOR, 1);
+        addToCart(userToken, productId, DEFAULT_VARIANT_VALUE, 1);
         long addressId = createAddressAndGetId(userToken, Province.ALBORZ);
 
         checkout(userToken, addressId)
@@ -74,7 +73,7 @@ class CheckoutITest extends AbstractCheckoutITest {
     @Test
     void checkout_with_heavy_cart_uses_over_threshold_tariff() throws Exception {
         Long productId = createActiveProduct("anvil", 10, 600);
-        addToCart(userToken, productId, VariantType.COLOR, 2); // 1200g > 1000g threshold
+        addToCart(userToken, productId, DEFAULT_VARIANT_VALUE, 2); // 1200g > 1000g threshold
         long addressId = createAddressAndGetId(userToken, Province.TEHRAN);
 
         checkout(userToken, addressId)
@@ -87,7 +86,7 @@ class CheckoutITest extends AbstractCheckoutITest {
     @Test
     void checkout_to_non_adjacent_province_uses_non_adjacent_tariff() throws Exception {
         Long productId = createActiveProduct("book", 10, 300);
-        addToCart(userToken, productId, VariantType.COLOR, 1);
+        addToCart(userToken, productId, DEFAULT_VARIANT_VALUE, 1);
         long addressId = createAddressAndGetId(userToken, Province.FARS);
 
         checkout(userToken, addressId)
@@ -100,8 +99,8 @@ class CheckoutITest extends AbstractCheckoutITest {
     void checkout_with_multiple_different_products_creates_separate_order_lines() throws Exception {
         Long product1 = createActiveProduct("laptop", 10, 500);
         Long product2 = createActiveProduct("mouse", 20, 100);
-        addToCart(userToken, product1, VariantType.COLOR, 1);
-        addToCart(userToken, product2, VariantType.COLOR, 2);
+        addToCart(userToken, product1, DEFAULT_VARIANT_VALUE, 1);
+        addToCart(userToken, product2, DEFAULT_VARIANT_VALUE, 2);
         long addressId = createAddressAndGetId(userToken, Province.TEHRAN);
 
         checkout(userToken, addressId)
@@ -114,8 +113,8 @@ class CheckoutITest extends AbstractCheckoutITest {
     @Test
     void same_product_and_variant_in_cart_merges_into_single_order_line() throws Exception {
         Long productId = createActiveProduct("laptop", 10, 500);
-        addToCart(userToken, productId, VariantType.COLOR, 1);
-        addToCart(userToken, productId, VariantType.COLOR, 2); // same product+variant -> merge
+        addToCart(userToken, productId, DEFAULT_VARIANT_VALUE, 1);
+        addToCart(userToken, productId, DEFAULT_VARIANT_VALUE, 2); // same product+variant -> merge
         long addressId = createAddressAndGetId(userToken, Province.TEHRAN);
 
         checkout(userToken, addressId)
@@ -127,9 +126,9 @@ class CheckoutITest extends AbstractCheckoutITest {
 
     @Test
     void same_product_different_variants_creates_separate_order_lines() throws Exception {
-        Long productId = createProduct("phone", 10, 300, ProductStatus.ACTIVE, VariantType.COLOR, VariantType.SIZE);
-        addToCart(userToken, productId, VariantType.COLOR, 1);
-        addToCart(userToken, productId, VariantType.SIZE, 2);
+        Long productId = createProduct("phone", 10, 300, ProductStatus.ACTIVE, "RED", "BLUE");
+        addToCart(userToken, productId, "RED", 1);
+        addToCart(userToken, productId, "BLUE", 2);
         long addressId = createAddressAndGetId(userToken, Province.TEHRAN);
 
         checkout(userToken, addressId)
@@ -140,7 +139,7 @@ class CheckoutITest extends AbstractCheckoutITest {
     @Test
     void order_response_includes_reserved_until() throws Exception {
         Long productId = createActiveProduct("laptop", 10, 500);
-        addToCart(userToken, productId, VariantType.COLOR, 1);
+        addToCart(userToken, productId, DEFAULT_VARIANT_VALUE, 1);
         long addressId = createAddressAndGetId(userToken, Province.TEHRAN);
 
         MvcResult result = checkout(userToken, addressId)
@@ -153,7 +152,7 @@ class CheckoutITest extends AbstractCheckoutITest {
     @Test
     void order_snapshot_captures_full_address() throws Exception {
         Long productId = createActiveProduct("laptop", 10, 500);
-        addToCart(userToken, productId, VariantType.COLOR, 1);
+        addToCart(userToken, productId, DEFAULT_VARIANT_VALUE, 1);
         long addressId = createAddressAndGetId(userToken, Province.TEHRAN);
 
         checkout(userToken, addressId)
@@ -170,11 +169,11 @@ class CheckoutITest extends AbstractCheckoutITest {
     @Test
     void checkout_uses_catalog_price_not_cart_snapshot() throws Exception {
         Long productId = createActiveProduct("laptop", 10, 500);
-        addToCart(userToken, productId, VariantType.COLOR, 1);
+        addToCart(userToken, productId, DEFAULT_VARIANT_VALUE, 1);
         long addressId = createAddressAndGetId(userToken, Province.TEHRAN);
 
         // Simulate a catalog price change after the item was added to cart
-        jdbcTemplate.update("UPDATE product_price SET price = ? WHERE product_id = ? AND variant_type = 'COLOR'",
+        jdbcTemplate.update("UPDATE product_price SET price = ? WHERE product_id = ? AND variant_value = 'RED'",
                 BigDecimal.valueOf(150), productId);
 
         checkout(userToken, addressId)
@@ -187,7 +186,7 @@ class CheckoutITest extends AbstractCheckoutITest {
     void discount_price_wins_over_unit_price() throws Exception {
         Long productId = createProductWithPrices("discount-laptop", 10, 500,
                 BigDecimal.valueOf(100), BigDecimal.valueOf(70));
-        addToCart(userToken, productId, VariantType.COLOR, 2);
+        addToCart(userToken, productId, DEFAULT_VARIANT_VALUE, 2);
         long addressId = createAddressAndGetId(userToken, Province.TEHRAN);
 
         checkout(userToken, addressId)
@@ -207,7 +206,7 @@ class CheckoutITest extends AbstractCheckoutITest {
     @Test
     void checkout_with_unknown_address_returns_404() throws Exception {
         Long productId = createActiveProduct("watch", 10, 200);
-        addToCart(userToken, productId, VariantType.COLOR, 1);
+        addToCart(userToken, productId, DEFAULT_VARIANT_VALUE, 1);
 
         checkout(userToken, 999999L)
                 .andExpect(status().isNotFound())
@@ -217,7 +216,7 @@ class CheckoutITest extends AbstractCheckoutITest {
     @Test
     void checkout_with_another_users_address_returns_404() throws Exception {
         Long productId = createActiveProduct("tablet", 10, 200);
-        addToCart(userToken, productId, VariantType.COLOR, 1);
+        addToCart(userToken, productId, DEFAULT_VARIANT_VALUE, 1);
 
         String otherToken = registerAndLogin(newMobile());
         long otherAddressId = createAddressAndGetId(otherToken, Province.TEHRAN);
@@ -230,7 +229,7 @@ class CheckoutITest extends AbstractCheckoutITest {
     @Test
     void checkout_with_inactive_product_in_cart_returns_409() throws Exception {
         Long productId = createActiveProduct("expiring-item", 10, 500);
-        addToCart(userToken, productId, VariantType.COLOR, 1);
+        addToCart(userToken, productId, DEFAULT_VARIANT_VALUE, 1);
         long addressId = createAddressAndGetId(userToken, Province.TEHRAN);
 
         // Product becomes inactive between add-to-cart and checkout
@@ -243,12 +242,13 @@ class CheckoutITest extends AbstractCheckoutITest {
 
     @Test
     void checkout_when_product_no_longer_has_the_variant_returns_404() throws Exception {
-        Long productId = createProduct("dynamic-item", 10, 300, ProductStatus.ACTIVE, VariantType.COLOR);
-        addToCart(userToken, productId, VariantType.COLOR, 1);
+        Long productId = createProduct("dynamic-item", 10, 300, ProductStatus.ACTIVE, DEFAULT_VARIANT_VALUE);
+        addToCart(userToken, productId, DEFAULT_VARIANT_VALUE, 1);
         long addressId = createAddressAndGetId(userToken, Province.TEHRAN);
 
         // Variant removed from catalog between add-to-cart and checkout
-        jdbcTemplate.update("DELETE FROM product_price WHERE product_id = ? AND variant_type = 'COLOR'", productId);
+        jdbcTemplate.update("DELETE FROM product_price WHERE product_id = ? AND variant_value = 'RED'",
+                productId);
 
         checkout(userToken, addressId)
                 .andExpect(status().isNotFound())
@@ -266,7 +266,7 @@ class CheckoutITest extends AbstractCheckoutITest {
     @Test
     void user_cannot_read_another_users_order() throws Exception {
         Long productId = createActiveProduct("camera", 10, 200);
-        addToCart(userToken, productId, VariantType.COLOR, 1);
+        addToCart(userToken, productId, DEFAULT_VARIANT_VALUE, 1);
         long addressId = createAddressAndGetId(userToken, Province.TEHRAN);
         MvcResult result = checkout(userToken, addressId).andExpect(status().isOk()).andReturn();
         long orderId = json(result).get("id").asLong();

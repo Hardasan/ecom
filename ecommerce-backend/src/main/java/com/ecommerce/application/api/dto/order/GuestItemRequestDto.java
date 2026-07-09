@@ -1,6 +1,7 @@
 package com.ecommerce.application.api.dto.order;
 
 import com.ecommerce.persistence.entity.enumeration.VariantType;
+import com.ecommerce.persistence.entity.enumeration.VariantValue;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.Getter;
@@ -13,8 +14,9 @@ public class GuestItemRequestDto {
     @NotNull
     private Long productId;
 
-    @NotNull
     private VariantType variantType;
+
+    private VariantValue variantValue;
 
     @NotNull
     @Positive

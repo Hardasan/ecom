@@ -24,6 +24,7 @@ import com.ecommerce.persistence.entity.enumeration.OrderStatus;
 import com.ecommerce.persistence.entity.enumeration.ProductStatus;
 import com.ecommerce.persistence.entity.enumeration.UserRole;
 import com.ecommerce.persistence.entity.enumeration.VariantType;
+import com.ecommerce.persistence.entity.enumeration.VariantValue;
 import com.ecommerce.persistence.repository.AppUserRepository;
 import com.ecommerce.persistence.repository.CartItemRepository;
 import com.ecommerce.persistence.repository.OrderRepository;
@@ -41,6 +42,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -121,6 +123,7 @@ public class CheckoutService {
             productSnapshot.setProductName(line.productName());
             productSnapshot.setProductCode(line.productCode());
             orderItem.setVariantType(line.variant());
+            orderItem.setVariantValue(line.variantValue());
             orderItem.setQuantity(line.quantity());
             orderItem.setUnitPrice(line.unitPrice());
             orderItem.setDiscountPrice(line.discountPrice());
@@ -151,9 +154,10 @@ public class CheckoutService {
     }
 
     private List<OrderLineSpec> resolveCartLines(List<CartItem> cartItems) {
+
         Map<VariantKey, Integer> quantities = new LinkedHashMap<>();
         for (CartItem item : cartItems) {
-            quantities.merge(new VariantKey(item.getProductId(), item.getVariantType()),
+            quantities.merge(new VariantKey(item.getProductId(), item.getVariantType(), item.getVariantValue()),
                     item.getQuantity(), Integer::sum);
         }
 
@@ -161,9 +165,9 @@ public class CheckoutService {
         for (Map.Entry<VariantKey, Integer> entry : quantities.entrySet()) {
             Product product = findProductOrThrow(entry.getKey().productId());
             requirePurchasable(product);
-            Price price = findVariantPriceOrThrow(product, entry.getKey().variant());
+            Price price = findVariantPriceOrThrow(product, entry.getKey().variant(), entry.getKey().variantValue());
             lines.add(new OrderLineSpec(product.getId(), product.getName(), product.getCode(),
-                    entry.getKey().variant(), entry.getValue(),
+                    entry.getKey().variant(), entry.getKey().variantValue(), entry.getValue(),
                     price.getPrice(), price.getDiscountPrice(),
                     product.getWeightGram() == null ? 0 : product.getWeightGram()));
         }
@@ -173,7 +177,21 @@ public class CheckoutService {
     private List<OrderLineSpec> resolveGuestLines(List<GuestItemRequestDto> items) {
         Map<VariantKey, Integer> quantities = new LinkedHashMap<>();
         for (GuestItemRequestDto item : items) {
-            quantities.merge(new VariantKey(item.getProductId(), item.getVariantType()),
+
+            Product product = findProductOrThrow(item.getProductId());
+            VariantValue variantValue = item.getVariantValue();
+            if (product.getVariantType() == null) {
+                if (item.getVariantType() != null || variantValue != null) {
+                    throw new EcommerceException(ECOMErrorType.PRODUCT_VARIANT_NOT_FOUND);
+                }
+            } else {
+                if (item.getVariantType() != product.getVariantType()
+                        || variantValue == null
+                        || !variantValue.isAllowedFor(product.getVariantType())) {
+                    throw new EcommerceException(ECOMErrorType.PRODUCT_VARIANT_NOT_FOUND);
+                }
+            }
+            quantities.merge(new VariantKey(item.getProductId(), product.getVariantType(), variantValue),
                     item.getQuantity(), Integer::sum);
         }
 
@@ -181,9 +199,9 @@ public class CheckoutService {
         for (Map.Entry<VariantKey, Integer> entry : quantities.entrySet()) {
             Product product = findProductOrThrow(entry.getKey().productId());
             requirePurchasable(product);
-            Price price = findVariantPriceOrThrow(product, entry.getKey().variant());
+            Price price = findVariantPriceOrThrow(product, entry.getKey().variant(), entry.getKey().variantValue());
             lines.add(new OrderLineSpec(product.getId(), product.getName(), product.getCode(),
-                    entry.getKey().variant(), entry.getValue(),
+                    entry.getKey().variant(), entry.getKey().variantValue(), entry.getValue(),
                     price.getPrice(), price.getDiscountPrice(),
                     product.getWeightGram() == null ? 0 : product.getWeightGram()));
         }
@@ -236,18 +254,31 @@ public class CheckoutService {
         }
     }
 
-    private Price findVariantPriceOrThrow(Product product, VariantType variantType) {
+    private Price findVariantPriceOrThrow(Product product, VariantType variantType, VariantValue variantValue) {
+        if (product.getVariantType() == null) {
+            if (variantType != null || variantValue != null) {
+                throw new EcommerceException(ECOMErrorType.PRODUCT_VARIANT_NOT_FOUND);
+            }
+            return product.getPrices().stream()
+                    .filter(p -> p.getVariantValue() == null)
+                    .findFirst()
+                    .or(() -> product.getPrices().stream().findFirst())
+                    .orElseThrow(() -> new EcommerceException(ECOMErrorType.PRODUCT_VARIANT_NOT_FOUND));
+        }
+        if (product.getVariantType() != variantType) {
+            throw new EcommerceException(ECOMErrorType.PRODUCT_VARIANT_NOT_FOUND);
+        }
         return product.getPrices().stream()
-                .filter(price -> price.getVariantType() == variantType)
+                .filter(price -> Objects.equals(variantValue, price.getVariantValue()))
                 .findFirst()
                 .orElseThrow(() -> new EcommerceException(ECOMErrorType.PRODUCT_VARIANT_NOT_FOUND));
     }
 
-    private record VariantKey(Long productId, VariantType variant) {
+    private record VariantKey(Long productId, VariantType variant, VariantValue variantValue) {
     }
 
     private record OrderLineSpec(Long productId, String productName, String productCode,
-                                  VariantType variant, int quantity,
+                                  VariantType variant, VariantValue variantValue, int quantity,
                                   BigDecimal unitPrice, BigDecimal discountPrice,
                                   int weightGram) {
     }

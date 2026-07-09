@@ -84,11 +84,12 @@ public class ProductExcelTemplateService {
         row.createCell(8).setCellValue("1000000");
         row.createCell(9).setCellValue("900000");
         row.createCell(10).setCellValue("COLOR");
-        row.createCell(11).setCellValue("50");
-        row.createCell(12).setCellValue("200");
-        row.createCell(13).setCellValue("ACTIVE");
-        row.createCell(14).setCellValue("IN_STOCK");
-        int col = 15;
+        row.createCell(11).setCellValue("RED");
+        row.createCell(12).setCellValue("50");
+        row.createCell(13).setCellValue("200");
+        row.createCell(14).setCellValue("ACTIVE");
+        row.createCell(15).setCellValue("IN_STOCK");
+        int col = 16;
         for (SpecificationKey key : SpecificationKey.values()) {
             row.createCell(col++).setCellValue(key.name() + " value");
         }
@@ -110,10 +111,10 @@ public class ProductExcelTemplateService {
         addListValidation(xssfSheet, helper, 10, Arrays.asList(variantTypes), 500);
 
         String[] productStatuses = Arrays.stream(ProductStatus.values()).map(Enum::name).toArray(String[]::new);
-        addListValidation(xssfSheet, helper, 13, Arrays.asList(productStatuses), 500);
+        addListValidation(xssfSheet, helper, 14, Arrays.asList(productStatuses), 500);
 
         String[] inventoryStatuses = Arrays.stream(InventoryStatus.values()).map(Enum::name).toArray(String[]::new);
-        addListValidation(xssfSheet, helper, 14, Arrays.asList(inventoryStatuses), 500);
+        addListValidation(xssfSheet, helper, 15, Arrays.asList(inventoryStatuses), 500);
     }
 
     private void addListValidation(XSSFSheet sheet, DataValidationHelper helper, int colIndex,
@@ -132,7 +133,7 @@ public class ProductExcelTemplateService {
         String[] base = {
                 "Name", "Local Name", "URL", "Category", "Sub Category", "Brand",
                 "Short Description", "Full Description", "Price", "Discount Price",
-                "Variant Type", "Inventory Count", "Weight (grams)", "Status", "Inventory Status"
+                "Variant Type", "Variant Value", "Inventory Count", "Weight (grams)", "Status", "Inventory Status"
         };
         SpecificationKey[] specs = SpecificationKey.values();
         String[] headers = Arrays.copyOf(base, base.length + specs.length);

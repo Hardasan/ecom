@@ -27,7 +27,7 @@ abstract class BaseCartServiceUTest {
 
     protected static final Long USER_ID = 7L;
     protected static final Long PRODUCT_ID = 100L;
-    protected static final String DEFAULT_VARIANT_VALUE = "RED";
+    protected static final String DEFAULT_VARIANT_VALUE = "#FF0000";
 
     @Mock
     protected CartItemRepository cartItemRepository;

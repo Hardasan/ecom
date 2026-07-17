@@ -45,7 +45,7 @@ class CartAddItemITest extends AbstractCartITest {
     void add_variant_not_offered_returns_404() throws Exception {
         Long productId = createActiveProduct("watch", 10, DEFAULT_VARIANT_VALUE);
 
-        addItem(userToken, productId, "BLUE", 1)
+        addItem(userToken, productId, "#0000FF", 1)
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.errorCode").value("PRODUCT_VARIANT_NOT_FOUND"));
     }
@@ -91,10 +91,10 @@ class CartAddItemITest extends AbstractCartITest {
 
     @Test
     void adding_different_variants_creates_separate_lines() throws Exception {
-        Long productId = createActiveProduct("multi", 10, "RED", "BLUE");
+        Long productId = createActiveProduct("multi", 10, "#FF0000", "#0000FF");
 
-        addItem(userToken, productId, "RED", 1).andExpect(status().isOk());
-        addItem(userToken, productId, "BLUE", 1)
+        addItem(userToken, productId, "#FF0000", 1).andExpect(status().isOk());
+        addItem(userToken, productId, "#0000FF", 1)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items", hasSize(2)))
                 .andExpect(jsonPath("$.totalQuantity").value(2));

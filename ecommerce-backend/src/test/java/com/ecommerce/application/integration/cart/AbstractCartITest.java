@@ -20,17 +20,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 public abstract class AbstractCartITest extends AbstractIntegrationITest {
 
     static final VariantType DEFAULT_VARIANT_TYPE = VariantType.COLOR;
-    static final String DEFAULT_VARIANT_VALUE = "RED";
+    static final String DEFAULT_VARIANT_VALUE = "#FF0000";
 
     @Autowired
     private PasswordEncoder passwordEncoder;

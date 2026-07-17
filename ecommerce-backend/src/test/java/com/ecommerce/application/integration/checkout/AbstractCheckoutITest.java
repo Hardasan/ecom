@@ -22,17 +22,13 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 public abstract class AbstractCheckoutITest extends AbstractIntegrationITest {
 
     protected static final VariantType DEFAULT_VARIANT_TYPE = VariantType.COLOR;
-    protected static final String DEFAULT_VARIANT_VALUE = "RED";
+    protected static final String DEFAULT_VARIANT_VALUE = "#FF0000";
 
     @Autowired
     private PasswordEncoder passwordEncoder;

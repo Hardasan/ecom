@@ -21,12 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -159,13 +154,35 @@ public class ProductBatchService {
         }
 
         String variantStr = row.get("Variant Type");
+        VariantType variantType = null;
+        boolean variantTypeValid = false;
         if (variantStr != null && !variantStr.isBlank()) {
             try {
-                VariantType.valueOf(variantStr.toUpperCase());
+                variantType = VariantType.valueOf(variantStr.toUpperCase());
+                variantTypeValid = true;
             } catch (IllegalArgumentException e) {
                 errs.add(new BatchProductRowError(rn, "Variant Type",
                         "Invalid variant type: " + variantStr + ". Valid values: " +
                                 java.util.Arrays.toString(VariantType.values())));
+            }
+        }
+
+        if (variantTypeValid) {
+            String variantValueStr = row.get("Variant Value");
+            if (variantValueStr != null && !variantValueStr.isBlank()) {
+                if (!variantType.isAllowedValue(variantValueStr)) {
+                    errs.add(new BatchProductRowError(rn, "Variant Value",
+                            "Variant value '" + variantValueStr + "' is not valid for variant type " + variantType));
+                }
+            } else {
+                errs.add(new BatchProductRowError(rn, "Variant Value",
+                        "Variant Value is required when Variant Type is provided"));
+            }
+        } else {
+            String variantValueStr = row.get("Variant Value");
+            if (variantValueStr != null && !variantValueStr.isBlank()) {
+                errs.add(new BatchProductRowError(rn, "Variant Value",
+                        "Variant Value requires Variant Type to be set"));
             }
         }
 
@@ -256,7 +273,8 @@ public class ProductBatchService {
                 ? VariantType.valueOf(variantTypeStr.trim().toUpperCase()) : null);
 
         String variantValueStr = row.get("Variant Value");
-        price.setVariantValue(variantValueStr != null && !variantValueStr.isBlank() ? variantValueStr.trim() : null);
+        price.setVariantValue(variantValueStr != null && !variantValueStr.isBlank()
+                ? variantValueStr.trim().toUpperCase() : null);
 
         product.setPrices(new ArrayList<>(List.of(price)));
 

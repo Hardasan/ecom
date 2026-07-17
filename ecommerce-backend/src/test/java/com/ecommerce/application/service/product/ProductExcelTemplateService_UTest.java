@@ -1,6 +1,7 @@
 package com.ecommerce.application.service.product;
 
 import com.ecommerce.persistence.entity.Category;
+import com.ecommerce.persistence.repository.BrandRepository;
 import com.ecommerce.persistence.repository.CategoryRepository;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -16,12 +17,8 @@ import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -29,17 +26,20 @@ class ProductExcelTemplateService_UTest {
 
     @Mock
     private CategoryRepository categoryRepository;
+    @Mock
+    private BrandRepository brandRepository;
 
     private ProductExcelTemplateService service;
 
     @BeforeEach
     void setUp() {
-        service = new ProductExcelTemplateService(categoryRepository);
+        service = new ProductExcelTemplateService(categoryRepository, brandRepository);
     }
 
     @Test
     void generated_workbook_has_correct_sheet_and_headers() throws Exception {
         when(categoryRepository.findAll()).thenReturn(List.of());
+        when(brandRepository.findAll()).thenReturn(List.of());
 
         byte[] content = service.generateTemplate();
         assertNotNull(content);
@@ -74,6 +74,7 @@ class ProductExcelTemplateService_UTest {
     @Test
     void template_includes_sample_row() throws Exception {
         when(categoryRepository.findAll()).thenReturn(List.of());
+        when(brandRepository.findAll()).thenReturn(List.of());
 
         byte[] content = service.generateTemplate();
 
@@ -87,7 +88,7 @@ class ProductExcelTemplateService_UTest {
             assertNotNull(sampleRow.getCell(2));
 
             // Price should be a numeric string
-            String priceVal = sampleRow.getCell(8).getStringCellValue();
+            String priceVal = sampleRow.getCell(7).getStringCellValue();
             assertDoesNotThrow(() -> new java.math.BigDecimal(priceVal));
         }
     }
@@ -95,6 +96,7 @@ class ProductExcelTemplateService_UTest {
     @Test
     void template_includes_specification_columns_for_all_spec_keys() throws Exception {
         when(categoryRepository.findAll()).thenReturn(List.of());
+        when(brandRepository.findAll()).thenReturn(List.of());
 
         byte[] content = service.generateTemplate();
 
@@ -121,6 +123,7 @@ class ProductExcelTemplateService_UTest {
         cat2.setId(2L);
         cat2.setName("Clothing");
         when(categoryRepository.findAll()).thenReturn(List.of(cat1, cat2));
+        when(brandRepository.findAll()).thenReturn(List.of());
 
         byte[] content = service.generateTemplate();
 

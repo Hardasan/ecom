@@ -3,19 +3,11 @@ package com.ecommerce.application.service.order;
 import com.ecommerce.application.config.properties.CheckoutProperties;
 import com.ecommerce.application.service.address.AddressService;
 import com.ecommerce.application.service.shipping.ShippingCalculator;
-import com.ecommerce.persistence.entity.CartItem;
-import com.ecommerce.persistence.entity.Order;
-import com.ecommerce.persistence.entity.Price;
-import com.ecommerce.persistence.entity.Product;
-import com.ecommerce.persistence.entity.UserAddress;
+import com.ecommerce.persistence.entity.*;
 import com.ecommerce.persistence.entity.enumeration.ProductStatus;
 import com.ecommerce.persistence.entity.enumeration.Province;
 import com.ecommerce.persistence.entity.enumeration.VariantType;
-import com.ecommerce.persistence.repository.AppUserRepository;
-import com.ecommerce.persistence.repository.CartItemRepository;
-import com.ecommerce.persistence.repository.OrderRepository;
-import com.ecommerce.persistence.repository.ProductRepository;
-import com.ecommerce.persistence.repository.UserAddressRepository;
+import com.ecommerce.persistence.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -27,9 +19,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,7 +28,7 @@ abstract class BaseCheckoutServiceUTest {
     protected static final Long USER_ID = 7L;
     protected static final Long PRODUCT_ID = 100L;
     protected static final Long ADDRESS_ID = 55L;
-    protected static final String DEFAULT_VARIANT_VALUE = "RED";
+    protected static final String DEFAULT_VARIANT_VALUE = "#FF0000";
 
     @Mock
     protected CartItemRepository cartItemRepository;

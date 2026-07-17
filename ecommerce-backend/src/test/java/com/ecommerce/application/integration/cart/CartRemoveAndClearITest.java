@@ -10,15 +10,15 @@ class CartRemoveAndClearITest extends AbstractCartITest {
 
     @Test
     void remove_item_drops_only_that_line() throws Exception {
-        Long productId = createActiveProduct("rm", 10, "RED", "BLUE");
-        long redItemId = addItemAndGetId(userToken, productId, "RED", 1);
-        addItemAndGetId(userToken, productId, "BLUE", 1);
+        Long productId = createActiveProduct("rm", 10, "#FF0000", "#0000FF");
+        long redItemId = addItemAndGetId(userToken, productId, "#FF0000", 1);
+        addItemAndGetId(userToken, productId, "#0000FF", 1);
 
         removeItem(userToken, redItemId)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items", hasSize(1)))
                 .andExpect(jsonPath("$.items[0].variantType").value("COLOR"))
-                .andExpect(jsonPath("$.items[0].variantValue").value("BLUE"));
+                .andExpect(jsonPath("$.items[0].variantValue").value("#0000FF"));
     }
 
     @Test
@@ -38,9 +38,9 @@ class CartRemoveAndClearITest extends AbstractCartITest {
 
     @Test
     void clear_empties_the_cart() throws Exception {
-        Long productId = createActiveProduct("clear", 10, "RED", "BLUE");
-        addItemAndGetId(userToken, productId, "RED", 2);
-        addItemAndGetId(userToken, productId, "BLUE", 1);
+        Long productId = createActiveProduct("clear", 10, "#FF0000", "#0000FF");
+        addItemAndGetId(userToken, productId, "#FF0000", 2);
+        addItemAndGetId(userToken, productId, "#0000FF", 1);
 
         clearCart(userToken)
                 .andExpect(status().isOk())

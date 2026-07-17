@@ -1,10 +1,12 @@
 package com.ecommerce.application.service.product;
 
+import com.ecommerce.persistence.entity.Brand;
 import com.ecommerce.persistence.entity.Category;
 import com.ecommerce.persistence.entity.enumeration.InventoryStatus;
 import com.ecommerce.persistence.entity.enumeration.ProductStatus;
 import com.ecommerce.persistence.entity.enumeration.SpecificationKey;
 import com.ecommerce.persistence.entity.enumeration.VariantType;
+import com.ecommerce.persistence.repository.BrandRepository;
 import com.ecommerce.persistence.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.DataValidation;
@@ -31,6 +33,7 @@ public class ProductExcelTemplateService {
     private static final List<String> REQUIRED_HEADERS = List.of("Name", "URL", "Category", "Price", "Inventory Count");
 
     private final CategoryRepository categoryRepository;
+    private final BrandRepository brandRepository;
 
     public byte[] generateTemplate() {
         try (SXSSFWorkbook workbook = new SXSSFWorkbook(100)) {
@@ -71,50 +74,41 @@ public class ProductExcelTemplateService {
         }
     }
 
+    private static String[] buildHeaders() {
+        String[] base = {
+                "Name", "Local Name", "URL", "Category", "Sub Category", "Brand",
+                "Short Description", "Price", "Discount Price",
+                "Variant Type", "Variant Value", "Inventory Count", "Weight (grams)", "Status", "Inventory Status"
+        };
+        SpecificationKey[] specs = SpecificationKey.values();
+        String[] headers = Arrays.copyOf(base, base.length + specs.length);
+        for (int i = 0; i < specs.length; i++) {
+            headers[base.length + i] = "Spec:" + specs[i].name();
+        }
+        return headers;
+    }
+
     private void writeSampleRow(Sheet sheet) {
         var row = sheet.createRow(1);
         row.createCell(0).setCellValue("Sample Product");
         row.createCell(1).setCellValue("محصول نمونه");
         row.createCell(2).setCellValue("sample-product");
         row.createCell(3).setCellValue(""); // Category — dropdown
-        row.createCell(4).setCellValue(""); // Sub Category
-        row.createCell(5).setCellValue(""); // Brand
+        row.createCell(4).setCellValue(""); // Sub Category — dropdown
+        row.createCell(5).setCellValue(""); // Brand — dropdown
         row.createCell(6).setCellValue("A short description of the product");
-        row.createCell(7).setCellValue("Full detailed description");
-        row.createCell(8).setCellValue("1000000");
-        row.createCell(9).setCellValue("900000");
-        row.createCell(10).setCellValue("COLOR");
-        row.createCell(11).setCellValue("RED");
-        row.createCell(12).setCellValue("50");
-        row.createCell(13).setCellValue("200");
-        row.createCell(14).setCellValue("ACTIVE");
-        row.createCell(15).setCellValue("IN_STOCK");
-        int col = 16;
+        row.createCell(7).setCellValue("1000000");
+        row.createCell(8).setCellValue("900000");
+        row.createCell(9).setCellValue("COLOR");
+        row.createCell(10).setCellValue("#FF0000");
+        row.createCell(11).setCellValue("50");
+        row.createCell(12).setCellValue("200");
+        row.createCell(13).setCellValue("ACTIVE");
+        row.createCell(14).setCellValue("IN_STOCK");
+        int col = 15;
         for (SpecificationKey key : SpecificationKey.values()) {
             row.createCell(col++).setCellValue(key.name() + " value");
         }
-    }
-
-    private void addValidations(Sheet sheet) {
-        XSSFSheet xssfSheet = ((SXSSFWorkbook) sheet.getWorkbook()).getXSSFWorkbook().getSheet(sheet.getSheetName());
-        DataValidationHelper helper = new XSSFDataValidationHelper(xssfSheet);
-
-        List<String> categories = categoryRepository.findAll().stream()
-                .map(Category::getName)
-                .collect(Collectors.toList());
-
-        if (!categories.isEmpty()) {
-            addListValidation(xssfSheet, helper, 3, categories, 500); // Category column
-        }
-
-        String[] variantTypes = Arrays.stream(VariantType.values()).map(Enum::name).toArray(String[]::new);
-        addListValidation(xssfSheet, helper, 10, Arrays.asList(variantTypes), 500);
-
-        String[] productStatuses = Arrays.stream(ProductStatus.values()).map(Enum::name).toArray(String[]::new);
-        addListValidation(xssfSheet, helper, 14, Arrays.asList(productStatuses), 500);
-
-        String[] inventoryStatuses = Arrays.stream(InventoryStatus.values()).map(Enum::name).toArray(String[]::new);
-        addListValidation(xssfSheet, helper, 15, Arrays.asList(inventoryStatuses), 500);
     }
 
     private void addListValidation(XSSFSheet sheet, DataValidationHelper helper, int colIndex,
@@ -129,17 +123,33 @@ public class ProductExcelTemplateService {
         sheet.addValidationData(validation);
     }
 
-    private static String[] buildHeaders() {
-        String[] base = {
-                "Name", "Local Name", "URL", "Category", "Sub Category", "Brand",
-                "Short Description", "Full Description", "Price", "Discount Price",
-                "Variant Type", "Variant Value", "Inventory Count", "Weight (grams)", "Status", "Inventory Status"
-        };
-        SpecificationKey[] specs = SpecificationKey.values();
-        String[] headers = Arrays.copyOf(base, base.length + specs.length);
-        for (int i = 0; i < specs.length; i++) {
-            headers[base.length + i] = "Spec:" + specs[i].name();
+    private void addValidations(Sheet sheet) {
+        XSSFSheet xssfSheet = ((SXSSFWorkbook) sheet.getWorkbook()).getXSSFWorkbook().getSheet(sheet.getSheetName());
+        DataValidationHelper helper = new XSSFDataValidationHelper(xssfSheet);
+
+        List<String> categories = categoryRepository.findAll().stream()
+                .map(Category::getName)
+                .collect(Collectors.toList());
+
+        if (!categories.isEmpty()) {
+            addListValidation(xssfSheet, helper, 3, categories, 500); // Category
+            addListValidation(xssfSheet, helper, 4, categories, 500); // Sub Category
         }
-        return headers;
+
+        List<String> brands = brandRepository.findAll().stream()
+                .map(Brand::getName)
+                .collect(Collectors.toList());
+        if (!brands.isEmpty()) {
+            addListValidation(xssfSheet, helper, 5, brands, 500); // Brand
+        }
+
+        String[] variantTypes = Arrays.stream(VariantType.values()).map(Enum::name).toArray(String[]::new);
+        addListValidation(xssfSheet, helper, 9, Arrays.asList(variantTypes), 500);
+
+        String[] productStatuses = Arrays.stream(ProductStatus.values()).map(Enum::name).toArray(String[]::new);
+        addListValidation(xssfSheet, helper, 13, Arrays.asList(productStatuses), 500);
+
+        String[] inventoryStatuses = Arrays.stream(InventoryStatus.values()).map(Enum::name).toArray(String[]::new);
+        addListValidation(xssfSheet, helper, 14, Arrays.asList(inventoryStatuses), 500);
     }
 }

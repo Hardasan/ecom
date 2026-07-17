@@ -14,13 +14,9 @@ import org.mockito.ArgumentCaptor;
 import java.math.BigDecimal;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class CartService_addItemUTest extends BaseCartServiceUTest {
 
@@ -78,17 +74,18 @@ class CartService_addItemUTest extends BaseCartServiceUTest {
     void adding_different_variant_of_same_product_creates_separate_line() {
         Product product = product(PRODUCT_ID, 10, ProductStatus.ACTIVE, VariantType.COLOR, DEFAULT_VARIANT_VALUE,
                 BigDecimal.valueOf(100), null);
-        product.getPrices().add(price("BLUE", BigDecimal.valueOf(120)));
+        product.getPrices().add(price("#0000FF", BigDecimal.valueOf(120)));
         when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product));
         when(cartItemRepository.findByUserIdAndProductIdAndVariantTypeAndVariantValue(USER_ID, PRODUCT_ID,
-                VariantType.COLOR, "BLUE"))
+                VariantType.COLOR, "#0000FF"))
                 .thenReturn(Optional.empty());
         stubUserItems(
                 item(50L, PRODUCT_ID, VariantType.COLOR, DEFAULT_VARIANT_VALUE, 1, BigDecimal.valueOf(100), null),
-                item(51L, PRODUCT_ID, VariantType.COLOR, "BLUE", 2, BigDecimal.valueOf(120), null));
+                item(51L, PRODUCT_ID, VariantType.COLOR, "#0000FF", 2, BigDecimal.valueOf(120), null));
         stubProductsForDto(product);
 
-        CartResponseDto response = cartService.addItem(USER_ID, addRequest(PRODUCT_ID, VariantType.COLOR, "BLUE", 2));
+        CartResponseDto response = cartService.addItem(USER_ID,
+                addRequest(PRODUCT_ID, VariantType.COLOR, "#0000FF", 2));
 
         assertEquals(2, response.getItems().size());
         assertEquals(3, response.getTotalQuantity());
@@ -125,7 +122,7 @@ class CartService_addItemUTest extends BaseCartServiceUTest {
         when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product));
 
         EcommerceException exception = assertThrows(EcommerceException.class,
-                () -> cartService.addItem(USER_ID, addRequest(PRODUCT_ID, VariantType.COLOR, "BLUE", 1)));
+                () -> cartService.addItem(USER_ID, addRequest(PRODUCT_ID, VariantType.COLOR, "#0000FF", 1)));
 
         assertEquals(ECOMErrorType.PRODUCT_VARIANT_NOT_FOUND, exception.getEcomErrorType());
         verify(cartItemRepository, never()).save(any());

@@ -3,10 +3,10 @@ package com.ecommerce.application.integration.product;
 import com.ecommerce.application.api.dto.product.CreateProductRequestDto;
 import com.ecommerce.application.api.dto.product.PriceDto;
 import com.ecommerce.application.integration.AbstractIntegrationITest;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.ecommerce.persistence.entity.enumeration.InventoryStatus;
 import com.ecommerce.persistence.entity.enumeration.ProductStatus;
 import com.ecommerce.persistence.entity.enumeration.VariantType;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -63,7 +63,7 @@ public abstract class AbstractProductITest extends AbstractIntegrationITest {
     CreateProductRequestDto validRequest(String url) {
         PriceDto price = new PriceDto();
         price.setPrice(BigDecimal.valueOf(100));
-        price.setVariantValue("RED");
+        price.setVariantValue("#FF0000");
 
         CreateProductRequestDto req = new CreateProductRequestDto();
         req.setCategoryId(categoryId);

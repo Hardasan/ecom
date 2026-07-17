@@ -126,9 +126,9 @@ class CheckoutITest extends AbstractCheckoutITest {
 
     @Test
     void same_product_different_variants_creates_separate_order_lines() throws Exception {
-        Long productId = createProduct("phone", 10, 300, ProductStatus.ACTIVE, "RED", "BLUE");
-        addToCart(userToken, productId, "RED", 1);
-        addToCart(userToken, productId, "BLUE", 2);
+        Long productId = createProduct("phone", 10, 300, ProductStatus.ACTIVE, "#FF0000", "#0000FF");
+        addToCart(userToken, productId, "#FF0000", 1);
+        addToCart(userToken, productId, "#0000FF", 2);
         long addressId = createAddressAndGetId(userToken, Province.TEHRAN);
 
         checkout(userToken, addressId)
@@ -173,7 +173,7 @@ class CheckoutITest extends AbstractCheckoutITest {
         long addressId = createAddressAndGetId(userToken, Province.TEHRAN);
 
         // Simulate a catalog price change after the item was added to cart
-        jdbcTemplate.update("UPDATE product_price SET price = ? WHERE product_id = ? AND variant_value = 'RED'",
+        jdbcTemplate.update("UPDATE PRODUCT_PRICE SET PRICE = ? WHERE PRODUCT_ID = ? AND VARIANT_VALUE = '#FF0000'",
                 BigDecimal.valueOf(150), productId);
 
         checkout(userToken, addressId)
@@ -247,7 +247,7 @@ class CheckoutITest extends AbstractCheckoutITest {
         long addressId = createAddressAndGetId(userToken, Province.TEHRAN);
 
         // Variant removed from catalog between add-to-cart and checkout
-        jdbcTemplate.update("DELETE FROM product_price WHERE product_id = ? AND variant_value = 'RED'",
+        jdbcTemplate.update("DELETE FROM product_price WHERE product_id = ? AND variant_value = '#FF0000'",
                 productId);
 
         checkout(userToken, addressId)

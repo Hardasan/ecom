@@ -12,10 +12,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -57,7 +54,7 @@ class ProductBatchUploadITest extends AbstractProductITest {
     void upload_valid_excel_saves_products_in_database() throws Exception {
         byte[] excelBytes = buildValidExcel(
                 row("DB Product", "محصول دیتابیس", "db-product-url", "Electronics", "", "",
-                        "Desc", "Full desc", "199000", "", "COLOR", "RED", "15", "200", "ACTIVE", "IN_STOCK")
+                        "Desc", "199000", "", "COLOR", "#FF0000", "15", "200", "ACTIVE", "IN_STOCK")
         );
 
         mockMvc.perform(multipart("/api/products/upload")
@@ -75,7 +72,7 @@ class ProductBatchUploadITest extends AbstractProductITest {
         assertEquals("db-product-url", row.get("url"));
         assertEquals(categoryId, row.get("category_id"));
         assertEquals("Desc", row.get("short_description"));
-        assertEquals("Full desc", row.get("full_description"));
+        assertNull(row.get("full_description"));
         assertEquals(15, row.get("inventory_count"));
         assertEquals(200, row.get("weight_gram"));
         assertEquals("ACTIVE", row.get("status"));
@@ -93,15 +90,18 @@ class ProductBatchUploadITest extends AbstractProductITest {
         assertEquals(0, new java.math.BigDecimal("199000")
                 .compareTo((java.math.BigDecimal) priceRow.get("price")));
         assertNull(priceRow.get("discount_price"));
-        assertEquals("RED", priceRow.get("variant_value"));
+        assertEquals("#FF0000", priceRow.get("variant_value"));
     }
 
     @Test
     void upload_multiple_products_all_saved() throws Exception {
         byte[] excelBytes = buildValidExcel(
-                row("Multi 1", "", "multi-1", "Electronics", "", "", "D1", "F1", "100000", "", "COLOR", "RED", "5", "100", "ACTIVE", "IN_STOCK"),
-                row("Multi 2", "", "multi-2", "Electronics", "", "", "D2", "F2", "200000", "180000", "SIZE", "M", "8", "150", "ACTIVE", "IN_STOCK"),
-                row("Multi 3", "", "multi-3", "Electronics", "", "", "D3", "F3", "300000", "", "SIZE", "XL", "12", "200", "ACTIVE", "IN_STOCK")
+                row("Multi 1", "", "multi-1", "Electronics", "", "", "D1", "100000", "", "COLOR", "#FF0000", "5", "100",
+                        "ACTIVE", "IN_STOCK"),
+                row("Multi 2", "", "multi-2", "Electronics", "", "", "D2", "200000", "180000", "SIZE", "M", "8", "150",
+                        "ACTIVE", "IN_STOCK"),
+                row("Multi 3", "", "multi-3", "Electronics", "", "", "D3", "300000", "", "SIZE", "XL", "12", "200",
+                        "ACTIVE", "IN_STOCK")
         );
 
         MvcResult result = mockMvc.perform(multipart("/api/products/upload")
@@ -143,7 +143,7 @@ class ProductBatchUploadITest extends AbstractProductITest {
     @Test
     void upload_with_missing_required_fields_returns_errors() throws Exception {
         byte[] excelBytes = buildValidExcel(
-                row("Incomplete", "", "", "", "", "", "", "", "", "", "", "", "", "", "")
+                row("Incomplete", "", "", "", "", "", "", "", "", "", "", "", "", "")
         );
 
         MvcResult result = mockMvc.perform(multipart("/api/products/upload")
@@ -167,7 +167,7 @@ class ProductBatchUploadITest extends AbstractProductITest {
 
         byte[] excelBytes = buildValidExcel(
                 row("Duplicate URL Product", "", "already-exists-url", "Electronics", "", "",
-                        "Desc", "Full", "50000", "", "COLOR", "RED", "3", "100", "ACTIVE", "IN_STOCK")
+                        "Desc", "50000", "", "COLOR", "#FF0000", "3", "100", "ACTIVE", "IN_STOCK")
         );
 
         MvcResult result = mockMvc.perform(multipart("/api/products/upload")
@@ -189,7 +189,7 @@ class ProductBatchUploadITest extends AbstractProductITest {
     void upload_with_nonexistent_category_returns_error() throws Exception {
         byte[] excelBytes = buildValidExcel(
                 row("Bad Category", "", "bad-cat-url", "FakeCategory", "", "",
-                        "Desc", "Full", "99000", "", "COLOR", "RED", "5", "100", "ACTIVE", "IN_STOCK")
+                        "Desc", "99000", "", "COLOR", "#FF0000", "5", "100", "ACTIVE", "IN_STOCK")
         );
 
         MvcResult result = mockMvc.perform(multipart("/api/products/upload")
@@ -210,7 +210,8 @@ class ProductBatchUploadITest extends AbstractProductITest {
     @Test
     void upload_requires_admin() throws Exception {
         byte[] excelBytes = buildValidExcel(
-                row("Test", "", "test-url", "Electronics", "", "", "D", "F", "100", "", "COLOR", "RED", "10", "100", "ACTIVE", "IN_STOCK")
+                row("Test", "", "test-url", "Electronics", "", "", "D", "100", "", "COLOR", "#FF0000", "10", "100",
+                        "ACTIVE", "IN_STOCK")
         );
 
         mockMvc.perform(multipart("/api/products/upload")
@@ -226,7 +227,7 @@ class ProductBatchUploadITest extends AbstractProductITest {
     void upload_with_specification_columns_saves_specs() throws Exception {
         byte[] excelBytes = buildExcelWithSpecs(
                 row("Spec Product", "", "spec-prod-url", "Electronics", "", "",
-                        "Desc", "Full", "75000", "", "COLOR", "RED", "7", "150", "ACTIVE", "IN_STOCK",
+                        "Desc", "75000", "", "COLOR", "#FF0000", "7", "150", "ACTIVE", "IN_STOCK",
                         "Red", "XL")
         );
 
@@ -255,7 +256,7 @@ class ProductBatchUploadITest extends AbstractProductITest {
                 "SELECT * FROM product_price WHERE product_id = ?", row.get("id"));
         assertEquals(0, new java.math.BigDecimal("75000")
                 .compareTo((java.math.BigDecimal) priceRow.get("price")));
-        assertEquals("RED", priceRow.get("variant_value"));
+        assertEquals("#FF0000", priceRow.get("variant_value"));
     }
 
     @Test
@@ -265,7 +266,7 @@ class ProductBatchUploadITest extends AbstractProductITest {
 
         byte[] excelBytes = buildValidExcel(
                 row("Branded Product", "", "branded-url", "Electronics", "Mobile Accessories",
-                        "TestBrand", "SD", "FD", "50000", "45000", "COLOR", "RED", "10", "120",
+                        "TestBrand", "SD", "50000", "45000", "COLOR", "#FF0000", "10", "120",
                         "ACTIVE", "IN_STOCK")
         );
 
@@ -289,6 +290,73 @@ class ProductBatchUploadITest extends AbstractProductITest {
                 .compareTo((java.math.BigDecimal) priceRow.get("price")));
         assertEquals(0, new java.math.BigDecimal("45000")
                 .compareTo((java.math.BigDecimal) priceRow.get("discount_price")));
+    }
+
+    @Test
+    void upload_with_invalid_variant_value_returns_error() throws Exception {
+        byte[] excelBytes = buildValidExcel(
+                row("Bad Variant", "", "bad-variant-url", "Electronics", "", "",
+                        "Desc", "99000", "", "COLOR", "INVALID_COLOR_CODE", "5", "100", "ACTIVE", "IN_STOCK")
+        );
+
+        MvcResult result = mockMvc.perform(multipart("/api/products/upload")
+                        .file(new MockMultipartFile("file", "products.xlsx",
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                excelBytes))
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        JsonNode json = json(result);
+        assertEquals(0, json.get("successCount").asInt());
+        assertEquals(1, json.get("failureCount").asInt());
+        assertTrue(json.get("errors").get(0).get("message").asText()
+                .contains("not valid for variant type COLOR"));
+    }
+
+    @Test
+    void upload_with_variant_type_but_no_variant_value_returns_error() throws Exception {
+        byte[] excelBytes = buildValidExcel(
+                row("No Variant Value", "", "no-var-value-url", "Electronics", "", "",
+                        "Desc", "99000", "", "COLOR", "", "5", "100", "ACTIVE", "IN_STOCK")
+        );
+
+        MvcResult result = mockMvc.perform(multipart("/api/products/upload")
+                        .file(new MockMultipartFile("file", "products.xlsx",
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                excelBytes))
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        JsonNode json = json(result);
+        assertEquals(0, json.get("successCount").asInt());
+        assertEquals(1, json.get("failureCount").asInt());
+        assertTrue(json.get("errors").get(0).get("message").asText()
+                .contains("Variant Value is required"));
+    }
+
+    @Test
+    void upload_lowercase_variant_value_is_normalized_to_uppercase() throws Exception {
+        byte[] excelBytes = buildValidExcel(
+                row("Lower Variant", "", "lower-variant-url", "Electronics", "", "",
+                        "Desc", "99000", "", "COLOR", "#ff0000", "5", "100", "ACTIVE", "IN_STOCK")
+        );
+
+        mockMvc.perform(multipart("/api/products/upload")
+                        .file(new MockMultipartFile("file", "products.xlsx",
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                excelBytes))
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isOk());
+
+        var row = jdbcTemplate.queryForMap("SELECT * FROM product WHERE url = ?", "lower-variant-url");
+        var priceRow = jdbcTemplate.queryForMap(
+                "SELECT * FROM product_price WHERE product_id = ?", row.get("id"));
+        assertEquals("#FF0000", priceRow.get("variant_value"));
     }
 
     @Test
@@ -342,8 +410,8 @@ class ProductBatchUploadITest extends AbstractProductITest {
         writeHeaderRow(sheet);
 
         var headerRow = sheet.getRow(0);
-        headerRow.createCell(16).setCellValue("Spec:COLOR");
-        headerRow.createCell(17).setCellValue("Spec:SIZE");
+        headerRow.createCell(15).setCellValue("Spec:COLOR");
+        headerRow.createCell(16).setCellValue("Spec:SIZE");
 
         for (int i = 0; i < rows.length; i++) {
             var dataRow = sheet.createRow(i + 1);
@@ -362,7 +430,7 @@ class ProductBatchUploadITest extends AbstractProductITest {
         var row = sheet.createRow(0);
         String[] headers = {
                 "Name", "Local Name", "URL", "Category", "Sub Category", "Brand",
-                "Short Description", "Full Description", "Price", "Discount Price",
+                "Short Description", "Price", "Discount Price",
                 "Variant Type", "Variant Value", "Inventory Count", "Weight (grams)", "Status", "Inventory Status"
         };
         for (int i = 0; i < headers.length; i++) {

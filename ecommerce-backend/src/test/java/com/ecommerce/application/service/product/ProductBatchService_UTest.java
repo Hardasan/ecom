@@ -19,17 +19,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.util.List;
-import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ProductBatchService_UTest {
@@ -63,7 +57,6 @@ class ProductBatchService_UTest {
         row1.put("Category", "Electronics");
         row1.put("Price", "100");
         row1.put("Inventory Count", "10");
-        row1.put("Variant Value", "RED");
 
         var row2 = new ExcelProductRow(3);
         row2.put("Name", "Product 2");
@@ -71,7 +64,6 @@ class ProductBatchService_UTest {
         row2.put("Category", "Electronics");
         row2.put("Price", "200");
         row2.put("Inventory Count", "5");
-        row2.put("Variant Value", "RED");
 
         when(parserService.parse(any(), any())).thenReturn(List.of(row1, row2));
 
@@ -110,7 +102,6 @@ class ProductBatchService_UTest {
         row1.put("Category", "Electronics");
         row1.put("Price", "100");
         row1.put("Inventory Count", "10");
-        row1.put("Variant Value", "RED");
 
         var row2 = new ExcelProductRow(3);
         row2.put("Name", ""); // Missing name
@@ -118,7 +109,6 @@ class ProductBatchService_UTest {
         row2.put("Category", "Electronics");
         row2.put("Price", "invalid"); // Bad price
         row2.put("Inventory Count", "5");
-        row2.put("Variant Value", "RED");
 
         var row3 = new ExcelProductRow(4);
         // Missing URL
@@ -126,7 +116,6 @@ class ProductBatchService_UTest {
         row3.put("Category", "Electronics");
         row3.put("Price", "150");
         row3.put("Inventory Count", "3");
-        row3.put("Variant Value", "RED");
 
         when(parserService.parse(any(), any())).thenReturn(List.of(row1, row2, row3));
 
@@ -157,7 +146,6 @@ class ProductBatchService_UTest {
         row1.put("Category", "Electronics");
         row1.put("Price", "100");
         row1.put("Inventory Count", "10");
-        row1.put("Variant Value", "RED");
 
         var row2 = new ExcelProductRow(3);
         row2.put("Name", "Second");
@@ -165,7 +153,6 @@ class ProductBatchService_UTest {
         row2.put("Category", "Electronics");
         row2.put("Price", "200");
         row2.put("Inventory Count", "5");
-        row2.put("Variant Value", "RED");
 
         when(parserService.parse(any(), any())).thenReturn(List.of(row1, row2));
 
@@ -196,7 +183,6 @@ class ProductBatchService_UTest {
         row.put("Category", "Electronics");
         row.put("Price", "100");
         row.put("Inventory Count", "10");
-        row.put("Variant Value", "RED");
 
         when(parserService.parse(any(), any())).thenReturn(List.of(row));
 
@@ -226,7 +212,6 @@ class ProductBatchService_UTest {
         row.put("Category", "NonExistent");
         row.put("Price", "100");
         row.put("Inventory Count", "10");
-        row.put("Variant Value", "RED");
 
         when(parserService.parse(any(), any())).thenReturn(List.of(row));
 
@@ -255,7 +240,6 @@ class ProductBatchService_UTest {
         row.put("Brand", "NonExistentBrand");
         row.put("Price", "100");
         row.put("Inventory Count", "10");
-        row.put("Variant Value", "RED");
 
         when(parserService.parse(any(), any())).thenReturn(List.of(row));
 
@@ -286,7 +270,6 @@ class ProductBatchService_UTest {
         row.put("Category", "Electronics");
         row.put("Price", "100");
         row.put("Inventory Count", "-5");
-        row.put("Variant Value", "RED");
 
         when(parserService.parse(any(), any())).thenReturn(List.of(row));
 
@@ -314,7 +297,6 @@ class ProductBatchService_UTest {
         row.put("Category", "Electronics");
         row.put("Price", "-1");
         row.put("Inventory Count", "10");
-        row.put("Variant Value", "RED");
 
         when(parserService.parse(any(), any())).thenReturn(List.of(row));
 
@@ -342,7 +324,6 @@ class ProductBatchService_UTest {
         row.put("Category", "Electronics");
         row.put("Price", "0");
         row.put("Inventory Count", "10");
-        row.put("Variant Value", "RED");
 
         when(parserService.parse(any(), any())).thenReturn(List.of(row));
 
@@ -370,7 +351,7 @@ class ProductBatchService_UTest {
         row.put("Category", "Electronics");
         row.put("Price", "100");
         row.put("Inventory Count", "10");
-        row.put("Variant Value", "RED");
+        row.put("Variant Value", "#FF0000");
         row.put("Variant Type", "INVALID_TYPE");
 
         when(parserService.parse(any(), any())).thenReturn(List.of(row));
@@ -385,8 +366,9 @@ class ProductBatchService_UTest {
         BatchProductUploadResult result = service.processUpload(file);
 
         assertEquals(0, result.getSuccessCount());
-        assertEquals(1, result.getFailureCount());
-        assertTrue(result.getErrors().get(0).getMessage().contains("Invalid variant type"));
+        assertEquals(2, result.getFailureCount());
+        assertTrue(result.getErrors().stream()
+                .anyMatch(e -> e.getMessage().contains("Invalid variant type")));
     }
 
     @Test
@@ -399,7 +381,6 @@ class ProductBatchService_UTest {
         row.put("Category", "Electronics");
         row.put("Price", "100");
         row.put("Inventory Count", "10");
-        row.put("Variant Value", "RED");
         row.put("Status", "INVALID_STATUS");
 
         when(parserService.parse(any(), any())).thenReturn(List.of(row));
@@ -428,7 +409,6 @@ class ProductBatchService_UTest {
         row.put("Category", "Electronics");
         row.put("Price", "50");
         row.put("Inventory Count", "1");
-        row.put("Variant Value", "RED");
         // No status, no inventory status, no variant type, no weight
 
         when(parserService.parse(any(), any())).thenReturn(List.of(row));
@@ -466,7 +446,6 @@ class ProductBatchService_UTest {
         row.put("Category", "Electronics");
         row.put("Price", "100");
         row.put("Inventory Count", "10");
-        row.put("Variant Value", "RED");
 
         when(parserService.parse(any(), any())).thenReturn(List.of(row));
 
@@ -481,6 +460,165 @@ class ProductBatchService_UTest {
         BatchProductUploadResult result = service.processUpload(file);
 
         assertTrue(result.getElapsedTimeMs() >= 0);
+    }
+
+    @Test
+    void variant_value_without_variant_type_is_rejected() throws Exception {
+        var file = new MockMultipartFile("file", "test.xlsx", "application/octet-stream", new byte[0]);
+
+        var row = new ExcelProductRow(2);
+        row.put("Name", "Product");
+        row.put("URL", "product-url");
+        row.put("Category", "Electronics");
+        row.put("Price", "100");
+        row.put("Inventory Count", "10");
+        row.put("Variant Value", "#FF0000");
+        // No Variant Type
+
+        when(parserService.parse(any(), any())).thenReturn(List.of(row));
+
+        var electronics = new Category();
+        electronics.setId(1L);
+        electronics.setName("Electronics");
+        when(categoryRepository.findAll()).thenReturn(List.of(electronics));
+        when(brandRepository.findAll()).thenReturn(List.of());
+        when(productRepository.findAllUrls()).thenReturn(List.of());
+
+        BatchProductUploadResult result = service.processUpload(file);
+
+        assertEquals(0, result.getSuccessCount());
+        assertEquals(1, result.getFailureCount());
+        assertTrue(result.getErrors().get(0).getMessage().contains("Variant Value requires Variant Type"));
+    }
+
+    @Test
+    void variant_type_without_variant_value_is_rejected() throws Exception {
+        var file = new MockMultipartFile("file", "test.xlsx", "application/octet-stream", new byte[0]);
+
+        var row = new ExcelProductRow(2);
+        row.put("Name", "Product");
+        row.put("URL", "product-url");
+        row.put("Category", "Electronics");
+        row.put("Price", "100");
+        row.put("Inventory Count", "10");
+        row.put("Variant Type", "COLOR");
+        // No Variant Value
+
+        when(parserService.parse(any(), any())).thenReturn(List.of(row));
+
+        var electronics = new Category();
+        electronics.setId(1L);
+        electronics.setName("Electronics");
+        when(categoryRepository.findAll()).thenReturn(List.of(electronics));
+        when(brandRepository.findAll()).thenReturn(List.of());
+        when(productRepository.findAllUrls()).thenReturn(List.of());
+
+        BatchProductUploadResult result = service.processUpload(file);
+
+        assertEquals(0, result.getSuccessCount());
+        assertEquals(1, result.getFailureCount());
+        assertTrue(result.getErrors().get(0).getMessage().contains("Variant Value is required"));
+    }
+
+    @Test
+    void invalid_variant_value_for_type_is_rejected() throws Exception {
+        var file = new MockMultipartFile("file", "test.xlsx", "application/octet-stream", new byte[0]);
+
+        var row = new ExcelProductRow(2);
+        row.put("Name", "Product");
+        row.put("URL", "product-url");
+        row.put("Category", "Electronics");
+        row.put("Price", "100");
+        row.put("Inventory Count", "10");
+        row.put("Variant Type", "COLOR");
+        row.put("Variant Value", "EXTRA_LARGE"); // Not a valid COLOR value
+
+        when(parserService.parse(any(), any())).thenReturn(List.of(row));
+
+        var electronics = new Category();
+        electronics.setId(1L);
+        electronics.setName("Electronics");
+        when(categoryRepository.findAll()).thenReturn(List.of(electronics));
+        when(brandRepository.findAll()).thenReturn(List.of());
+        when(productRepository.findAllUrls()).thenReturn(List.of());
+
+        BatchProductUploadResult result = service.processUpload(file);
+
+        assertEquals(0, result.getSuccessCount());
+        assertEquals(1, result.getFailureCount());
+        assertTrue(result.getErrors().get(0).getMessage().contains("not valid for variant type COLOR"));
+    }
+
+    @Test
+    void valid_variant_product_is_accepted() throws Exception {
+        var file = new MockMultipartFile("file", "test.xlsx", "application/octet-stream", new byte[0]);
+
+        var row = new ExcelProductRow(2);
+        row.put("Name", "Variant Product");
+        row.put("URL", "variant-product");
+        row.put("Category", "Electronics");
+        row.put("Price", "150");
+        row.put("Inventory Count", "5");
+        row.put("Variant Type", "COLOR");
+        row.put("Variant Value", "#0000FF");
+
+        when(parserService.parse(any(), any())).thenReturn(List.of(row));
+
+        var electronics = new Category();
+        electronics.setId(1L);
+        electronics.setName("Electronics");
+        when(categoryRepository.findAll()).thenReturn(List.of(electronics));
+        when(brandRepository.findAll()).thenReturn(List.of());
+        when(productRepository.findAllUrls()).thenReturn(List.of());
+        when(jdbcTemplate.queryForObject(any(String.class), any(Class.class))).thenReturn(1L);
+
+        BatchProductUploadResult result = service.processUpload(file);
+
+        assertEquals(1, result.getTotalRows());
+        assertEquals(1, result.getSuccessCount());
+        assertEquals(0, result.getFailureCount());
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Product>> captor = ArgumentCaptor.forClass(List.class);
+        verify(productRepository).saveAll(captor.capture());
+        Product saved = captor.getValue().get(0);
+        assertEquals(com.ecommerce.persistence.entity.enumeration.VariantType.COLOR,
+                saved.getVariantType());
+        assertEquals("#0000FF", saved.getPrices().get(0).getVariantValue());
+    }
+
+    @Test
+    void lowercase_variant_value_is_normalized_to_uppercase() throws Exception {
+        var file = new MockMultipartFile("file", "test.xlsx", "application/octet-stream", new byte[0]);
+
+        var row = new ExcelProductRow(2);
+        row.put("Name", "Product");
+        row.put("URL", "product-url");
+        row.put("Category", "Electronics");
+        row.put("Price", "150");
+        row.put("Inventory Count", "5");
+        row.put("Variant Type", "COLOR");
+        row.put("Variant Value", "#ff0000"); // lowercase hex
+
+        when(parserService.parse(any(), any())).thenReturn(List.of(row));
+
+        var electronics = new Category();
+        electronics.setId(1L);
+        electronics.setName("Electronics");
+        when(categoryRepository.findAll()).thenReturn(List.of(electronics));
+        when(brandRepository.findAll()).thenReturn(List.of());
+        when(productRepository.findAllUrls()).thenReturn(List.of());
+        when(jdbcTemplate.queryForObject(any(String.class), any(Class.class))).thenReturn(1L);
+
+        BatchProductUploadResult result = service.processUpload(file);
+
+        assertEquals(1, result.getSuccessCount());
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Product>> captor = ArgumentCaptor.forClass(List.class);
+        verify(productRepository).saveAll(captor.capture());
+        Product saved = captor.getValue().get(0);
+        assertEquals("#FF0000", saved.getPrices().get(0).getVariantValue());
     }
 
     @Test

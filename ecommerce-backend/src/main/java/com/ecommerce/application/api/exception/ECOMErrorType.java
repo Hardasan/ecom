@@ -35,7 +35,8 @@ public enum ECOMErrorType {
     ADDRESS_NOT_FOUND(HttpStatus.NOT_FOUND, "error.address.not.found"),
     EMPTY_CART(HttpStatus.CONFLICT, "error.cart.empty"),
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "error.order.not.found"),
-    ORDER_RESERVATION_EXPIRED(HttpStatus.GONE, "error.order.reservation.expired");
+    ORDER_RESERVATION_EXPIRED(HttpStatus.GONE, "error.order.reservation.expired"),
+    CATEGORY_NAME_ALREADY_EXISTS(HttpStatus.CONFLICT, "error.category.name.already.exists");
 
     private final HttpStatus httpStatus;
     private final String messageKey;

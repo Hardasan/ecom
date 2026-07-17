@@ -7,7 +7,6 @@ import com.ecommerce.application.integration.AbstractIntegrationITest;
 import com.ecommerce.persistence.entity.enumeration.InventoryStatus;
 import com.ecommerce.persistence.entity.enumeration.ProductStatus;
 import com.ecommerce.persistence.entity.enumeration.VariantType;
-import com.ecommerce.persistence.entity.enumeration.VariantValue;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,7 +77,7 @@ public abstract class AbstractCartITest extends AbstractIntegrationITest {
         for (String variantValue : values) {
             PriceDto price = new PriceDto();
             price.setPrice(base);
-            price.setVariantValue(VariantValue.valueOf(variantValue));
+            price.setVariantValue(variantValue);
             prices.add(price);
             base = base.add(BigDecimal.valueOf(10));
         }
@@ -115,7 +114,7 @@ public abstract class AbstractCartITest extends AbstractIntegrationITest {
         AddCartItemRequestDto req = new AddCartItemRequestDto();
         req.setProductId(productId);
         req.setVariantType(DEFAULT_VARIANT_TYPE);
-        req.setVariantValue(variantValue == null ? null : VariantValue.valueOf(variantValue));
+        req.setVariantValue(variantValue == null ? null : variantValue);
         req.setQuantity(quantity);
         return mockMvc.perform(withAuth(post("/api/cart/items"), token)
                 .contentType(MediaType.APPLICATION_JSON)

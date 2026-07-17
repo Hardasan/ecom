@@ -6,7 +6,6 @@ import com.ecommerce.persistence.entity.enumeration.SpecificationKey;
 import com.ecommerce.persistence.entity.enumeration.VariantType;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.AttributeOverrides;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -30,7 +29,11 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Entity
 @Table(
@@ -68,8 +71,8 @@ public class Product {
     @Column(name = "url", nullable = false, length = 255)
     private String url;
 
-    @Column(name = "variant_type", length = 64)
     @Enumerated(EnumType.STRING)
+    @Column(name = "variant_type", length = 64)
     private VariantType variantType;
 
     @ElementCollection
@@ -94,7 +97,7 @@ public class Product {
     })
     private ProductImage mainImage;
 
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "product", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
     @BatchSize(size = 25)
     private List<ProductOtherImage> otherImages = new ArrayList<>();
 

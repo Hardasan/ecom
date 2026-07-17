@@ -1,7 +1,6 @@
 package com.ecommerce.persistence.entity;
 
 import com.ecommerce.persistence.entity.enumeration.VariantType;
-import com.ecommerce.persistence.entity.enumeration.VariantValue;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -11,6 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
@@ -20,7 +20,12 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 @Entity
-@Table(name = "cart_item")
+@Table(
+        name = "cart_item",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_cart_item_user_product_variant",
+                columnNames = {"user_id", "product_id", "variant_type", "variant_value"})
+)
 @Getter
 @Setter
 public class CartItem {
@@ -41,15 +46,12 @@ public class CartItem {
     @Column(name = "variant_type", length = 64)
     private VariantType variantType;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "variant_value", length = 64)
-    private VariantValue variantValue;
+    private String variantValue;
 
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
-    // Price snapshot captured when the item is first added, so the cart total is stable
-    // even if the catalog price changes afterwards.
     @Column(name = "unit_price", nullable = false, precision = 12, scale = 2)
     private BigDecimal unitPrice;
 

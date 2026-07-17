@@ -1,6 +1,5 @@
 package com.ecommerce.application.api.dto.product;
 
-import com.ecommerce.persistence.entity.enumeration.VariantValue;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -19,5 +18,5 @@ public class PriceDto {
     @DecimalMin(value = "0")
     private BigDecimal discountPrice;
 
-    private VariantValue variantValue;
+    private String variantValue;
 }

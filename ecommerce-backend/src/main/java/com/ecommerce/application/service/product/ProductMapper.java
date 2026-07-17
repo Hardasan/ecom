@@ -32,9 +32,8 @@ interface ProductMapper {
     ProductOtherImageDto toOtherImageDto(ProductOtherImage entity);
 
     /**
-     * The DTO already carries a typed {@code VariantValue} on each Price row, so this is a
-     * near-passthrough. Kept as a static method so {@link ProductService} can call it the same
-     * way the @AfterMapping used to (one place to evolve if we add per-row defaults).
+     * Copy DTO price rows into entity Price objects. variantValue is now String in both DTO
+     * and entity, so this is a plain passthrough.
      */
     static List<Price> mapPrices(CreateProductRequestDto dto) {
         return dto.getPrices().stream().map(p -> {

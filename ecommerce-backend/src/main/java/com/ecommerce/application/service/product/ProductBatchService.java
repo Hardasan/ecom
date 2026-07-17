@@ -2,9 +2,6 @@ package com.ecommerce.application.service.product;
 
 import com.ecommerce.application.api.dto.product.BatchProductRowError;
 import com.ecommerce.application.api.dto.product.BatchProductUploadResult;
-import com.ecommerce.application.api.exception.ECOMErrorType;
-import com.ecommerce.application.api.exception.EcommerceException;
-import com.ecommerce.application.util.VariantValueResolver;
 import com.ecommerce.persistence.entity.Category;
 import com.ecommerce.persistence.entity.Price;
 import com.ecommerce.persistence.entity.Product;
@@ -162,25 +159,13 @@ public class ProductBatchService {
         }
 
         String variantStr = row.get("Variant Type");
-        VariantType variantType = null;
         if (variantStr != null && !variantStr.isBlank()) {
             try {
-                variantType = VariantType.valueOf(variantStr.toUpperCase());
+                VariantType.valueOf(variantStr.toUpperCase());
             } catch (IllegalArgumentException e) {
                 errs.add(new BatchProductRowError(rn, "Variant Type",
                         "Invalid variant type: " + variantStr + ". Valid values: " +
                                 java.util.Arrays.toString(VariantType.values())));
-            }
-        }
-
-        String variantValue = row.get("Variant Value");
-        if ((variantValue != null && !variantValue.isBlank()) && variantType != null) {
-            try {
-                VariantValueResolver.parse(variantType, variantValue);
-            } catch (EcommerceException e) {
-                errs.add(new BatchProductRowError(rn, "Variant Value",
-                        "Invalid variant value: " + variantValue + ". Valid values: "
-                                + VariantValueResolver.allowedNames(variantType)));
             }
         }
 
@@ -266,15 +251,13 @@ public class ProductBatchService {
             price.setDiscountPrice(new BigDecimal(discountStr));
         }
 
-        VariantType variantType;
-        String variantStr = row.get("Variant Type");
-        if (variantStr != null && !variantStr.isBlank()) {
-            variantType = VariantType.valueOf(variantStr.toUpperCase());
-        } else {
-            variantType = null;
-        }
-        product.setVariantType(variantType);
-        price.setVariantValue(VariantValueResolver.parseNullable(variantType, row.get("Variant Value")));
+        String variantTypeStr = row.get("Variant Type");
+        product.setVariantType(variantTypeStr != null && !variantTypeStr.isBlank()
+                ? VariantType.valueOf(variantTypeStr.trim().toUpperCase()) : null);
+
+        String variantValueStr = row.get("Variant Value");
+        price.setVariantValue(variantValueStr != null && !variantValueStr.isBlank() ? variantValueStr.trim() : null);
+
         product.setPrices(new ArrayList<>(List.of(price)));
 
         product.setInventoryCount(Integer.parseInt(row.get("Inventory Count")));

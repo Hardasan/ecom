@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.ecommerce.persistence.entity.enumeration.InventoryStatus;
 import com.ecommerce.persistence.entity.enumeration.ProductStatus;
 import com.ecommerce.persistence.entity.enumeration.VariantType;
-import com.ecommerce.persistence.entity.enumeration.VariantValue;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -64,7 +63,7 @@ public abstract class AbstractProductITest extends AbstractIntegrationITest {
     CreateProductRequestDto validRequest(String url) {
         PriceDto price = new PriceDto();
         price.setPrice(BigDecimal.valueOf(100));
-        price.setVariantValue(VariantValue.RED);
+        price.setVariantValue("RED");
 
         CreateProductRequestDto req = new CreateProductRequestDto();
         req.setCategoryId(categoryId);

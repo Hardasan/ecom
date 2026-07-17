@@ -10,7 +10,6 @@ import com.ecommerce.persistence.entity.enumeration.InventoryStatus;
 import com.ecommerce.persistence.entity.enumeration.ProductStatus;
 import com.ecommerce.persistence.entity.enumeration.Province;
 import com.ecommerce.persistence.entity.enumeration.VariantType;
-import com.ecommerce.persistence.entity.enumeration.VariantValue;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -81,7 +80,7 @@ public abstract class AbstractCheckoutITest extends AbstractIntegrationITest {
         for (String variantValue : values) {
             PriceDto price = new PriceDto();
             price.setPrice(BigDecimal.valueOf(100));
-            price.setVariantValue(VariantValue.valueOf(variantValue));
+            price.setVariantValue(variantValue);
             prices.add(price);
         }
         req.setPrices(prices);
@@ -117,7 +116,7 @@ public abstract class AbstractCheckoutITest extends AbstractIntegrationITest {
         PriceDto price = new PriceDto();
         price.setPrice(unitPrice);
         price.setDiscountPrice(discountPrice);
-        price.setVariantValue(VariantValue.valueOf(DEFAULT_VARIANT_VALUE));
+        price.setVariantValue(DEFAULT_VARIANT_VALUE);
         req.setPrices(List.of(price));
 
         org.springframework.mock.web.MockPart part =
@@ -140,7 +139,7 @@ public abstract class AbstractCheckoutITest extends AbstractIntegrationITest {
         AddCartItemRequestDto req = new AddCartItemRequestDto();
         req.setProductId(productId);
         req.setVariantType(DEFAULT_VARIANT_TYPE);
-        req.setVariantValue(variantValue == null ? null : VariantValue.valueOf(variantValue));
+        req.setVariantValue(variantValue == null ? null : variantValue);
         req.setQuantity(quantity);
         mockMvc.perform(withAuth(post("/api/cart/items"), token)
                         .contentType(MediaType.APPLICATION_JSON)

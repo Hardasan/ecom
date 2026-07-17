@@ -1,7 +1,6 @@
 package com.ecommerce.application.api.dto.cart;
 
 import com.ecommerce.persistence.entity.enumeration.VariantType;
-import com.ecommerce.persistence.entity.enumeration.VariantValue;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,7 +20,7 @@ public class CartItemResponseDto {
 
     private VariantType variantType;
 
-    private VariantValue variantValue;
+    private String variantValue;
 
     private Integer quantity;
 

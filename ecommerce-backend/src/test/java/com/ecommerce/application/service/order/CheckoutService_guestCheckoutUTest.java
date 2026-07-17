@@ -14,7 +14,6 @@ import com.ecommerce.persistence.entity.enumeration.ProductStatus;
 import com.ecommerce.persistence.entity.enumeration.Province;
 import com.ecommerce.persistence.entity.enumeration.ShippingZone;
 import com.ecommerce.persistence.entity.enumeration.VariantType;
-import com.ecommerce.persistence.entity.enumeration.VariantValue;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -57,7 +56,7 @@ class CheckoutService_guestCheckoutUTest extends BaseCheckoutServiceUTest {
         GuestItemRequestDto item = new GuestItemRequestDto();
         item.setProductId(PRODUCT_ID);
         item.setVariantType(VariantType.COLOR);
-        item.setVariantValue(VariantValue.valueOf(DEFAULT_VARIANT_VALUE));
+        item.setVariantValue(DEFAULT_VARIANT_VALUE);
         item.setQuantity(2);
         dto.setItems(List.of(item));
         return dto;

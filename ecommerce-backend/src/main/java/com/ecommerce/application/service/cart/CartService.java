@@ -9,7 +9,6 @@ import com.ecommerce.persistence.entity.Price;
 import com.ecommerce.persistence.entity.Product;
 import com.ecommerce.persistence.entity.enumeration.ProductStatus;
 import com.ecommerce.persistence.entity.enumeration.VariantType;
-import com.ecommerce.persistence.entity.enumeration.VariantValue;
 import com.ecommerce.persistence.repository.CartItemRepository;
 import com.ecommerce.persistence.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -40,22 +40,21 @@ public class CartService {
         requirePurchasable(product);
 
         VariantType variantType = requestDto.getVariantType();
-        VariantValue variantValue = requestDto.getVariantValue();
+        String variantValue = requestDto.getVariantValue();
 
         if (product.getVariantType() == null) {
             if (variantType != null || variantValue != null) {
                 throw new EcommerceException(ECOMErrorType.PRODUCT_VARIANT_NOT_FOUND);
             }
         } else {
-            if (variantType != product.getVariantType() || variantValue == null
-                    || !variantValue.isAllowedFor(product.getVariantType())) {
+            if (!Objects.equals(variantType, product.getVariantType()) || variantValue == null) {
                 throw new EcommerceException(ECOMErrorType.PRODUCT_VARIANT_NOT_FOUND);
             }
         }
         Price price = findVariantPriceOrThrow(product, variantType, variantValue);
 
         CartItem item = cartItemRepository
-                .findCartLine(userId, product.getId(), variantType, variantValue)
+                .findByUserIdAndProductIdAndVariantTypeAndVariantValue(userId, product.getId(), variantType, variantValue)
                 .orElse(null);
 
         int newQuantity = (item != null ? item.getQuantity() : 0) + requestDto.getQuantity();
@@ -118,7 +117,6 @@ public class CartService {
 
     @Transactional
     public CartResponseDto clearCart(Long userId) {
-        // Clearing is idempotent: with no rows for the user this simply deletes nothing.
         cartItemRepository.deleteByUserId(userId);
         return toDto(userId, List.of());
     }
@@ -139,27 +137,10 @@ public class CartService {
         }
     }
 
-    /**
-     * Picks the Price for the line. A variant-less product (both args null) gets the first row
-     * whose own variantValue is null; a variant-bearing request gets the row matching exactly.
-     * Throws {@code PRODUCT_VARIANT_NOT_FOUND} if no matching price exists.
-     */
-    private Price findVariantPriceOrThrow(Product product, VariantType variantType, VariantValue variantValue) {
-        if (product.getVariantType() == null) {
-            if (variantType != null || variantValue != null) {
-                throw new EcommerceException(ECOMErrorType.PRODUCT_VARIANT_NOT_FOUND);
-            }
-            return product.getPrices().stream()
-                    .filter(p -> p.getVariantValue() == null)
-                    .findFirst()
-                    .or(() -> product.getPrices().stream().findFirst())
-                    .orElseThrow(() -> new EcommerceException(ECOMErrorType.PRODUCT_VARIANT_NOT_FOUND));
-        }
-        if (product.getVariantType() != variantType) {
-            throw new EcommerceException(ECOMErrorType.PRODUCT_VARIANT_NOT_FOUND);
-        }
+    private Price findVariantPriceOrThrow(Product product, VariantType variantType, String variantValue) {
         return product.getPrices().stream()
-                .filter(p -> variantValue.equals(p.getVariantValue()))
+                .filter(p -> variantType == product.getVariantType()
+                        && Objects.equals(variantValue, p.getVariantValue()))
                 .findFirst()
                 .orElseThrow(() -> new EcommerceException(ECOMErrorType.PRODUCT_VARIANT_NOT_FOUND));
     }

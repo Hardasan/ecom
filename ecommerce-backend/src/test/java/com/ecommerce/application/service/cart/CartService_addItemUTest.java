@@ -3,7 +3,6 @@ package com.ecommerce.application.service.cart;
 import com.ecommerce.application.api.dto.cart.CartResponseDto;
 import com.ecommerce.application.api.exception.ECOMErrorType;
 import com.ecommerce.application.api.exception.EcommerceException;
-import com.ecommerce.application.util.VariantValueResolver;
 import com.ecommerce.persistence.entity.CartItem;
 import com.ecommerce.persistence.entity.Price;
 import com.ecommerce.persistence.entity.Product;
@@ -30,8 +29,8 @@ class CartService_addItemUTest extends BaseCartServiceUTest {
         Product product = product(PRODUCT_ID, 10, ProductStatus.ACTIVE, VariantType.COLOR, DEFAULT_VARIANT_VALUE,
                 BigDecimal.valueOf(100), BigDecimal.valueOf(80));
         when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product));
-        when(cartItemRepository.findCartLine(USER_ID, PRODUCT_ID,
-                VariantType.COLOR, VariantValueResolver.parse(VariantType.COLOR, DEFAULT_VARIANT_VALUE)))
+        when(cartItemRepository.findByUserIdAndProductIdAndVariantTypeAndVariantValue(USER_ID, PRODUCT_ID,
+                VariantType.COLOR, DEFAULT_VARIANT_VALUE))
                 .thenReturn(Optional.empty());
         stubUserItems(item(50L, PRODUCT_ID, VariantType.COLOR, DEFAULT_VARIANT_VALUE, 2,
                 BigDecimal.valueOf(100), BigDecimal.valueOf(80)));
@@ -61,8 +60,8 @@ class CartService_addItemUTest extends BaseCartServiceUTest {
         CartItem existing = item(50L, PRODUCT_ID, VariantType.COLOR, DEFAULT_VARIANT_VALUE, 1,
                 BigDecimal.valueOf(100), null);
         when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product));
-        when(cartItemRepository.findCartLine(USER_ID, PRODUCT_ID,
-                VariantType.COLOR, VariantValueResolver.parse(VariantType.COLOR, DEFAULT_VARIANT_VALUE)))
+        when(cartItemRepository.findByUserIdAndProductIdAndVariantTypeAndVariantValue(USER_ID, PRODUCT_ID,
+                VariantType.COLOR, DEFAULT_VARIANT_VALUE))
                 .thenReturn(Optional.of(existing));
         stubUserItems(existing);
         stubProductsForDto(product);
@@ -81,8 +80,8 @@ class CartService_addItemUTest extends BaseCartServiceUTest {
                 BigDecimal.valueOf(100), null);
         product.getPrices().add(price("BLUE", BigDecimal.valueOf(120)));
         when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product));
-        when(cartItemRepository.findCartLine(USER_ID, PRODUCT_ID,
-                VariantType.COLOR, VariantValueResolver.parse(VariantType.COLOR, "BLUE")))
+        when(cartItemRepository.findByUserIdAndProductIdAndVariantTypeAndVariantValue(USER_ID, PRODUCT_ID,
+                VariantType.COLOR, "BLUE"))
                 .thenReturn(Optional.empty());
         stubUserItems(
                 item(50L, PRODUCT_ID, VariantType.COLOR, DEFAULT_VARIANT_VALUE, 1, BigDecimal.valueOf(100), null),
@@ -136,8 +135,8 @@ class CartService_addItemUTest extends BaseCartServiceUTest {
     void requesting_more_than_inventory_throws_insufficient_stock() {
         Product product = product(PRODUCT_ID, 3);
         when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product));
-        when(cartItemRepository.findCartLine(USER_ID, PRODUCT_ID,
-                VariantType.COLOR, VariantValueResolver.parse(VariantType.COLOR, DEFAULT_VARIANT_VALUE)))
+        when(cartItemRepository.findByUserIdAndProductIdAndVariantTypeAndVariantValue(USER_ID, PRODUCT_ID,
+                VariantType.COLOR, DEFAULT_VARIANT_VALUE))
                 .thenReturn(Optional.empty());
 
         EcommerceException exception = assertThrows(EcommerceException.class,
@@ -153,8 +152,8 @@ class CartService_addItemUTest extends BaseCartServiceUTest {
         CartItem existing = item(50L, PRODUCT_ID, VariantType.COLOR, DEFAULT_VARIANT_VALUE, 4,
                 BigDecimal.valueOf(100), null);
         when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product));
-        when(cartItemRepository.findCartLine(USER_ID, PRODUCT_ID,
-                VariantType.COLOR, VariantValueResolver.parse(VariantType.COLOR, DEFAULT_VARIANT_VALUE)))
+        when(cartItemRepository.findByUserIdAndProductIdAndVariantTypeAndVariantValue(USER_ID, PRODUCT_ID,
+                VariantType.COLOR, DEFAULT_VARIANT_VALUE))
                 .thenReturn(Optional.of(existing));
 
         EcommerceException exception = assertThrows(EcommerceException.class,
@@ -169,7 +168,7 @@ class CartService_addItemUTest extends BaseCartServiceUTest {
         Product product = variantlessProduct(PRODUCT_ID, 5, ProductStatus.ACTIVE,
                 BigDecimal.valueOf(100), null);
         when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product));
-        when(cartItemRepository.findCartLine(USER_ID, PRODUCT_ID, null, null))
+        when(cartItemRepository.findByUserIdAndProductIdAndVariantTypeAndVariantValue(USER_ID, PRODUCT_ID, null, null))
                 .thenReturn(Optional.empty());
         stubUserItems(variantlessItem(50L, PRODUCT_ID, 2, BigDecimal.valueOf(100), null));
         stubProductsForDto(product);
@@ -200,7 +199,7 @@ class CartService_addItemUTest extends BaseCartServiceUTest {
 
     private Price price(String variantValue, BigDecimal value) {
         Price price = new Price();
-        price.setVariantValue(VariantValueResolver.parse(VariantType.COLOR, variantValue));
+        price.setVariantValue(variantValue);
         price.setPrice(value);
         return price;
     }

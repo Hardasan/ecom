@@ -1,13 +1,11 @@
 package com.ecommerce.application.service.cart;
 
 import com.ecommerce.application.api.dto.cart.AddCartItemRequestDto;
-import com.ecommerce.application.util.VariantValueResolver;
 import com.ecommerce.persistence.entity.CartItem;
 import com.ecommerce.persistence.entity.Price;
 import com.ecommerce.persistence.entity.Product;
 import com.ecommerce.persistence.entity.enumeration.ProductStatus;
 import com.ecommerce.persistence.entity.enumeration.VariantType;
-import com.ecommerce.persistence.entity.enumeration.VariantValue;
 import com.ecommerce.persistence.repository.CartItemRepository;
 import com.ecommerce.persistence.repository.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,7 +62,7 @@ abstract class BaseCartServiceUTest {
         product.setInventoryCount(inventory);
         product.setVariantType(variant);
         Price variantPrice = new Price();
-        variantPrice.setVariantValue(VariantValueResolver.parse(variant, variantValue));
+        variantPrice.setVariantValue(variantValue);
         variantPrice.setPrice(price);
         variantPrice.setDiscountPrice(discountPrice);
         product.setPrices(new ArrayList<>(List.of(variantPrice)));
@@ -83,7 +81,7 @@ abstract class BaseCartServiceUTest {
         item.setUserId(USER_ID);
         item.setProductId(productId);
         item.setVariantType(variant);
-        item.setVariantValue(VariantValueResolver.parse(variant, variantValue));
+        item.setVariantValue(variantValue);
         item.setQuantity(quantity);
         item.setUnitPrice(unitPrice);
         item.setDiscountPrice(discountPrice);
@@ -94,7 +92,7 @@ abstract class BaseCartServiceUTest {
         AddCartItemRequestDto requestDto = new AddCartItemRequestDto();
         requestDto.setProductId(productId);
         requestDto.setVariantType(variant);
-        requestDto.setVariantValue(variantValue == null ? null : VariantValue.valueOf(variantValue));
+        requestDto.setVariantValue(variantValue == null ? null : variantValue);
         requestDto.setQuantity(quantity);
         return requestDto;
     }

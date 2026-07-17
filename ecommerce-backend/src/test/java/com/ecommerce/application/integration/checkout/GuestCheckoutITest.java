@@ -5,7 +5,6 @@ import com.ecommerce.application.api.dto.order.GuestCheckoutRequestDto;
 import com.ecommerce.application.api.dto.order.GuestItemRequestDto;
 import com.ecommerce.persistence.entity.enumeration.ProductStatus;
 import com.ecommerce.persistence.entity.enumeration.Province;
-import com.ecommerce.persistence.entity.enumeration.VariantValue;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -35,7 +34,7 @@ class GuestCheckoutITest extends AbstractCheckoutITest {
         GuestItemRequestDto item = new GuestItemRequestDto();
         item.setProductId(productId);
         item.setVariantType(DEFAULT_VARIANT_TYPE);
-        item.setVariantValue(VariantValue.valueOf(DEFAULT_VARIANT_VALUE));
+        item.setVariantValue(DEFAULT_VARIANT_VALUE);
         item.setQuantity(quantity);
         dto.setItems(List.of(item));
         return dto;
@@ -64,7 +63,7 @@ class GuestCheckoutITest extends AbstractCheckoutITest {
         GuestItemRequestDto item = new GuestItemRequestDto();
         item.setProductId(productId);
         item.setVariantType(DEFAULT_VARIANT_TYPE);
-        item.setVariantValue(VariantValue.valueOf(variantValue));
+        item.setVariantValue(variantValue);
         item.setQuantity(quantity);
         return item;
     }

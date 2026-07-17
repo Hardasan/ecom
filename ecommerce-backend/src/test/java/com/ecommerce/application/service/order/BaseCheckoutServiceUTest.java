@@ -3,7 +3,6 @@ package com.ecommerce.application.service.order;
 import com.ecommerce.application.config.properties.CheckoutProperties;
 import com.ecommerce.application.service.address.AddressService;
 import com.ecommerce.application.service.shipping.ShippingCalculator;
-import com.ecommerce.application.util.VariantValueResolver;
 import com.ecommerce.persistence.entity.CartItem;
 import com.ecommerce.persistence.entity.Order;
 import com.ecommerce.persistence.entity.Price;
@@ -83,7 +82,7 @@ abstract class BaseCheckoutServiceUTest {
         product.setWeightGram(weightGram);
         product.setVariantType(VariantType.COLOR);
         Price price = new Price();
-        price.setVariantValue(VariantValueResolver.parse(VariantType.COLOR, DEFAULT_VARIANT_VALUE));
+        price.setVariantValue(DEFAULT_VARIANT_VALUE);
         price.setPrice(BigDecimal.valueOf(100));
         product.setPrices(new ArrayList<>(List.of(price)));
         return product;
@@ -100,7 +99,7 @@ abstract class BaseCheckoutServiceUTest {
         product.setWeightGram(weightGram);
         product.setVariantType(VariantType.COLOR);
         Price price = new Price();
-        price.setVariantValue(VariantValueResolver.parse(VariantType.COLOR, DEFAULT_VARIANT_VALUE));
+        price.setVariantValue(DEFAULT_VARIANT_VALUE);
         price.setPrice(priceValue);
         price.setDiscountPrice(discountPrice);
         product.setPrices(new ArrayList<>(List.of(price)));
@@ -113,7 +112,7 @@ abstract class BaseCheckoutServiceUTest {
         item.setUserId(USER_ID);
         item.setProductId(PRODUCT_ID);
         item.setVariantType(VariantType.COLOR);
-        item.setVariantValue(VariantValueResolver.parse(VariantType.COLOR, DEFAULT_VARIANT_VALUE));
+        item.setVariantValue(DEFAULT_VARIANT_VALUE);
         item.setQuantity(quantity);
         return item;
     }

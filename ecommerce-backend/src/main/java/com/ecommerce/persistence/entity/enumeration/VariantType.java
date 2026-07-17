@@ -2,19 +2,26 @@ package com.ecommerce.persistence.entity.enumeration;
 
 import lombok.Getter;
 
+import java.util.Locale;
 import java.util.Set;
 
-/**
- * The variant dimension a product is offered in. Each {@link VariantType} has an associated set
- * of allowed {@link VariantValue}s — see {@link VariantValue#allFor(VariantType)}.
- */
 @Getter
 public enum VariantType {
 
-    COLOR,
-    SIZE;
+    COLOR(Set.of("BLUE", "RED", "WHITE", "BLACK", "GRAY", "GREEN", "YELLOW", "ORANGE", "PURPLE", "PINK", "BROWN")),
 
-    public Set<VariantValue> getAllowedValues() {
-        return VariantValue.allFor(this);
+    SIZE(Set.of("XS", "S", "M", "L", "XL", "XXL"));
+
+    private final Set<String> allowedValues;
+
+    VariantType(Set<String> allowedValues) {
+        this.allowedValues = allowedValues;
+    }
+
+    public boolean isAllowedValue(String value) {
+        if (value == null) {
+            return false;
+        }
+        return allowedValues.contains(value.trim().toUpperCase(Locale.ROOT));
     }
 }

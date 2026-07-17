@@ -1,16 +1,12 @@
 package com.ecommerce.application.controller;
 
-import com.ecommerce.application.api.dto.category.CategoryResponseDto;
-import com.ecommerce.application.api.dto.category.CreateCategoryRequestDto;
-import com.ecommerce.application.api.dto.category.UpdateCategoryRequestDto;
+import com.ecommerce.application.api.dto.category.*;
 import com.ecommerce.application.service.category.CategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/categories")
@@ -20,8 +16,13 @@ public class CategoryController {
     private final CategoryService categoryService;
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public List<CategoryResponseDto> getAll() {
+    public CategoryListResponseDto getAll() {
         return categoryService.getAll();
+    }
+
+    @GetMapping(value = "/hierarchy", produces = MediaType.APPLICATION_JSON_VALUE)
+    public CategoryHierarchyListResponseDto getHierarchy() {
+        return categoryService.getHierarchy();
     }
 
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)

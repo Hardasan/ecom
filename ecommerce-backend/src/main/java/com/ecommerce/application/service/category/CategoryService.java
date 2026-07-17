@@ -1,8 +1,6 @@
 package com.ecommerce.application.service.category;
 
-import com.ecommerce.application.api.dto.category.CategoryResponseDto;
-import com.ecommerce.application.api.dto.category.CreateCategoryRequestDto;
-import com.ecommerce.application.api.dto.category.UpdateCategoryRequestDto;
+import com.ecommerce.application.api.dto.category.*;
 import com.ecommerce.application.api.exception.ECOMErrorType;
 import com.ecommerce.application.api.exception.EcommerceException;
 import com.ecommerce.persistence.entity.Category;
@@ -12,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,8 +21,8 @@ public class CategoryService {
     private final CategoryMapper categoryMapper;
 
     @Transactional(readOnly = true)
-    public List<CategoryResponseDto> getAll() {
-        return categoryMapper.toResponseDtoList(categoryRepository.findAll());
+    public CategoryListResponseDto getAll() {
+        return new CategoryListResponseDto(categoryMapper.toResponseDtoList(categoryRepository.findAll()));
     }
 
     @Transactional(readOnly = true)
@@ -31,6 +30,29 @@ public class CategoryService {
         return categoryMapper.toResponseDto(findOrThrow(id));
     }
 
+    @Transactional(readOnly = true)
+    public CategoryHierarchyListResponseDto getHierarchy() {
+        var allCategories = categoryRepository.findAll();
+
+        var childrenByParentId = allCategories.stream()
+                .filter(c -> c.getParentId() != null)
+                .collect(Collectors.groupingBy(Category::getParentId));
+
+        var items = allCategories.stream()
+                .filter(c -> c.getParentId() == null)
+                .map(root -> {
+                    var sub = childrenByParentId.getOrDefault(root.getId(), List.of())
+                            .stream()
+                            .map(categoryMapper::toResponseDto)
+                            .toList();
+                    return new CategoryHierarchyItemDto(categoryMapper.toResponseDto(root), sub);
+                })
+                .toList();
+
+        return new CategoryHierarchyListResponseDto(items);
+    }
+
+    @Transactional
     public CategoryResponseDto create(CreateCategoryRequestDto requestDto) {
         if (categoryRepository.existsByName(requestDto.getName())) {
             throw new EcommerceException(ECOMErrorType.CATEGORY_NAME_ALREADY_EXISTS);
@@ -44,6 +66,7 @@ public class CategoryService {
         return categoryMapper.toResponseDto(categoryRepository.save(category));
     }
 
+    @Transactional
     public CategoryResponseDto update(Long id, UpdateCategoryRequestDto requestDto) {
         var category = findOrThrow(id);
 

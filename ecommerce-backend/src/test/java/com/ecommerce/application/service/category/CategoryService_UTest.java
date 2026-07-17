@@ -49,11 +49,66 @@ class CategoryService_UTest {
         var cat2 = category(2L, "Clothing", null, null);
         when(categoryRepository.findAll()).thenReturn(List.of(cat1, cat2));
 
-        List<CategoryResponseDto> result = service.getAll();
+        var result = service.getAll();
 
-        assertEquals(2, result.size());
-        assertEquals("Electronics", result.get(0).getName());
-        assertEquals("Clothing", result.get(1).getName());
+        assertEquals(2, result.getCategories().size());
+        assertEquals("Electronics", result.getCategories().get(0).getName());
+        assertEquals("Clothing", result.getCategories().get(1).getName());
+    }
+
+    @Test
+    void get_hierarchy_returns_root_categories_with_subcategories() {
+        var electronics = category(1L, "Electronics", null, null);
+        var mobile = category(2L, "Mobile", null, 1L);
+        var laptop = category(3L, "Laptop", null, 1L);
+        var clothing = category(4L, "Clothing", null, null);
+
+        when(categoryRepository.findAll()).thenReturn(List.of(electronics, mobile, laptop, clothing));
+
+        var result = service.getHierarchy();
+
+        assertEquals(2, result.getCategories().size());
+
+        var electronicsItem = result.getCategories().get(0);
+        assertEquals("Electronics", electronicsItem.getCategory().getName());
+        assertEquals(2, electronicsItem.getSubCategories().size());
+        assertEquals("Mobile", electronicsItem.getSubCategories().get(0).getName());
+        assertEquals("Laptop", electronicsItem.getSubCategories().get(1).getName());
+
+        var clothingItem = result.getCategories().get(1);
+        assertEquals("Clothing", clothingItem.getCategory().getName());
+        assertEquals(0, clothingItem.getSubCategories().size());
+    }
+
+    @Test
+    void get_hierarchy_with_no_children_returns_roots_with_empty_subcategories() {
+        var cat1 = category(1L, "Electronics", null, null);
+        when(categoryRepository.findAll()).thenReturn(List.of(cat1));
+
+        var result = service.getHierarchy();
+
+        assertEquals(1, result.getCategories().size());
+        assertEquals("Electronics", result.getCategories().get(0).getCategory().getName());
+        assertEquals(0, result.getCategories().get(0).getSubCategories().size());
+    }
+
+    @Test
+    void get_hierarchy_empty_categories_returns_empty_list() {
+        when(categoryRepository.findAll()).thenReturn(List.of());
+
+        var result = service.getHierarchy();
+
+        assertEquals(0, result.getCategories().size());
+    }
+
+    @Test
+    void get_hierarchy_only_subcategories_returns_empty() {
+        var mobile = category(1L, "Mobile", null, 5L);
+        when(categoryRepository.findAll()).thenReturn(List.of(mobile));
+
+        var result = service.getHierarchy();
+
+        assertEquals(0, result.getCategories().size());
     }
 
     @Test

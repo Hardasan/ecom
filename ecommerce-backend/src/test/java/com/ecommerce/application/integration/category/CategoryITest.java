@@ -63,22 +63,74 @@ class CategoryITest extends AbstractIntegrationITest {
 
         mockMvc.perform(get("/api/categories"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].name").value("Electronics"))
-                .andExpect(jsonPath("$[0].localName").value("الکترونیک"))
-                .andExpect(jsonPath("$[1].name").value("Clothing"))
-                .andExpect(jsonPath("$[1].localName").value("لباس"))
-                .andExpect(jsonPath("$[1].parentId").value(electronicsId));
+                .andExpect(jsonPath("$.categories", hasSize(2)))
+                .andExpect(jsonPath("$.categories[0].name").value("Electronics"))
+                .andExpect(jsonPath("$.categories[0].localName").value("الکترونیک"))
+                .andExpect(jsonPath("$.categories[1].name").value("Clothing"))
+                .andExpect(jsonPath("$.categories[1].localName").value("لباس"))
+                .andExpect(jsonPath("$.categories[1].parentId").value(electronicsId));
     }
 
     @Test
     void get_all_no_auth_required() throws Exception {
         mockMvc.perform(get("/api/categories"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)));
+                .andExpect(jsonPath("$.categories", hasSize(1)));
 
         assertEquals(1, jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM category", Integer.class));
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // GET hierarchy — public read
+    // ---------------------------------------------------------------------------------------------
+
+    @Test
+    void get_hierarchy_returns_roots_with_subcategories() throws Exception {
+        Long mobileId = jdbcTemplate.queryForObject(
+                "INSERT INTO CATEGORY (NAME, LOCAL_NAME, PARENT_ID) VALUES (?, ?, ?) RETURNING ID",
+                Long.class, "Mobile", "موبایل", electronicsId);
+        Long laptopId = jdbcTemplate.queryForObject(
+                "INSERT INTO CATEGORY (NAME, LOCAL_NAME, PARENT_ID) VALUES (?, ?, ?) RETURNING ID",
+                Long.class, "Laptop", "لپتاپ", electronicsId);
+        Long clothingId = jdbcTemplate.queryForObject(
+                "INSERT INTO CATEGORY (NAME, LOCAL_NAME) VALUES (?, ?) RETURNING ID",
+                Long.class, "Clothing", "لباس");
+
+        mockMvc.perform(get("/api/categories/hierarchy"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.categories", hasSize(2)))
+                .andExpect(jsonPath("$.categories[0].category.name").value("Electronics"))
+                .andExpect(jsonPath("$.categories[0].subCategories", hasSize(2)))
+                .andExpect(jsonPath("$.categories[0].subCategories[0].name").value("Mobile"))
+                .andExpect(jsonPath("$.categories[0].subCategories[1].name").value("Laptop"))
+                .andExpect(jsonPath("$.categories[1].category.name").value("Clothing"))
+                .andExpect(jsonPath("$.categories[1].subCategories", hasSize(0)));
+    }
+
+    @Test
+    void get_hierarchy_no_subcategories_returns_root_with_empty_array() throws Exception {
+        mockMvc.perform(get("/api/categories/hierarchy"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.categories", hasSize(1)))
+                .andExpect(jsonPath("$.categories[0].category.name").value("Electronics"))
+                .andExpect(jsonPath("$.categories[0].subCategories", hasSize(0)));
+    }
+
+    @Test
+    void get_hierarchy_empty_returns_empty_list() throws Exception {
+        jdbcTemplate.execute("TRUNCATE TABLE CATEGORY RESTART IDENTITY CASCADE");
+
+        mockMvc.perform(get("/api/categories/hierarchy"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.categories", hasSize(0)));
+    }
+
+    @Test
+    void get_hierarchy_no_auth_required() throws Exception {
+        mockMvc.perform(get("/api/categories/hierarchy"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.categories", hasSize(1)));
     }
 
     @Test

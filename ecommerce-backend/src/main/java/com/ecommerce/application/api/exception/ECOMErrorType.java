@@ -32,6 +32,8 @@ public enum ECOMErrorType {
     PRODUCT_VARIANT_NOT_FOUND(HttpStatus.NOT_FOUND, "error.product.variant.not.found"),
     PRODUCT_NOT_AVAILABLE(HttpStatus.CONFLICT, "error.product.not.available"),
     INSUFFICIENT_STOCK(HttpStatus.CONFLICT, "error.insufficient.stock"),
+    PRODUCT_REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "error.product.review.not.found"),
+    PRODUCT_REVIEW_ALREADY_EXISTS(HttpStatus.CONFLICT, "error.product.review.already.exists"),
     ADDRESS_NOT_FOUND(HttpStatus.NOT_FOUND, "error.address.not.found"),
     EMPTY_CART(HttpStatus.CONFLICT, "error.cart.empty"),
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "error.order.not.found"),

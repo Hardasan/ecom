@@ -119,6 +119,27 @@ DELETE /wishlist                        ← clear all bookmarks (idempotent no-o
 
 ---
 
+## Product Reviews & Ratings — Non-Obvious Rules
+
+```
+GET    /products/{productId}/reviews                  ← public, paginated (sort / rating / verifiedOnly filters)
+GET    /products/{productId}/reviews/summary          ← public, average + count + 1..5 star histogram
+POST   /products/{productId}/reviews                  ← create own review (JWT)
+PUT    /products/{productId}/reviews/{reviewId}       ← edit own review (JWT, owner)
+DELETE /products/{productId}/reviews/{reviewId}       ← delete (owner, or any review as ROLE_ADMIN)
+PATCH  /products/{productId}/reviews/{reviewId}/status ← moderate: PUBLISHED / HIDDEN (ROLE_ADMIN)
+```
+
+- **No rating aggregate is stored on the product.** A product's rating is derived on read from its `product_review` rows (same "derive, don't store" model as the cart total). `GET .../summary` computes `averageRating` (scale 1, `HALF_UP`; `0.0` when empty), `totalCount`, and a zero-filled `ratingCounts{1..5}` from a **single grouped query over `PUBLISHED` rows only**.
+- **One review per `(user_id, product_id)`** (`uk_product_review_user_product`) — product-level, not per-variant. A second `POST` returns `PRODUCT_REVIEW_ALREADY_EXISTS`; edits go through `PUT`.
+- **Reads are public via the existing `GET /api/products/**` rule** — no change to `PUBLIC_ENDPOINTS`. Writes fall through to `/api/**` authenticated. Admin moderation is **method-level** (`@PreAuthorize` on `PATCH .../status`), never path-based, so a normal user's `POST`/`PUT`/`DELETE` is unaffected.
+- **`rating` is required (1–5); `title`/`comment` are optional** — a bare rating with no text is a valid review. The range is enforced by bean validation → `VALIDATION_ERROR`.
+- **Any signed-in user may review; there is no purchase gate.** `verifiedPurchase` is only a badge, snapshotted at create time from `OrderRepository.existsPaidOrderForProduct` (the user has a **PAID** order line for that product). It is not recomputed on edit.
+- **`authorName` is snapshotted** from the author's name at post time (like order snapshots); editing the review does not refresh it, nor does the user later renaming themselves.
+- **Auto-publish + reactive moderation.** New reviews are `PUBLISHED` and count immediately. An admin can set a review `HIDDEN` (removed from the public list **and** the average) or delete any review; the owner can delete only their own. Non-owned mutations / unknown ids return `PRODUCT_REVIEW_NOT_FOUND`. Admins see `HIDDEN` rows in the list; everyone else sees `PUBLISHED` only.
+- **Reviewing only requires the product to exist**, not to be `ACTIVE`, so a buyer can still review a discontinued item.
+---
+
 ## Error Response Contract
 
 ```json

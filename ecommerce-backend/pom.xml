@@ -13,7 +13,7 @@
     <name>ecommerce-backend</name>
 
     <properties>
-        <tosan.httpserver.version>2.2.4</tosan.httpserver.version>
+        <tosan.httpserver.version>2.3.0</tosan.httpserver.version>
         <wiremock.version>3.13.2</wiremock.version>
         <redisson-spring-boot-starter.version>4.6.1</redisson-spring-boot-starter.version>
         <jsonwebtoken.version>0.13.0</jsonwebtoken.version>

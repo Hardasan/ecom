@@ -97,6 +97,27 @@ DELETE /cart                            ← clear all lines
 
 ---
 
+## Wishlist — Non-Obvious Rules
+
+```
+GET    /wishlist                        ← current user's wishlist (newest bookmark first)
+POST   /wishlist/items                  ← productId  (idempotent add)
+DELETE /wishlist/items/{itemId}         ← remove one bookmark by its id
+DELETE /wishlist/products/{productId}   ← remove the bookmark for a product (heart-toggle off)
+GET    /wishlist/products/{productId}   ← { inWishlist: true|false }  (heart-toggle state)
+DELETE /wishlist                        ← clear all bookmarks (idempotent no-op when empty)
+```
+
+- All wishlist endpoints require a JWT (any role); they are **not** in `PUBLIC_ENDPOINTS`. The acting user is taken from the JWT principal (`UserDetailsDto.getId()`), never from the request body — a user can only touch their own wishlist.
+- **There is no `wishlist` table.** A user's wishlist is simply the set of `wishlist_item` rows owned by that user (`wishlist_item.user_id`), mirroring the cart's user-keyed model. `WishlistResponseDto` is assembled from those rows and has **no** wishlist id.
+- **A bookmark is keyed by `(userId, productId)`** (`uk_wishlist_item_user_product`) — product-level, **not** per-variant like the cart. A product is either on your wishlist or it is not.
+- **Add is idempotent.** Adding a product already present is a no-op (no error, no duplicate row); the response is the unchanged wishlist. The bookmark is immutable — there is no quantity, variant, price snapshot, or `updated_at`.
+- **Only `ACTIVE` products can be added** (else `PRODUCT_NOT_AVAILABLE`; unknown id → `PRODUCT_NOT_FOUND`). Unlike the cart, **stock is deliberately NOT checked** — saving an out-of-stock product to buy when it returns is the whole point of a wishlist. Each item carries derived catalog flags: `inStock` (inventory > 0) and `available` (`ACTIVE` **and** in stock) so a wishlist page can badge unavailable lines.
+- **Removals must reference a bookmark the user owns** — `DELETE /wishlist/items/{id}` (by bookmark id) and `DELETE /wishlist/products/{productId}` (by product) both return `WISHLIST_ITEM_NOT_FOUND` when the user has no matching row. `GET /wishlist/products/{productId}` is a pure membership check: it returns `{ inWishlist: false }` for an absent or even non-existent product, never an error.
+- **No server-side "move to cart".** Moving a wishlisted product into the cart is just the existing `POST /cart/items` (which needs a `variantType` the wishlist does not carry) followed by an optional `DELETE /wishlist/products/{id}` — composed by the client, not a dedicated endpoint.
+
+---
+
 ## Error Response Contract
 
 ```json

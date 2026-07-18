@@ -17,12 +17,15 @@ src/main/java/com/ecommerce/
 │   ├── api/dto/
 │   │   ├── cart/               # Cart request/response DTOs
 │   │   ├── product/            # DTOs + product DTO enums (enumeration/)
-│   │   └── user/               # DTOs + user DTO enums (enumeration/)
+│   │   ├── user/               # DTOs + user DTO enums (enumeration/)
+│   │   └── wishlist/           # Wishlist request/response DTOs
 │   ├── controller/cart/        # CartController
 │   ├── controller/product/     # ProductController
 │   ├── controller/user/        # UserController
+│   ├── controller/wishlist/    # WishlistController
 │   ├── service/cart/           # CartService, CartMapper
 │   ├── service/product/        # ProductService, ProductMapper, ProductSpecifications
+│   ├── service/wishlist/       # WishlistService, WishlistMapper
 │   ├── service/ticket/         # AbstractTicketService, SignupTicketService, LoginTicketService
 │   ├── config/                 # Spring config, security, properties
 │   └── invoker/sms/            # SMS client

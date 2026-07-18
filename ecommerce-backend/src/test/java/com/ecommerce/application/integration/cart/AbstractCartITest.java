@@ -20,14 +20,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 public abstract class AbstractCartITest extends AbstractIntegrationITest {
+
+    static final VariantType DEFAULT_VARIANT_TYPE = VariantType.COLOR;
+    static final String DEFAULT_VARIANT_VALUE = "#FF0000";
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -58,7 +57,7 @@ public abstract class AbstractCartITest extends AbstractIntegrationITest {
     // Product fixtures
     // ---------------------------------------------------------------------------------------------
 
-    Long createProduct(String url, int inventory, ProductStatus status, VariantType... variants) throws Exception {
+    Long createProduct(String url, int inventory, ProductStatus status, String... variantValues) throws Exception {
         CreateProductRequestDto req = new CreateProductRequestDto();
         req.setCategoryId(categoryId);
         req.setUrl(url);
@@ -66,13 +65,15 @@ public abstract class AbstractCartITest extends AbstractIntegrationITest {
         req.setStatus(status);
         req.setInventoryStatus(InventoryStatus.IN_STOCK);
         req.setInventoryCount(inventory);
+        req.setVariantType(DEFAULT_VARIANT_TYPE);
 
         List<PriceDto> prices = new ArrayList<>();
         BigDecimal base = BigDecimal.valueOf(100);
-        for (VariantType variant : variants) {
+        String[] values = variantValues.length == 0 ? new String[]{DEFAULT_VARIANT_VALUE} : variantValues;
+        for (String variantValue : values) {
             PriceDto price = new PriceDto();
             price.setPrice(base);
-            price.setVariantType(variant);
+            price.setVariantValue(variantValue);
             prices.add(price);
             base = base.add(BigDecimal.valueOf(10));
         }
@@ -86,9 +87,8 @@ public abstract class AbstractCartITest extends AbstractIntegrationITest {
         return json(result).get("id").asLong();
     }
 
-    Long createActiveProduct(String url, int inventory, VariantType... variants) throws Exception {
-        return createProduct(url, inventory, ProductStatus.ACTIVE,
-                variants.length == 0 ? new VariantType[]{VariantType.COLOR} : variants);
+    Long createActiveProduct(String url, int inventory, String... variantValues) throws Exception {
+        return createProduct(url, inventory, ProductStatus.ACTIVE, variantValues);
     }
 
     org.springframework.mock.web.MockPart jsonPart(String name, Object body) throws Exception {
@@ -106,10 +106,11 @@ public abstract class AbstractCartITest extends AbstractIntegrationITest {
         return mockMvc.perform(withAuth(get("/api/cart"), token));
     }
 
-    ResultActions addItem(String token, Long productId, VariantType variant, int quantity) throws Exception {
+    ResultActions addItem(String token, Long productId, String variantValue, int quantity) throws Exception {
         AddCartItemRequestDto req = new AddCartItemRequestDto();
         req.setProductId(productId);
-        req.setVariantType(variant);
+        req.setVariantType(DEFAULT_VARIANT_TYPE);
+        req.setVariantValue(variantValue == null ? null : variantValue);
         req.setQuantity(quantity);
         return mockMvc.perform(withAuth(post("/api/cart/items"), token)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -138,14 +139,15 @@ public abstract class AbstractCartITest extends AbstractIntegrationITest {
         return mockMvc.perform(withAuth(delete("/api/cart"), token));
     }
 
-    long addItemAndGetId(String token, Long productId, VariantType variant, int quantity) throws Exception {
-        MvcResult result = addItem(token, productId, variant, quantity)
+    long addItemAndGetId(String token, Long productId, String variantValue, int quantity) throws Exception {
+        MvcResult result = addItem(token, productId, variantValue, quantity)
                 .andExpect(status().isOk())
                 .andReturn();
         JsonNode items = json(result).get("items");
         for (JsonNode itemNode : items) {
             if (itemNode.get("productId").asLong() == productId
-                    && variant.name().equals(itemNode.get("variantType").asText())) {
+                    && DEFAULT_VARIANT_TYPE.name().equals(itemNode.get("variantType").asText())
+                    && variantValue.equalsIgnoreCase(itemNode.get("variantValue").asText())) {
                 return itemNode.get("id").asLong();
             }
         }

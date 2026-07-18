@@ -3,9 +3,9 @@ package com.ecommerce.persistence.entity;
 import com.ecommerce.persistence.entity.enumeration.InventoryStatus;
 import com.ecommerce.persistence.entity.enumeration.ProductStatus;
 import com.ecommerce.persistence.entity.enumeration.SpecificationKey;
+import com.ecommerce.persistence.entity.enumeration.VariantType;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.AttributeOverrides;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -71,6 +71,10 @@ public class Product {
     @Column(name = "url", nullable = false, length = 255)
     private String url;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "variant_type", length = 64)
+    private VariantType variantType;
+
     @ElementCollection
     @CollectionTable(name = "product_price", joinColumns = @JoinColumn(name = "product_id"))
     @BatchSize(size = 25)
@@ -93,7 +97,7 @@ public class Product {
     })
     private ProductImage mainImage;
 
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "product", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
     @BatchSize(size = 25)
     private List<ProductOtherImage> otherImages = new ArrayList<>();
 

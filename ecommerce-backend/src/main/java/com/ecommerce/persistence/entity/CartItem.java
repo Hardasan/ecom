@@ -24,7 +24,7 @@ import java.util.Date;
         name = "cart_item",
         uniqueConstraints = @UniqueConstraint(
                 name = "uk_cart_item_user_product_variant",
-                columnNames = {"user_id", "product_id", "variant_type"})
+                columnNames = {"user_id", "product_id", "variant_type", "variant_value"})
 )
 @Getter
 @Setter
@@ -43,14 +43,15 @@ public class CartItem {
     private Long productId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "variant_type", nullable = false, length = 64)
+    @Column(name = "variant_type", length = 64)
     private VariantType variantType;
+
+    @Column(name = "variant_value", length = 64)
+    private String variantValue;
 
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
-    // Price snapshot captured when the item is first added, so the cart total is stable
-    // even if the catalog price changes afterwards.
     @Column(name = "unit_price", nullable = false, precision = 12, scale = 2)
     private BigDecimal unitPrice;
 

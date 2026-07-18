@@ -20,7 +20,7 @@ class CartService_decrementItemUTest extends BaseCartServiceUTest {
 
     @Test
     void decrement_reduces_quantity_by_one() {
-        CartItem cartItem = item(50L, PRODUCT_ID, VariantType.COLOR, 3, BigDecimal.valueOf(100), null);
+        CartItem cartItem = item(50L, PRODUCT_ID, VariantType.COLOR, DEFAULT_VARIANT_VALUE, 3, BigDecimal.valueOf(100), null);
         when(cartItemRepository.findByIdAndUserId(50L, USER_ID)).thenReturn(Optional.of(cartItem));
         stubUserItems(cartItem);
         stubProductsForDto(product(PRODUCT_ID, 10));
@@ -32,7 +32,7 @@ class CartService_decrementItemUTest extends BaseCartServiceUTest {
 
     @Test
     void decrement_to_zero_removes_the_line() {
-        CartItem cartItem = item(50L, PRODUCT_ID, VariantType.COLOR, 1, BigDecimal.valueOf(100), null);
+        CartItem cartItem = item(50L, PRODUCT_ID, VariantType.COLOR, DEFAULT_VARIANT_VALUE, 1, BigDecimal.valueOf(100), null);
         when(cartItemRepository.findByIdAndUserId(50L, USER_ID)).thenReturn(Optional.of(cartItem));
         stubUserItems();
 

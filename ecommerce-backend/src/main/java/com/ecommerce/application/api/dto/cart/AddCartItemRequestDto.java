@@ -13,8 +13,9 @@ public class AddCartItemRequestDto {
     @NotNull
     private Long productId;
 
-    @NotNull
     private VariantType variantType;
+
+    private String variantValue;
 
     @NotNull
     @Positive

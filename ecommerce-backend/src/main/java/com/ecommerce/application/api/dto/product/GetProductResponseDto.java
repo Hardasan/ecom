@@ -3,6 +3,7 @@ package com.ecommerce.application.api.dto.product;
 import com.ecommerce.persistence.entity.enumeration.InventoryStatus;
 import com.ecommerce.persistence.entity.enumeration.ProductStatus;
 import com.ecommerce.persistence.entity.enumeration.SpecificationKey;
+import com.ecommerce.persistence.entity.enumeration.VariantType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,6 +24,8 @@ public class GetProductResponseDto {
     private Long subCategoryId;
 
     private String url;
+
+    private VariantType variantType;
 
     private List<PriceDto> prices;
 

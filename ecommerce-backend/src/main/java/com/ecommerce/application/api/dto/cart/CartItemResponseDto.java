@@ -20,6 +20,8 @@ public class CartItemResponseDto {
 
     private VariantType variantType;
 
+    private String variantValue;
+
     private Integer quantity;
 
     private BigDecimal unitPrice;

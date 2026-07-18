@@ -23,22 +23,24 @@ public class ExceptionHandlerUtil {
 
     public ExceptionParam generateExceptionParam(Throwable exception) {
         if (exception instanceof EcommerceException e) {
-            return buildParam(e.getEcomErrorType(), e.getData());
+            return buildParam(e.getEcomErrorType(), e.getData(), e.getMessageArgs());
         }
-        return buildParam(ECOMErrorType.GENERAL_ERROR, null);
+        return buildParam(ECOMErrorType.GENERAL_ERROR, null, null);
     }
 
-    private ExceptionParam buildParam(ECOMErrorType errorType, Map<String, Object> data) {
+    private ExceptionParam buildParam(ECOMErrorType errorType, Map<String, Object> data,
+                                      Object[] messageArgs) {
         var param = new ExceptionParam();
         param.setErrorCode(errorType.name());
-        param.setMessage(resolveMessage(errorType));
+        param.setMessage(resolveMessage(errorType, messageArgs));
         param.setErrorParams(data);
         return param;
     }
 
-    private String resolveMessage(ECOMErrorType errorType) {
+    private String resolveMessage(ECOMErrorType errorType, Object[] messageArgs) {
         try {
-            return messageSource.getMessage(errorType.getMessageKey(), null, LocaleContextHolder.getLocale());
+            return messageSource.getMessage(errorType.getMessageKey(), messageArgs,
+                    LocaleContextHolder.getLocale());
         } catch (NoSuchMessageException e) {
             return errorType.getMessageKey();
         }

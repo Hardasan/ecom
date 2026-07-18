@@ -1,6 +1,5 @@
 package com.ecommerce.application.integration.cart;
 
-import com.ecommerce.persistence.entity.enumeration.VariantType;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.hasSize;
@@ -11,8 +10,8 @@ class CartUpdateQuantityITest extends AbstractCartITest {
 
     @Test
     void increment_increases_quantity() throws Exception {
-        Long productId = createActiveProduct("inc", 10, VariantType.COLOR);
-        long itemId = addItemAndGetId(userToken, productId, VariantType.COLOR, 1);
+        Long productId = createActiveProduct("inc", 10, DEFAULT_VARIANT_VALUE);
+        long itemId = addItemAndGetId(userToken, productId, DEFAULT_VARIANT_VALUE, 1);
 
         incrementItem(userToken, itemId)
                 .andExpect(status().isOk())
@@ -21,8 +20,8 @@ class CartUpdateQuantityITest extends AbstractCartITest {
 
     @Test
     void increment_beyond_stock_returns_409() throws Exception {
-        Long productId = createActiveProduct("inc-limit", 1, VariantType.COLOR);
-        long itemId = addItemAndGetId(userToken, productId, VariantType.COLOR, 1);
+        Long productId = createActiveProduct("inc-limit", 1, DEFAULT_VARIANT_VALUE);
+        long itemId = addItemAndGetId(userToken, productId, DEFAULT_VARIANT_VALUE, 1);
 
         incrementItem(userToken, itemId)
                 .andExpect(status().isConflict())
@@ -31,8 +30,8 @@ class CartUpdateQuantityITest extends AbstractCartITest {
 
     @Test
     void decrement_reduces_quantity() throws Exception {
-        Long productId = createActiveProduct("dec", 10, VariantType.COLOR);
-        long itemId = addItemAndGetId(userToken, productId, VariantType.COLOR, 3);
+        Long productId = createActiveProduct("dec", 10, DEFAULT_VARIANT_VALUE);
+        long itemId = addItemAndGetId(userToken, productId, DEFAULT_VARIANT_VALUE, 3);
 
         decrementItem(userToken, itemId)
                 .andExpect(status().isOk())
@@ -41,8 +40,8 @@ class CartUpdateQuantityITest extends AbstractCartITest {
 
     @Test
     void decrement_to_zero_removes_line() throws Exception {
-        Long productId = createActiveProduct("dec-zero", 10, VariantType.COLOR);
-        long itemId = addItemAndGetId(userToken, productId, VariantType.COLOR, 1);
+        Long productId = createActiveProduct("dec-zero", 10, DEFAULT_VARIANT_VALUE);
+        long itemId = addItemAndGetId(userToken, productId, DEFAULT_VARIANT_VALUE, 1);
 
         decrementItem(userToken, itemId)
                 .andExpect(status().isOk())
@@ -52,8 +51,8 @@ class CartUpdateQuantityITest extends AbstractCartITest {
 
     @Test
     void update_sets_absolute_quantity() throws Exception {
-        Long productId = createActiveProduct("set-qty", 10, VariantType.COLOR);
-        long itemId = addItemAndGetId(userToken, productId, VariantType.COLOR, 1);
+        Long productId = createActiveProduct("set-qty", 10, DEFAULT_VARIANT_VALUE);
+        long itemId = addItemAndGetId(userToken, productId, DEFAULT_VARIANT_VALUE, 1);
 
         updateQuantity(userToken, itemId, 5)
                 .andExpect(status().isOk())
@@ -62,8 +61,8 @@ class CartUpdateQuantityITest extends AbstractCartITest {
 
     @Test
     void update_above_stock_returns_409() throws Exception {
-        Long productId = createActiveProduct("set-limit", 4, VariantType.COLOR);
-        long itemId = addItemAndGetId(userToken, productId, VariantType.COLOR, 1);
+        Long productId = createActiveProduct("set-limit", 4, DEFAULT_VARIANT_VALUE);
+        long itemId = addItemAndGetId(userToken, productId, DEFAULT_VARIANT_VALUE, 1);
 
         updateQuantity(userToken, itemId, 5)
                 .andExpect(status().isConflict())

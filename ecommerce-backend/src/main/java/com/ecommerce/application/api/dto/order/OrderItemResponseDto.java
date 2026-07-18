@@ -20,6 +20,8 @@ public class OrderItemResponseDto {
 
     private VariantType variantType;
 
+    private String variantValue;
+
     private Integer quantity;
 
     private BigDecimal unitPrice;

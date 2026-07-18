@@ -56,6 +56,7 @@ class CheckoutService_guestCheckoutUTest extends BaseCheckoutServiceUTest {
         GuestItemRequestDto item = new GuestItemRequestDto();
         item.setProductId(PRODUCT_ID);
         item.setVariantType(VariantType.COLOR);
+        item.setVariantValue(DEFAULT_VARIANT_VALUE);
         item.setQuantity(2);
         dto.setItems(List.of(item));
         return dto;

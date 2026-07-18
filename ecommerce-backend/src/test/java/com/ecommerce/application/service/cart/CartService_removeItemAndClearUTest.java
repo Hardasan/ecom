@@ -20,8 +20,8 @@ class CartService_removeItemAndClearUTest extends BaseCartServiceUTest {
 
     @Test
     void remove_drops_the_targeted_line_only() {
-        CartItem colorItem = item(50L, PRODUCT_ID, VariantType.COLOR, 1, BigDecimal.valueOf(100), null);
-        CartItem sizeItem = item(51L, PRODUCT_ID, VariantType.SIZE, 1, BigDecimal.valueOf(100), null);
+        CartItem colorItem = item(50L, PRODUCT_ID, VariantType.COLOR, DEFAULT_VARIANT_VALUE, 1, BigDecimal.valueOf(100), null);
+        CartItem sizeItem = item(51L, PRODUCT_ID, VariantType.SIZE, "M", 1, BigDecimal.valueOf(100), null);
         when(cartItemRepository.findByIdAndUserId(50L, USER_ID)).thenReturn(Optional.of(colorItem));
         stubUserItems(sizeItem);
         stubProductsForDto(product(PRODUCT_ID, 10));

@@ -3,6 +3,7 @@ package com.ecommerce.application.api.dto.product;
 import com.ecommerce.persistence.entity.enumeration.InventoryStatus;
 import com.ecommerce.persistence.entity.enumeration.ProductStatus;
 import com.ecommerce.persistence.entity.enumeration.SpecificationKey;
+import com.ecommerce.persistence.entity.enumeration.VariantType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -24,6 +25,8 @@ public class CreateProductRequestDto {
 
     @NotEmpty
     private String url;
+
+    private VariantType variantType;
 
     @NotEmpty
     @Valid

@@ -27,10 +27,6 @@ import java.util.Base64;
 
 import static com.ecommerce.application.util.SecurityUtil.isAdmin;
 
-/**
- * @author reza gholamzad
- * @since 6/16/26
- */
 @Service
 @RequiredArgsConstructor
 public class ProductService {
@@ -50,6 +46,7 @@ public class ProductService {
 
         var product = new Product();
         productMapper.apply(requestDto, product);
+        product.setPrices(ProductMapper.mapPrices(requestDto));
         product.setCode(generateCode(requestDto.getCategoryId()));
 
         if (mainImageFile != null) {
@@ -87,6 +84,7 @@ public class ProductService {
         validateProductRequestDto(requestDto);
 
         productMapper.apply(requestDto, product);
+        product.setPrices(ProductMapper.mapPrices(requestDto));
 
         return productMapper.toResponseDto(productRepository.save(product));
     }
@@ -170,6 +168,13 @@ public class ProductService {
         }
         if (requestDto.getBrandId() != null && !brandRepository.existsById(requestDto.getBrandId())) {
             throw new EcommerceException(ECOMErrorType.BRAND_NOT_FOUND);
+        }
+
+        // A non-null variantValue on any Price row implies the product's variantType must also be set.
+        for (var price : requestDto.getPrices()) {
+            if (price.getVariantValue() != null && requestDto.getVariantType() == null) {
+                throw new EcommerceException(ECOMErrorType.VALIDATION_ERROR);
+            }
         }
     }
 }

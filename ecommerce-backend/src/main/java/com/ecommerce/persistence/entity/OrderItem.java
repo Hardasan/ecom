@@ -41,8 +41,11 @@ public class OrderItem {
     private ProductSnapshot product = new ProductSnapshot();
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "variant_type", nullable = false, length = 64)
+    @Column(name = "variant_type", length = 64)
     private VariantType variantType;
+
+    @Column(name = "variant_value", length = 64)
+    private String variantValue;
 
     @Column(name = "quantity", nullable = false)
     private Integer quantity;

@@ -11,6 +11,8 @@ public class BatchProductUploadResult {
 
     private int totalRows;
     private int successCount;
+    private int createdCount;
+    private int updatedCount;
     private int failureCount;
     private List<BatchProductRowError> errors;
     private long elapsedTimeMs;

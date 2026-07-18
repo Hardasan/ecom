@@ -261,6 +261,42 @@ class ProductBatchService_UTest {
     }
 
     @Test
+    void duplicate_category_names_do_not_crash_upload() throws Exception {
+        var file = new MockMultipartFile("file", "test.xlsx", "application/octet-stream", new byte[0]);
+
+        var row = new ExcelProductRow(2);
+        row.put("Name", "Product");
+        row.put("URL", "product-url");
+        row.put("Category", "Electronics");
+        row.put("Price", "100");
+        row.put("Inventory Count", "10");
+
+        when(parserService.parse(any(), any())).thenReturn(List.of(row));
+
+        // Two categories collapse to the same lower-cased key — must not throw on toMap.
+        var electronics = new Category();
+        electronics.setId(1L);
+        electronics.setName("Electronics");
+        var electronicsLower = new Category();
+        electronicsLower.setId(2L);
+        electronicsLower.setName("electronics");
+        when(categoryRepository.findAll()).thenReturn(List.of(electronics, electronicsLower));
+        when(brandRepository.findAll()).thenReturn(List.of());
+        when(productRepository.findAllUrls()).thenReturn(List.of());
+        when(jdbcTemplate.queryForObject(any(String.class), any(Class.class))).thenReturn(1L);
+
+        BatchProductUploadResult result = service.processUpload(file);
+
+        assertEquals(1, result.getSuccessCount());
+        assertEquals(0, result.getFailureCount());
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Product>> captor = ArgumentCaptor.forClass(List.class);
+        verify(productRepository).saveAll(captor.capture());
+        assertEquals(Long.valueOf(1L), captor.getValue().get(0).getCategoryId());
+    }
+
+    @Test
     void negative_inventory_count_is_rejected() throws Exception {
         var file = new MockMultipartFile("file", "test.xlsx", "application/octet-stream", new byte[0]);
 
@@ -631,5 +667,198 @@ class ProductBatchService_UTest {
         var ex = org.junit.jupiter.api.Assertions.assertThrows(EcommerceException.class,
                 () -> service.processUpload(file));
         assertEquals(ECOMErrorType.EXCEL_EMPTY_FILE, ex.getEcomErrorType());
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Upsert by Code
+    // ---------------------------------------------------------------------------------------------
+
+    @Test
+    void matching_code_updates_existing_product_instead_of_creating() throws Exception {
+        var file = new MockMultipartFile("file", "test.xlsx", "application/octet-stream", new byte[0]);
+
+        var row = new ExcelProductRow(2);
+        row.put("Name", "Updated Name");
+        row.put("URL", "new-url");
+        row.put("Category", "Electronics");
+        row.put("Price", "500");
+        row.put("Inventory Count", "20");
+        row.put("Code", "1-100");
+
+        when(parserService.parse(any(), any())).thenReturn(List.of(row));
+
+        var electronics = new Category();
+        electronics.setId(1L);
+        electronics.setName("Electronics");
+        when(categoryRepository.findAll()).thenReturn(List.of(electronics));
+        when(brandRepository.findAll()).thenReturn(List.of());
+        when(productRepository.findAllUrls()).thenReturn(List.of("old-url"));
+
+        var existing = new Product();
+        existing.setId(42L);
+        existing.setCode("1-100");
+        existing.setUrl("old-url");
+        existing.setName("Old Name");
+        when(productRepository.findByCodeIn(any())).thenReturn(List.of(existing));
+
+        BatchProductUploadResult result = service.processUpload(file);
+
+        assertEquals(1, result.getSuccessCount());
+        assertEquals(0, result.getCreatedCount());
+        assertEquals(1, result.getUpdatedCount());
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Product>> captor = ArgumentCaptor.forClass(List.class);
+        verify(productRepository).saveAll(captor.capture());
+        List<Product> saved = captor.getValue();
+        assertEquals(1, saved.size());
+        assertSame(existing, saved.get(0)); // mutated the managed entity, not a new one
+        assertEquals(Long.valueOf(42L), saved.get(0).getId());
+        assertEquals("Updated Name", saved.get(0).getName());
+        assertEquals("new-url", saved.get(0).getUrl()); // url can change on update
+        assertEquals("1-100", saved.get(0).getCode()); // code preserved
+        // code generation (sequence) must not run on update
+        verify(jdbcTemplate, never()).queryForObject(any(String.class), any(Class.class));
+    }
+
+    @Test
+    void unknown_code_is_rejected() throws Exception {
+        var file = new MockMultipartFile("file", "test.xlsx", "application/octet-stream", new byte[0]);
+
+        var row = new ExcelProductRow(2);
+        row.put("Name", "Ghost");
+        row.put("URL", "ghost-url");
+        row.put("Category", "Electronics");
+        row.put("Price", "10");
+        row.put("Inventory Count", "1");
+        row.put("Code", "9-999");
+
+        when(parserService.parse(any(), any())).thenReturn(List.of(row));
+
+        var electronics = new Category();
+        electronics.setId(1L);
+        electronics.setName("Electronics");
+        when(categoryRepository.findAll()).thenReturn(List.of(electronics));
+        when(brandRepository.findAll()).thenReturn(List.of());
+        when(productRepository.findAllUrls()).thenReturn(List.of());
+        when(productRepository.findByCodeIn(any())).thenReturn(List.of());
+
+        BatchProductUploadResult result = service.processUpload(file);
+
+        assertEquals(0, result.getSuccessCount());
+        assertEquals(1, result.getFailureCount());
+        assertTrue(result.getErrors().get(0).getMessage().contains("Product code not found"));
+        verify(productRepository, never()).saveAll(anyList());
+    }
+
+    @Test
+    void duplicate_code_within_file_is_rejected() throws Exception {
+        var file = new MockMultipartFile("file", "test.xlsx", "application/octet-stream", new byte[0]);
+
+        var row1 = new ExcelProductRow(2);
+        row1.put("Name", "First");
+        row1.put("URL", "url-1");
+        row1.put("Category", "Electronics");
+        row1.put("Price", "10");
+        row1.put("Inventory Count", "1");
+        row1.put("Code", "1-100");
+
+        var row2 = new ExcelProductRow(3);
+        row2.put("Name", "Second");
+        row2.put("URL", "url-2");
+        row2.put("Category", "Electronics");
+        row2.put("Price", "20");
+        row2.put("Inventory Count", "2");
+        row2.put("Code", "1-100");
+
+        when(parserService.parse(any(), any())).thenReturn(List.of(row1, row2));
+
+        var electronics = new Category();
+        electronics.setId(1L);
+        electronics.setName("Electronics");
+        when(categoryRepository.findAll()).thenReturn(List.of(electronics));
+        when(brandRepository.findAll()).thenReturn(List.of());
+        when(productRepository.findAllUrls()).thenReturn(List.of());
+
+        var existing = new Product();
+        existing.setId(1L);
+        existing.setCode("1-100");
+        existing.setUrl("old");
+        when(productRepository.findByCodeIn(any())).thenReturn(List.of(existing));
+
+        BatchProductUploadResult result = service.processUpload(file);
+
+        assertEquals(1, result.getSuccessCount());
+        assertEquals(1, result.getUpdatedCount());
+        assertEquals(1, result.getFailureCount());
+        assertTrue(result.getErrors().get(0).getMessage().contains("Duplicate Code within file"));
+    }
+
+    @Test
+    void update_keeping_its_own_url_is_not_a_conflict() throws Exception {
+        var file = new MockMultipartFile("file", "test.xlsx", "application/octet-stream", new byte[0]);
+
+        var row = new ExcelProductRow(2);
+        row.put("Name", "Same Url Product");
+        row.put("URL", "same-url");
+        row.put("Category", "Electronics");
+        row.put("Price", "10");
+        row.put("Inventory Count", "1");
+        row.put("Code", "1-100");
+
+        when(parserService.parse(any(), any())).thenReturn(List.of(row));
+
+        var electronics = new Category();
+        electronics.setId(1L);
+        electronics.setName("Electronics");
+        when(categoryRepository.findAll()).thenReturn(List.of(electronics));
+        when(brandRepository.findAll()).thenReturn(List.of());
+        when(productRepository.findAllUrls()).thenReturn(List.of("same-url")); // the product's own url
+
+        var existing = new Product();
+        existing.setId(1L);
+        existing.setCode("1-100");
+        existing.setUrl("same-url");
+        when(productRepository.findByCodeIn(any())).thenReturn(List.of(existing));
+
+        BatchProductUploadResult result = service.processUpload(file);
+
+        assertEquals(1, result.getSuccessCount());
+        assertEquals(1, result.getUpdatedCount());
+        assertEquals(0, result.getFailureCount());
+    }
+
+    @Test
+    void update_to_url_owned_by_another_product_is_rejected() throws Exception {
+        var file = new MockMultipartFile("file", "test.xlsx", "application/octet-stream", new byte[0]);
+
+        var row = new ExcelProductRow(2);
+        row.put("Name", "Thief");
+        row.put("URL", "taken-by-other");
+        row.put("Category", "Electronics");
+        row.put("Price", "10");
+        row.put("Inventory Count", "1");
+        row.put("Code", "1-100");
+
+        when(parserService.parse(any(), any())).thenReturn(List.of(row));
+
+        var electronics = new Category();
+        electronics.setId(1L);
+        electronics.setName("Electronics");
+        when(categoryRepository.findAll()).thenReturn(List.of(electronics));
+        when(brandRepository.findAll()).thenReturn(List.of());
+        when(productRepository.findAllUrls()).thenReturn(List.of("taken-by-other", "my-own-url"));
+
+        var existing = new Product();
+        existing.setId(1L);
+        existing.setCode("1-100");
+        existing.setUrl("my-own-url");
+        when(productRepository.findByCodeIn(any())).thenReturn(List.of(existing));
+
+        BatchProductUploadResult result = service.processUpload(file);
+
+        assertEquals(0, result.getSuccessCount());
+        assertEquals(1, result.getFailureCount());
+        assertTrue(result.getErrors().get(0).getMessage().contains("already exists"));
     }
 }

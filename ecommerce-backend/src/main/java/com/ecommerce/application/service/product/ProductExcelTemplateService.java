@@ -78,7 +78,8 @@ public class ProductExcelTemplateService {
         String[] base = {
                 "Name", "Local Name", "URL", "Category", "Sub Category", "Brand",
                 "Short Description", "Price", "Discount Price",
-                "Variant Type", "Variant Value", "Inventory Count", "Weight (grams)", "Status", "Inventory Status"
+                "Variant Type", "Variant Value", "Inventory Count", "Weight (grams)", "Status", "Inventory Status",
+                "Code"
         };
         SpecificationKey[] specs = SpecificationKey.values();
         String[] headers = Arrays.copyOf(base, base.length + specs.length);
@@ -105,7 +106,9 @@ public class ProductExcelTemplateService {
         row.createCell(12).setCellValue("200");
         row.createCell(13).setCellValue("ACTIVE");
         row.createCell(14).setCellValue("IN_STOCK");
-        int col = 15;
+        // Cell 15 (Code) intentionally left blank — a blank Code means "create a new product".
+        // Fill Code with an existing product's code to update that product instead.
+        int col = 16;
         for (SpecificationKey key : SpecificationKey.values()) {
             row.createCell(col++).setCellValue(key.name() + " value");
         }

@@ -2,6 +2,7 @@ package com.ecommerce.application.service.product;
 
 import com.ecommerce.application.api.dto.product.BatchProductRowError;
 import com.ecommerce.application.api.dto.product.BatchProductUploadResult;
+import com.ecommerce.persistence.entity.Brand;
 import com.ecommerce.persistence.entity.Category;
 import com.ecommerce.persistence.entity.Price;
 import com.ecommerce.persistence.entity.Product;
@@ -43,40 +44,70 @@ public class ProductBatchService {
         Set<String> requiredHeaders = new HashSet<>(ProductExcelTemplateService.requiredHeaders());
         List<ExcelProductRow> rows = parserService.parse(file, requiredHeaders);
 
+        // Category/brand names are not unique (no DB constraint), so two rows can collapse to the
+        // same lower-cased key. Keep the first-seen id instead of letting toMap throw on collision.
         Map<String, Long> categoryNameToId = categoryRepository.findAll().stream()
-                .collect(Collectors.toMap(c -> c.getName().toLowerCase(), Category::getId));
+                .collect(Collectors.toMap(c -> c.getName().toLowerCase(), Category::getId, (first, dup) -> first));
         Map<String, Long> brandNameToId = brandRepository.findAll().stream()
-                .collect(Collectors.toMap(b -> b.getName().toLowerCase(), b -> b.getId()));
+                .collect(Collectors.toMap(b -> b.getName().toLowerCase(), Brand::getId, (first, dup) -> first));
         Set<String> existingUrls = new HashSet<>(productRepository.findAllUrls());
+
+        // A row with a non-blank Code updates the matching product; a blank Code creates a new one.
+        Set<String> codesInFile = rows.stream()
+                .map(r -> r.get("Code"))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<String, Product> codeToProduct = codesInFile.isEmpty()
+                ? Map.of()
+                : productRepository.findByCodeIn(codesInFile).stream()
+                        .collect(Collectors.toMap(Product::getCode, p -> p));
+
         Set<String> inFileUrls = new HashSet<>();
+        Set<String> inFileCodes = new HashSet<>();
 
         List<BatchProductRowError> errors = new ArrayList<>();
-        List<Product> validProducts = new ArrayList<>();
+        List<Product> toSave = new ArrayList<>();
+        int createdCount = 0;
+        int updatedCount = 0;
 
         for (ExcelProductRow row : rows) {
+            String code = row.get("Code");
+            Product existing = code == null ? null : codeToProduct.get(code);
+
             List<BatchProductRowError> rowErrors = validateAndCollect(row, categoryNameToId, brandNameToId,
-                    existingUrls, inFileUrls);
+                    existingUrls, inFileUrls, inFileCodes, existing);
             if (rowErrors.isEmpty()) {
-                Product product = mapToProduct(row, categoryNameToId, brandNameToId);
-                product.setCode(generateCode(product.getCategoryId()));
-                validProducts.add(product);
+                Product product = existing != null ? existing : new Product();
+                applyRow(product, row, categoryNameToId, brandNameToId);
+                if (existing == null) {
+                    product.setCode(generateCode(product.getCategoryId()));
+                    createdCount++;
+                } else {
+                    updatedCount++;
+                }
+                toSave.add(product);
                 inFileUrls.add(product.getUrl());
+                if (code != null) {
+                    inFileCodes.add(code);
+                }
             } else {
                 errors.addAll(rowErrors);
             }
         }
 
-        if (!validProducts.isEmpty()) {
-            productRepository.saveAll(validProducts);
+        if (!toSave.isEmpty()) {
+            productRepository.saveAll(toSave);
         }
 
         long elapsed = System.currentTimeMillis() - start;
-        log.info("Batch product upload complete: totalRows={}, successCount={}, failureCount={}, elapsedMs={}",
-                rows.size(), validProducts.size(), errors.size(), elapsed);
+        log.info("Batch product upload complete: totalRows={}, created={}, updated={}, failureCount={}, elapsedMs={}",
+                rows.size(), createdCount, updatedCount, errors.size(), elapsed);
 
         return new BatchProductUploadResult(
                 rows.size(),
-                validProducts.size(),
+                createdCount + updatedCount,
+                createdCount,
+                updatedCount,
                 errors.size(),
                 errors.isEmpty() ? null : errors,
                 elapsed);
@@ -86,9 +117,20 @@ public class ProductBatchService {
                                                           Map<String, Long> categoryNameToId,
                                                           Map<String, Long> brandNameToId,
                                                           Set<String> existingUrls,
-                                                          Set<String> inFileUrls) {
+                                                          Set<String> inFileUrls,
+                                                          Set<String> inFileCodes,
+                                                          Product existing) {
         List<BatchProductRowError> errs = new ArrayList<>();
         int rn = row.rowNumber;
+
+        String code = row.get("Code");
+        if (code != null) {
+            if (inFileCodes.contains(code)) {
+                errs.add(new BatchProductRowError(rn, "Code", "Duplicate Code within file: " + code));
+            } else if (existing == null) {
+                errs.add(new BatchProductRowError(rn, "Code", "Product code not found: " + code));
+            }
+        }
 
         String name = row.get("Name");
         if (name == null || name.isBlank()) {
@@ -104,7 +146,8 @@ public class ProductBatchService {
             errs.add(new BatchProductRowError(rn, "URL", "URL exceeds 255 characters"));
         } else if (inFileUrls.contains(url)) {
             errs.add(new BatchProductRowError(rn, "URL", "Duplicate URL within file: " + url));
-        } else if (existingUrls.contains(url)) {
+        } else if (existingUrls.contains(url) && (existing == null || !url.equals(existing.getUrl()))) {
+            // Conflict only when the URL belongs to a *different* product; keeping/renaming your own is fine.
             errs.add(new BatchProductRowError(rn, "URL", "A product with this URL already exists: " + url));
         }
 
@@ -230,27 +273,25 @@ public class ProductBatchService {
         return errs;
     }
 
-    private Product mapToProduct(ExcelProductRow row,
-                                  Map<String, Long> categoryNameToId,
-                                  Map<String, Long> brandNameToId) {
-        Product product = new Product();
-
+    /**
+     * Copies the row onto {@code product}, which is either a fresh entity (create) or an existing
+     * managed one (update). The row is the source of truth: blank optional cells clear the field.
+     * ({@code ExcelProductRow.get} already returns null for blank cells, so a null check is enough.)
+     */
+    private void applyRow(Product product, ExcelProductRow row,
+                          Map<String, Long> categoryNameToId,
+                          Map<String, Long> brandNameToId) {
         product.setName(row.get("Name"));
         product.setLocalName(row.get("Local Name"));
         product.setUrl(row.get("URL"));
 
-        Long categoryId = categoryNameToId.get(row.get("Category").toLowerCase());
-        product.setCategoryId(categoryId);
+        product.setCategoryId(categoryNameToId.get(row.get("Category").toLowerCase()));
 
         String subCat = row.get("Sub Category");
-        if (subCat != null && !subCat.isBlank()) {
-            product.setSubCategoryId(categoryNameToId.get(subCat.toLowerCase()));
-        }
+        product.setSubCategoryId(subCat != null ? categoryNameToId.get(subCat.toLowerCase()) : null);
 
         String brand = row.get("Brand");
-        if (brand != null && !brand.isBlank()) {
-            product.setBrandId(brandNameToId.get(brand.toLowerCase()));
-        }
+        product.setBrandId(brand != null ? brandNameToId.get(brand.toLowerCase()) : null);
 
         product.setShortDescription(row.get("Short Description"));
         product.setFullDescription(row.get("Full Description"));
@@ -259,45 +300,43 @@ public class ProductBatchService {
         price.setPrice(new BigDecimal(row.get("Price")));
 
         String discountStr = row.get("Discount Price");
-        if (discountStr != null && !discountStr.isBlank()) {
+        if (discountStr != null) {
             price.setDiscountPrice(new BigDecimal(discountStr));
         }
 
         String variantTypeStr = row.get("Variant Type");
-        product.setVariantType(variantTypeStr != null && !variantTypeStr.isBlank()
+        product.setVariantType(variantTypeStr != null
                 ? VariantType.valueOf(variantTypeStr.trim().toUpperCase()) : null);
 
         String variantValueStr = row.get("Variant Value");
-        price.setVariantValue(variantValueStr != null && !variantValueStr.isBlank()
-                ? variantValueStr.trim().toUpperCase() : null);
+        price.setVariantValue(variantValueStr != null ? variantValueStr.trim().toUpperCase() : null);
 
-        product.setPrices(new ArrayList<>(List.of(price)));
+        // Mutate the existing collection (clear + add) so Hibernate's element-collection bag is reused
+        // rather than replaced — matters when updating an already-managed product.
+        product.getPrices().clear();
+        product.getPrices().add(price);
 
         product.setInventoryCount(Integer.parseInt(row.get("Inventory Count")));
 
         String weight = row.get("Weight (grams)");
-        product.setWeightGram(weight != null && !weight.isBlank() ? Integer.parseInt(weight) : 0);
+        product.setWeightGram(weight != null ? Integer.parseInt(weight) : 0);
 
         String statusStr = row.get("Status");
-        product.setStatus(statusStr != null && !statusStr.isBlank()
-                ? ProductStatus.valueOf(statusStr.toUpperCase())
-                : ProductStatus.ACTIVE);
+        product.setStatus(statusStr != null
+                ? ProductStatus.valueOf(statusStr.toUpperCase()) : ProductStatus.ACTIVE);
 
         String invStatusStr = row.get("Inventory Status");
-        product.setInventoryStatus(invStatusStr != null && !invStatusStr.isBlank()
-                ? InventoryStatus.valueOf(invStatusStr.toUpperCase())
-                : InventoryStatus.IN_STOCK);
+        product.setInventoryStatus(invStatusStr != null
+                ? InventoryStatus.valueOf(invStatusStr.toUpperCase()) : InventoryStatus.IN_STOCK);
 
         Map<SpecificationKey, String> specs = new HashMap<>();
         for (SpecificationKey key : SpecificationKey.values()) {
             String val = row.get("Spec:" + key.name());
-            if (val != null && !val.isBlank()) {
+            if (val != null) {
                 specs.put(key, val);
             }
         }
         product.setSpecification(specs);
-
-        return product;
     }
 
     private String generateCode(Long categoryId) {

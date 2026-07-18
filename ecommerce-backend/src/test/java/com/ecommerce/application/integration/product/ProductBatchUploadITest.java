@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -376,9 +377,109 @@ class ProductBatchUploadITest extends AbstractProductITest {
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void upload_with_matching_code_updates_existing_product_in_place() throws Exception {
+        // Create a product first (blank Code → create).
+        byte[] createBytes = buildValidExcel(
+                row("Original", "", "orig-url", "Electronics", "", "", "Old desc", "100000", "",
+                        "COLOR", "#FF0000", "10", "100", "ACTIVE", "IN_STOCK"));
+        upload(createBytes).andExpect(status().isOk());
+
+        var created = jdbcTemplate.queryForMap("SELECT id, code FROM product WHERE url = ?", "orig-url");
+        String code = (String) created.get("code");
+        Object id = created.get("id");
+
+        // Re-upload with that Code, changing name, price, inventory, variant, status and the URL itself.
+        byte[] updateBytes = buildExcelWithCode(
+                row("Renamed", "", "renamed-url", "Electronics", "", "", "New desc", "250000", "200000",
+                        "SIZE", "L", "3", "500", "INACTIVE", "OUT_OF_STOCK", code));
+        MvcResult result = upload(updateBytes).andExpect(status().isOk()).andReturn();
+
+        JsonNode json = json(result);
+        assertEquals(1, json.get("successCount").asInt(), json.toString());
+        assertEquals(0, json.get("createdCount").asInt());
+        assertEquals(1, json.get("updatedCount").asInt());
+
+        // Still exactly one product for this code, same id, fields overwritten.
+        assertEquals(1, (int) jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM product WHERE code = ?", Integer.class, code));
+        var updated = jdbcTemplate.queryForMap("SELECT * FROM product WHERE code = ?", code);
+        assertEquals(id, updated.get("id"));
+        assertEquals("Renamed", updated.get("name"));
+        assertEquals("renamed-url", updated.get("url"));
+        assertEquals("INACTIVE", updated.get("status"));
+        assertEquals("OUT_OF_STOCK", updated.get("inventory_status"));
+        assertEquals(3, updated.get("inventory_count"));
+        assertEquals("SIZE", updated.get("variant_type"));
+
+        // The old URL is now free.
+        assertEquals(0, (int) jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM product WHERE url = ?", Integer.class, "orig-url"));
+
+        // Single price row, replaced with the new values.
+        assertEquals(1, (int) jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM product_price WHERE product_id = ?", Integer.class, id));
+        var priceRow = jdbcTemplate.queryForMap("SELECT * FROM product_price WHERE product_id = ?", id);
+        assertEquals(0, new java.math.BigDecimal("250000")
+                .compareTo((java.math.BigDecimal) priceRow.get("price")));
+        assertEquals(0, new java.math.BigDecimal("200000")
+                .compareTo((java.math.BigDecimal) priceRow.get("discount_price")));
+        assertEquals("L", priceRow.get("variant_value"));
+    }
+
+    @Test
+    void upload_with_unknown_code_returns_error() throws Exception {
+        byte[] bytes = buildExcelWithCode(
+                row("Ghost", "", "ghost-url", "Electronics", "", "", "d", "10000", "",
+                        "COLOR", "#FF0000", "1", "10", "ACTIVE", "IN_STOCK", "999-999999"));
+        MvcResult result = upload(bytes).andExpect(status().isOk()).andReturn();
+
+        JsonNode json = json(result);
+        assertEquals(0, json.get("successCount").asInt());
+        assertEquals(1, json.get("failureCount").asInt());
+        assertTrue(json.get("errors").get(0).get("message").asText().contains("Product code not found"));
+        assertEquals(0, (int) jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM product WHERE url = ?", Integer.class, "ghost-url"));
+    }
+
+    @Test
+    void upload_mixed_create_and_update_in_one_file() throws Exception {
+        byte[] seed = buildValidExcel(
+                row("Seed", "", "seed-url", "Electronics", "", "", "d", "100000", "",
+                        "COLOR", "#FF0000", "5", "50", "ACTIVE", "IN_STOCK"));
+        upload(seed).andExpect(status().isOk());
+        String code = jdbcTemplate.queryForObject(
+                "SELECT code FROM product WHERE url = ?", String.class, "seed-url");
+
+        byte[] mixed = buildExcelWithCode(
+                row("Seed Updated", "", "seed-url", "Electronics", "", "", "d", "120000", "",
+                        "COLOR", "#FF0000", "6", "50", "ACTIVE", "IN_STOCK", code),
+                row("Brand New", "", "brand-new-url", "Electronics", "", "", "d", "90000", "",
+                        "COLOR", "#00FF00", "2", "50", "ACTIVE", "IN_STOCK", "")); // blank Code → create
+        MvcResult result = upload(mixed).andExpect(status().isOk()).andReturn();
+
+        JsonNode json = json(result);
+        assertEquals(2, json.get("successCount").asInt(), json.toString());
+        assertEquals(1, json.get("createdCount").asInt());
+        assertEquals(1, json.get("updatedCount").asInt());
+
+        assertEquals(2, (int) jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM product WHERE url IN ('seed-url','brand-new-url')", Integer.class));
+        assertEquals("Seed Updated", jdbcTemplate.queryForObject(
+                "SELECT name FROM product WHERE url = 'seed-url'", String.class));
+    }
+
     // ---------------------------------------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------------------------------------
+
+    private ResultActions upload(byte[] excelBytes) throws Exception {
+        return mockMvc.perform(multipart("/api/products/upload")
+                .file(new MockMultipartFile("file", "products.xlsx",
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", excelBytes))
+                .header("Authorization", "Bearer " + adminToken)
+                .contentType(MediaType.MULTIPART_FORM_DATA));
+    }
 
     private String[] row(String... values) {
         return values;
@@ -389,6 +490,32 @@ class ProductBatchUploadITest extends AbstractProductITest {
         var sheet = workbook.createSheet();
         writeHeaderRow(sheet);
 
+        for (int i = 0; i < rows.length; i++) {
+            var dataRow = sheet.createRow(i + 1);
+            for (int j = 0; j < rows[i].length; j++) {
+                dataRow.createCell(j).setCellValue(rows[i][j]);
+            }
+        }
+
+        var out = new ByteArrayOutputStream();
+        workbook.write(out);
+        workbook.close();
+        return out.toByteArray();
+    }
+
+    private byte[] buildExcelWithCode(String[]... rows) throws Exception {
+        var workbook = new XSSFWorkbook();
+        var sheet = workbook.createSheet();
+        var header = sheet.createRow(0);
+        String[] headers = {
+                "Name", "Local Name", "URL", "Category", "Sub Category", "Brand",
+                "Short Description", "Price", "Discount Price",
+                "Variant Type", "Variant Value", "Inventory Count", "Weight (grams)", "Status",
+                "Inventory Status", "Code"
+        };
+        for (int i = 0; i < headers.length; i++) {
+            header.createCell(i).setCellValue(headers[i]);
+        }
         for (int i = 0; i < rows.length; i++) {
             var dataRow = sheet.createRow(i + 1);
             for (int j = 0; j < rows[i].length; j++) {

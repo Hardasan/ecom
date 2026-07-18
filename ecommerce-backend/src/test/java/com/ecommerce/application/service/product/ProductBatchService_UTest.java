@@ -521,7 +521,7 @@ class ProductBatchService_UTest {
     }
 
     @Test
-    void invalid_variant_value_for_type_is_rejected() throws Exception {
+    void custom_variant_value_is_accepted() throws Exception {
         var file = new MockMultipartFile("file", "test.xlsx", "application/octet-stream", new byte[0]);
 
         var row = new ExcelProductRow(2);
@@ -531,7 +531,7 @@ class ProductBatchService_UTest {
         row.put("Price", "100");
         row.put("Inventory Count", "10");
         row.put("Variant Type", "COLOR");
-        row.put("Variant Value", "EXTRA_LARGE"); // Not a valid COLOR value
+        row.put("Variant Value", "#FF5733");
 
         when(parserService.parse(any(), any())).thenReturn(List.of(row));
 
@@ -541,12 +541,12 @@ class ProductBatchService_UTest {
         when(categoryRepository.findAll()).thenReturn(List.of(electronics));
         when(brandRepository.findAll()).thenReturn(List.of());
         when(productRepository.findAllUrls()).thenReturn(List.of());
+        when(jdbcTemplate.queryForObject(any(String.class), any(Class.class))).thenReturn(1L);
 
         BatchProductUploadResult result = service.processUpload(file);
 
-        assertEquals(0, result.getSuccessCount());
-        assertEquals(1, result.getFailureCount());
-        assertTrue(result.getErrors().get(0).getMessage().contains("not valid for variant type COLOR"));
+        assertEquals(1, result.getSuccessCount());
+        assertEquals(0, result.getFailureCount());
     }
 
     @Test

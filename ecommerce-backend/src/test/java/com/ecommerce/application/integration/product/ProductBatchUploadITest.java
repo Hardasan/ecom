@@ -293,10 +293,10 @@ class ProductBatchUploadITest extends AbstractProductITest {
     }
 
     @Test
-    void upload_with_invalid_variant_value_returns_error() throws Exception {
+    void upload_with_custom_variant_value_succeeds() throws Exception {
         byte[] excelBytes = buildValidExcel(
-                row("Bad Variant", "", "bad-variant-url", "Electronics", "", "",
-                        "Desc", "99000", "", "COLOR", "INVALID_COLOR_CODE", "5", "100", "ACTIVE", "IN_STOCK")
+                row("Custom Variant", "", "custom-variant-url", "Electronics", "", "",
+                        "Desc", "99000", "", "COLOR", "#FF5733", "5", "100", "ACTIVE", "IN_STOCK")
         );
 
         MvcResult result = mockMvc.perform(multipart("/api/products/upload")
@@ -309,10 +309,8 @@ class ProductBatchUploadITest extends AbstractProductITest {
                 .andReturn();
 
         JsonNode json = json(result);
-        assertEquals(0, json.get("successCount").asInt());
-        assertEquals(1, json.get("failureCount").asInt());
-        assertTrue(json.get("errors").get(0).get("message").asText()
-                .contains("not valid for variant type COLOR"));
+        assertEquals(1, json.get("successCount").asInt());
+        assertEquals(0, json.get("failureCount").asInt());
     }
 
     @Test

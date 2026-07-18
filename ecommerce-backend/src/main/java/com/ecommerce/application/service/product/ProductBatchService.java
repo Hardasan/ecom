@@ -169,12 +169,7 @@ public class ProductBatchService {
 
         if (variantTypeValid) {
             String variantValueStr = row.get("Variant Value");
-            if (variantValueStr != null && !variantValueStr.isBlank()) {
-                if (!variantType.isAllowedValue(variantValueStr)) {
-                    errs.add(new BatchProductRowError(rn, "Variant Value",
-                            "Variant value '" + variantValueStr + "' is not valid for variant type " + variantType));
-                }
-            } else {
+            if (variantValueStr == null || variantValueStr.isBlank()) {
                 errs.add(new BatchProductRowError(rn, "Variant Value",
                         "Variant Value is required when Variant Type is provided"));
             }

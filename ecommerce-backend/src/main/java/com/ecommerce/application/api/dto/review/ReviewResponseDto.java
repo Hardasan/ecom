@@ -14,8 +14,8 @@ public class ReviewResponseDto {
 
     private Long productId;
 
-    private Long userId;
-
+    // The author's internal user id is deliberately not exposed: the list is public, and
+    // authorName is the only author-facing field a client needs.
     private String authorName;
 
     private Integer rating;

@@ -42,8 +42,10 @@ abstract class BaseProductReviewServiceUTest {
     void baseSetUp() {
         service = new ProductReviewService(productReviewRepository, productRepository,
                 appUserRepository, orderRepository, new ProductReviewMapperImpl());
-        // save returns the persisted instance; harmless if a given test never saves.
+        // save/saveAndFlush return the persisted instance; harmless if a given test never saves.
         lenient().when(productReviewRepository.save(any(ProductReview.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        lenient().when(productReviewRepository.saveAndFlush(any(ProductReview.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
     }
 

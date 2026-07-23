@@ -7,6 +7,7 @@ import com.ecommerce.persistence.entity.ProductReview;
 import com.ecommerce.persistence.entity.enumeration.ReviewStatus;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.Optional;
 
@@ -35,12 +36,11 @@ class ProductReviewService_createReviewUTest extends BaseProductReviewServiceUTe
         assertEquals("Loved it", response.getComment());
         assertEquals("Amir Zaman", response.getAuthorName());
         assertEquals(PRODUCT_ID, response.getProductId());
-        assertEquals(USER_ID, response.getUserId());
         assertEquals(ReviewStatus.PUBLISHED, response.getStatus());
         assertTrue(response.getVerifiedPurchase());
 
         ArgumentCaptor<ProductReview> saved = ArgumentCaptor.forClass(ProductReview.class);
-        verify(productReviewRepository).save(saved.capture());
+        verify(productReviewRepository).saveAndFlush(saved.capture());
         assertEquals(USER_ID, saved.getValue().getUserId());
         assertEquals(PRODUCT_ID, saved.getValue().getProductId());
         assertEquals("Amir Zaman", saved.getValue().getAuthorName());
@@ -69,7 +69,7 @@ class ProductReviewService_createReviewUTest extends BaseProductReviewServiceUTe
                 () -> service.create(USER_ID, PRODUCT_ID, request(5, "x", "y")));
 
         assertEquals(ECOMErrorType.PRODUCT_NOT_FOUND, exception.getEcomErrorType());
-        verify(productReviewRepository, never()).save(any());
+        verify(productReviewRepository, never()).saveAndFlush(any());
     }
 
     @Test
@@ -81,6 +81,21 @@ class ProductReviewService_createReviewUTest extends BaseProductReviewServiceUTe
                 () -> service.create(USER_ID, PRODUCT_ID, request(5, "x", "y")));
 
         assertEquals(ECOMErrorType.PRODUCT_REVIEW_ALREADY_EXISTS, exception.getEcomErrorType());
-        verify(productReviewRepository, never()).save(any());
+        verify(productReviewRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void concurrent_duplicate_insert_maps_unique_violation_to_already_exists() {
+        stubProductExists();
+        when(productReviewRepository.existsByUserIdAndProductId(USER_ID, PRODUCT_ID)).thenReturn(false);
+        when(appUserRepository.findById(USER_ID)).thenReturn(Optional.of(appUser(USER_ID, "Amir", "Zaman")));
+        when(orderRepository.existsPaidOrderForProduct(USER_ID, PRODUCT_ID)).thenReturn(false);
+        when(productReviewRepository.saveAndFlush(any(ProductReview.class)))
+                .thenThrow(new DataIntegrityViolationException("uk_product_review_user_product"));
+
+        EcommerceException exception = assertThrows(EcommerceException.class,
+                () -> service.create(USER_ID, PRODUCT_ID, request(5, "x", "y")));
+
+        assertEquals(ECOMErrorType.PRODUCT_REVIEW_ALREADY_EXISTS, exception.getEcomErrorType());
     }
 }

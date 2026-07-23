@@ -15,6 +15,7 @@ import com.ecommerce.persistence.repository.OrderRepository;
 import com.ecommerce.persistence.repository.ProductRepository;
 import com.ecommerce.persistence.repository.ProductReviewRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -55,7 +56,14 @@ public class ProductReviewService {
         review.setStatus(ReviewStatus.PUBLISHED);
         review.setVerifiedPurchase(orderRepository.existsPaidOrderForProduct(userId, productId));
 
-        return productReviewMapper.toResponseDto(productReviewRepository.save(review));
+        try {
+            // Two concurrent POSTs can both pass the exists() pre-check; the loser then violates
+            // uk_product_review_user_product. Flush here (sequence ids defer the insert to commit,
+            // which is outside this try) so the violation maps to the same business error.
+            return productReviewMapper.toResponseDto(productReviewRepository.saveAndFlush(review));
+        } catch (DataIntegrityViolationException e) {
+            throw new EcommerceException(ECOMErrorType.PRODUCT_REVIEW_ALREADY_EXISTS);
+        }
     }
 
     @Transactional

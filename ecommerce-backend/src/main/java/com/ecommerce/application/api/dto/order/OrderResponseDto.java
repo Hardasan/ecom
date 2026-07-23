@@ -43,6 +43,8 @@ public class OrderResponseDto {
 
     private List<OrderItemResponseDto> items;
 
+    private List<TransactionResponseDto> transactions;
+
     private BigDecimal itemsCost;
 
     private BigDecimal shippingCost;

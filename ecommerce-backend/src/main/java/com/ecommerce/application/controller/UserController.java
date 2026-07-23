@@ -3,10 +3,13 @@ package com.ecommerce.application.controller;
 import com.ecommerce.application.api.dto.user.*;
 import com.ecommerce.application.config.security.UserDetailsDto;
 import com.ecommerce.application.service.user.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -71,5 +74,21 @@ public class UserController {
     public void changePassword(@RequestBody ChangePasswordRequestDto requestDto, Authentication authentication) {
         UserDetailsDto userDetails = (UserDetailsDto) authentication.getPrincipal();
         userService.changePassword(requestDto, userDetails.getId());
+    }
+
+    @GetMapping(value = "/iban", produces = MediaType.APPLICATION_JSON_VALUE)
+    public IbanResponseDto getIban(Authentication authentication) {
+        return userService.getIban(userId(authentication));
+    }
+
+    @PutMapping(value = "/iban", consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public IbanResponseDto updateIban(@Valid @RequestBody UpdateIbanRequestDto requestDto,
+                                      Authentication authentication) {
+        return userService.updateIban(requestDto, userId(authentication));
+    }
+
+    private Long userId(Authentication authentication) {
+        return ((UserDetailsDto) authentication.getPrincipal()).getId();
     }
 }

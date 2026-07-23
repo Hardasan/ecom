@@ -119,7 +119,10 @@ public class ProductService {
         if (type == ImageType.MAIN) {
             product.setMainImage(null);
         } else {
-            product.getOtherImages().removeIf(img -> img.getId().equals(imageId));
+            boolean removed = product.getOtherImages().removeIf(img -> img.getId().equals(imageId));
+            if (!removed) {
+                throw new EcommerceException(ECOMErrorType.VALIDATION_ERROR);
+            }
         }
         productRepository.save(product);
     }

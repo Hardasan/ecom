@@ -71,6 +71,19 @@ class ProductRemoveImageITest extends AbstractProductITest {
     }
 
     @Test
+    void remove_other_image_with_unknown_image_id_returns_400() throws Exception {
+        Long id = createProductAndGetId("del-other-unknown-id");
+        uploadOtherImageAndGetId(id, "only");
+
+        mockMvc.perform(delete("/api/products/{id}/images", id)
+                        .param("type", "OTHER")
+                        .param("imageId", "999999")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
+    }
+
+    @Test
     void remove_image_with_user_role_returns_403() throws Exception {
         Long id = createProductAndGetId("del-img-user-forbidden");
         uploadMainImage(id);

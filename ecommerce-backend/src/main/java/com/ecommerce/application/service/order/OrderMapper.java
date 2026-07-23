@@ -2,8 +2,10 @@ package com.ecommerce.application.service.order;
 
 import com.ecommerce.application.api.dto.order.OrderItemResponseDto;
 import com.ecommerce.application.api.dto.order.OrderResponseDto;
+import com.ecommerce.application.api.dto.order.TransactionResponseDto;
 import com.ecommerce.persistence.entity.Order;
 import com.ecommerce.persistence.entity.OrderItem;
+import com.ecommerce.persistence.entity.Transaction;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -26,4 +28,6 @@ interface OrderMapper {
     @Mapping(target = "productName", source = "product.productName")
     @Mapping(target = "productCode", source = "product.productCode")
     OrderItemResponseDto toItemDto(OrderItem item);
+
+    TransactionResponseDto toTransactionDto(Transaction transaction);
 }

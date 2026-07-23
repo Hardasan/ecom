@@ -46,7 +46,7 @@ class CheckoutService_checkoutUTest extends BaseCheckoutServiceUTest {
 
         OrderResponseDto response = checkoutService.checkout(USER_ID, request());
 
-        assertEquals(OrderStatus.PENDING, response.getStatus());
+        assertEquals(OrderStatus.RESERVED, response.getStatus());
         assertEquals(1, response.getItems().size());
         // catalog price 100 * qty 2 = 200
         assertEquals(0, response.getItemsCost().compareTo(BigDecimal.valueOf(200)));

@@ -18,14 +18,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class CheckoutITest extends AbstractCheckoutITest {
 
     @Test
-    void checkout_creates_pending_order_decrements_inventory_and_clears_cart() throws Exception {
+    void checkout_creates_reserved_order_decrements_inventory_and_clears_cart() throws Exception {
         Long productId = createActiveProduct("laptop", 10, 500);
         addToCart(userToken, productId, DEFAULT_VARIANT_VALUE, 2);
         long addressId = createAddressAndGetId(userToken, Province.TEHRAN);
 
         MvcResult result = checkout(userToken, addressId)
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("PENDING"))
+                .andExpect(jsonPath("$.status").value("RESERVED"))
                 .andExpect(jsonPath("$.items", hasSize(1)))
                 .andExpect(jsonPath("$.items[0].productId").value(productId))
                 .andExpect(jsonPath("$.items[0].quantity").value(2))
@@ -46,7 +46,7 @@ class CheckoutITest extends AbstractCheckoutITest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items", hasSize(0)));
 
-        // stock IS decremented at checkout (reserved for the pending order)
+        // stock IS decremented at checkout (reserved for the reserved order)
         assertEquals(8, inventoryOf(productId));
 
         // order is retrievable

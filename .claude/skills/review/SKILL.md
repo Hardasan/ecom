@@ -1,6 +1,6 @@
 ---
 name: review
-description: Code review checklist for this ecommerce project. Checks for dead error types, orphaned entities, message bundle drift, transaction strategy, and silent no-ops. Run before opening a PR.
+description: Code review checklist for this ecommerce project. Checks dead errors, orphans, message bundles, transactions, order/payment invariants, silent no-ops, and security. Run before opening a PR.
 user-invocable: true
 allowed-tools:
   - Read
@@ -9,88 +9,73 @@ allowed-tools:
 
 # /review — PR Review Checklist
 
-Run each check below against the current branch. Report findings grouped by section. For each finding state: file, line (if applicable), what is wrong, and what the fix is.
+Run each check against the current branch. Report by section: file, line (if applicable), what's wrong, and the fix.
 
 ---
 
 ## 1. Dead error types
 
-Scan `src/main/java/com/ecommerce/application/api/exception/ECOMErrorType.java` for every enum constant.
-For each constant, grep the entire `src/` tree (excluding the enum file itself) for its name.
-Flag any constant that has zero references — it is never thrown.
+For every constant in `ECOMErrorType.java`, grep `src/` (exclude the enum file). Flag zero references.
 
-**Why:** `code` is server-generated from a sequence (no collision possible).
-
-**Fix:** Delete the constant and its corresponding message keys from both `messages.properties` and `messages_fa.properties`.
+**Fix:** Delete the constant and its keys from `messages.properties` + `messages_fa.properties`.
 
 ---
 
-## 2. Orphaned entities and repositories
+## 2. Orphaned entities / repositories
 
-For every class in `src/main/java/com/ecommerce/persistence/entity/` and `src/main/java/com/ecommerce/persistence/repository/`, grep `src/` (excluding the file itself) for the class name.
-Flag any that have zero references outside their own file.
+For every class under `persistence/entity/` and `persistence/repository/`, grep `src/` (exclude self). Flag zero external references.
 
-Also check whether the corresponding DB tables/sequences are still referenced in any migration file under `src/main/resources/db/migration/`. If the entity is gone but the tables remain, a new Flyway migration is needed to drop them (and any FKs that point to them from other tables).
-
-**Why:** Orphaned entities imply a subsystem (e.g., media) that no longer exists. They cause confusion and Hibernate will still validate/create the schema for them.
-
-**Fix:** Delete the entity and repository. Remove `@Column` fields on other entities that hold a bare `Long` FK to the deleted table. Write a new `V1.x__drop_*.sql` migration (using `DROP ... IF EXISTS`) to remove the tables, FKs, and sequences.
+If the entity is gone but tables remain in Flyway history, add `V1.x__drop_*.sql` (`DROP … IF EXISTS` for tables, FKs, sequences). Also drop bare `Long` FK columns on other entities.
 
 ---
 
 ## 3. Message bundle drift
 
-Every key in `messages.properties` and `messages_fa.properties` must correspond to a `messageKey` value in `ECOMErrorType`.
-Every `messageKey` in `ECOMErrorType` must have an entry in both bundle files.
-
-Check for:
-- Keys in the bundle that no longer exist in `ECOMErrorType` (stale keys).
-- `messageKey` values in `ECOMErrorType` that are missing from a bundle file (missing translations).
-
-**Why:** Stale keys are left-over from deleted error types and mislead maintainers. Missing keys cause the error message to fall back to the raw key string at runtime.
-
-**Fix:** Delete stale keys. Add missing keys with an appropriate translation.
+Every `ECOMErrorType.messageKey` ↔ both `messages.properties` and `messages_fa.properties` (no stale keys, no missing translations).
 
 ---
 
-## 4. Transaction strategy on service methods
+## 4. `@Transactional` on services
 
-Check every `@Service` class under `src/main/java/com/ecommerce/application/service/`.
+Under `application/service/`, flag:
+- Class-level `@Transactional` without `readOnly=true`
+- Reads with no `@Transactional` (LazyInitialization risk on MapStruct/collections)
+- Reads with plain `@Transactional` instead of `readOnly=true`
 
-Flag:
-- Class-level `@Transactional` without `readOnly = true` (too broad — write transaction opened for all methods including reads).
-- Read methods (those that only call `findById`, `findAll`, or query methods and pass the result to a mapper) that have no `@Transactional` at all (risk of `LazyInitializationException` when MapStruct accesses lazy collections).
-- Read methods annotated with plain `@Transactional` instead of `@Transactional(readOnly = true)` (missed optimisation — Hibernate dirty-checks all loaded entities unnecessarily).
-
-**Expected pattern:**
-```
-@Transactional               → create / update / uploadImage / removeImage / delete
-@Transactional(readOnly=true)→ getById / search / any pure-read method
-// no class-level @Transactional
-```
-
-**Why:** `readOnly = true` does NOT disable lazy loading — `@Transactional` keeps the Hibernate session open regardless of the flag. `readOnly = true` tells Hibernate to skip dirty checking at flush time, which is free optimisation on read paths. Class-level `@Transactional` (without readOnly) opens a write-capable transaction for every method, including GET endpoints, which is wasteful.
+Expected: method-level only — writes `@Transactional`, reads `@Transactional(readOnly=true)`.
 
 ---
 
-## 5. Silent no-ops on required conditional parameters
+## 5. Order / payment invariants
 
-Check every controller endpoint where a `@RequestParam(required = false)` parameter is required for a specific value of another parameter.
+When the PR touches orders, checkout, payment, or `order_transaction`:
 
-Example pattern to look for:
-```java
-void removeImage(Long productId, ImageType type, Long imageId)
-// imageId is required when type == OTHER, but declared required=false
-```
+| Rule | Expectation |
+|------|-------------|
+| Status writes | Load via `findByIdForUpdate` / `findByIdAndUserIdForUpdate` (same lock family as `findExpiredReservations`) |
+| Cancel | Only from `RESERVED`/`PAID`; restore inventory; `PAID` → `PaymentGateway.refund` + `REFUND` transaction (needs user IBAN) |
+| Pay confirm | `RESERVED` + active reservation → `PAID` + `PAYMENT` transaction; public callback stays intentional |
+| Expiry | `ReservationReleaseService` only; `ReservationReleaseJob` gated by `app.checkout.scheduling.enabled` |
+| Stock | Decrement at checkout; restore on cancel/`FAILED` — never double-restore |
 
-Flag any method where a null value for the optional parameter would cause the operation to silently succeed (return 2xx) while doing nothing.
+Flag missing locks, refund without IBAN check, pay/refund without a `Transaction` row, or inventory restore on failed refund.
 
-**Why:** A caller omitting `imageId` when `type=OTHER` gets a 200 OK but nothing is deleted — the bug is invisible. The contract must be enforced explicitly.
+---
 
-**Fix:** Add a guard at the top of the service method:
-```java
-if (type == ImageType.OTHER && imageId == null) {
-    throw new EcommerceException(ECOMErrorType.VALIDATION_ERROR);
-}
-```
-And add an integration test that calls the endpoint with the missing parameter and asserts 400 with `errorCode = VALIDATION_ERROR`.
+## 6. Silent no-ops on conditional params
+
+Flag `@RequestParam(required=false)` that is required for another param's value (e.g. `imageId` when `type=OTHER`) if null yields 2xx and no work.
+
+**Fix:** Guard → `VALIDATION_ERROR`; add ITest asserting 400.
+
+---
+
+## 7. Security
+
+Read `SecurityConfiguration` + `PublicEndPoint`.
+
+- Controllers: `@RequestMapping` must start with `/api`
+- Matcher order: POST public → GET public → `/api/**` authenticated → static → SPA no-dot wildcards → `anyRequest` authenticated. `/api/**` **before** SPA wildcards (else unprotected API GETs)
+- No swagger paths unless `springdoc` is in `pom.xml`
+- CORS disabled (same-origin SPA)
+- `SpaController` (`GET /`) must exist (WelcomePageHandlerMapping 500 without it)

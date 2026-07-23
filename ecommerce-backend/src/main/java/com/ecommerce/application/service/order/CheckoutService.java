@@ -86,20 +86,6 @@ public class CheckoutService {
         return orderMapper.toResponseDto(placeOrder(userId, address, lines));
     }
 
-    @Transactional(readOnly = true)
-    public List<OrderResponseDto> listOrders(Long userId) {
-        return orderRepository.findByUserIdOrderByIdDesc(userId).stream()
-                .map(orderMapper::toResponseDto)
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public OrderResponseDto getOrder(Long userId, Long orderId) {
-        Order order = orderRepository.findByIdAndUserId(orderId, userId)
-                .orElseThrow(() -> new EcommerceException(ECOMErrorType.ORDER_NOT_FOUND));
-        return orderMapper.toResponseDto(order);
-    }
-
     private Order placeOrder(Long userId, UserAddress address, List<OrderLineSpec> lines) {
         if (lines.isEmpty()) {
             throw new EcommerceException(ECOMErrorType.EMPTY_CART);
@@ -107,7 +93,7 @@ public class CheckoutService {
 
         Order order = new Order();
         order.setUserId(userId);
-        order.setStatus(OrderStatus.PENDING);
+        order.setStatus(OrderStatus.RESERVED);
         applyAddressSnapshot(address, order);
 
         BigDecimal itemsCost = BigDecimal.ZERO;

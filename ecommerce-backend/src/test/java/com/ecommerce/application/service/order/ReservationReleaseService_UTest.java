@@ -15,10 +15,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Date;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,11 +35,11 @@ class ReservationReleaseService_UTest {
 
     @BeforeEach
     void setUp() {
-        releaseService = new ReservationReleaseService(orderRepository, productRepository);
+        releaseService = new ReservationReleaseService(orderRepository, new OrderInventoryRestorer(productRepository));
     }
 
     @Test
-    void release_expired_orders_increments_inventory_and_sets_expired_status() {
+    void release_expired_orders_increments_inventory_and_sets_failed_status() {
         OrderItem item = new OrderItem();
         ProductSnapshot snapshot = new ProductSnapshot();
         snapshot.setProductId(10L);
@@ -47,7 +47,7 @@ class ReservationReleaseService_UTest {
         item.setQuantity(3);
         Order order = new Order();
         order.setId(1L);
-        order.setStatus(OrderStatus.PENDING);
+        order.setStatus(OrderStatus.RESERVED);
         order.addItem(item);
         when(orderRepository.findExpiredReservations(any(Date.class))).thenReturn(List.of(order));
 
@@ -56,6 +56,7 @@ class ReservationReleaseService_UTest {
         verify(productRepository).incrementInventory(10L, 3);
         verify(orderRepository).save(order);
         verify(orderRepository).findExpiredReservations(any(Date.class));
+        assertEquals(OrderStatus.FAILED, order.getStatus());
     }
 
     @Test

@@ -41,9 +41,8 @@ abstract class BaseWishlistServiceUTest {
     @BeforeEach
     void baseSetUp() {
         wishlistService = new WishlistService(wishlistItemRepository, productRepository, new WishlistMapperImpl());
-        // save returns the persisted instance; harmless if a given test never saves.
-        lenient().when(wishlistItemRepository.save(any(WishlistItem.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        // The insert reports one row created; tests covering the already-bookmarked path override this.
+        lenient().when(wishlistItemRepository.insertIfAbsent(any(), any())).thenReturn(1);
     }
 
     protected void stubProductsForDto(Product... products) {

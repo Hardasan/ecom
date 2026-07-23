@@ -37,14 +37,11 @@ public class WishlistService {
         Product product = findProductOrThrow(requestDto.getProductId());
         requireWishlistable(product);
 
-        // Adding a product already on the wishlist is a no-op: the wishlist holds at most one
-        // bookmark per (user, product), so a second add neither errors nor duplicates the row.
-        if (!wishlistItemRepository.existsByUserIdAndProductId(userId, product.getId())) {
-            WishlistItem item = new WishlistItem();
-            item.setUserId(userId);
-            item.setProductId(product.getId());
-            wishlistItemRepository.save(item);
-        }
+        // Adding a product already on the wishlist is a no-op: the wishlist holds at most one bookmark
+        // per (user, product), so a second add neither errors nor duplicates the row. The de-duplication
+        // is left to the database rather than an exists() pre-check, which two concurrent adds could
+        // both pass — see WishlistItemRepository#insertIfAbsent.
+        wishlistItemRepository.insertIfAbsent(userId, product.getId());
 
         return getWishlistDto(userId);
     }

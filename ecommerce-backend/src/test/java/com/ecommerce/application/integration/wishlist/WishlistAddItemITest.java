@@ -3,7 +3,14 @@ package com.ecommerce.application.integration.wishlist;
 import com.ecommerce.persistence.entity.enumeration.ProductStatus;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.startsWith;
@@ -95,6 +102,42 @@ class WishlistAddItemITest extends AbstractWishlistITest {
 
         // The unique (user, product) constraint means the second add did not create a new row.
         assertEquals(1, wishlistRowCount(userId, productId));
+    }
+
+    @Test
+    void concurrent_adds_of_same_product_are_idempotent_and_never_fail() throws Exception {
+        // Idempotency has to hold under a real race, not just for sequential adds: an
+        // exists()-then-save() would let every concurrent request observe "absent" and then collide on
+        // uk_wishlist_item_user_product, so the losers got a 500 instead of the documented no-op.
+        // Several rounds, since any one interleaving may happen to serialise on its own.
+        int rounds = 5;
+        int concurrentAdds = 3;
+        ExecutorService pool = Executors.newFixedThreadPool(concurrentAdds);
+        try {
+            for (int round = 0; round < rounds; round++) {
+                Long productId = createActiveProduct("race-" + round, 10);
+                CountDownLatch releaseAll = new CountDownLatch(1);
+
+                List<Future<Integer>> statuses = new ArrayList<>();
+                for (int i = 0; i < concurrentAdds; i++) {
+                    statuses.add(pool.submit(() -> {
+                        releaseAll.await();
+                        return addItem(userToken, productId).andReturn().getResponse().getStatus();
+                    }));
+                }
+                releaseAll.countDown();
+
+                for (Future<Integer> status : statuses) {
+                    assertEquals(200, status.get(30, TimeUnit.SECONDS),
+                            "a concurrent duplicate add must be a no-op, not a constraint-violation failure");
+                }
+                assertEquals(1, wishlistRowCount(userId, productId));
+            }
+        } finally {
+            pool.shutdownNow();
+        }
+
+        assertEquals(rounds, wishlistRowCount(userId));
     }
 
     @Test

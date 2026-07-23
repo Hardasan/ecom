@@ -39,7 +39,8 @@ public enum ECOMErrorType {
     CATEGORY_NAME_ALREADY_EXISTS(HttpStatus.CONFLICT, "error.category.name.already.exists"),
     EXCEL_PARSING_ERROR(HttpStatus.BAD_REQUEST, "error.excel.parsing"),
     EXCEL_EMPTY_FILE(HttpStatus.BAD_REQUEST, "error.excel.empty.file"),
-    EXCEL_INVALID_HEADER(HttpStatus.BAD_REQUEST, "error.excel.invalid.header");
+    EXCEL_INVALID_HEADER(HttpStatus.BAD_REQUEST, "error.excel.invalid.header"),
+    WISHLIST_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "error.wishlist.item.not.found");
 
     private final HttpStatus httpStatus;
     private final String messageKey;

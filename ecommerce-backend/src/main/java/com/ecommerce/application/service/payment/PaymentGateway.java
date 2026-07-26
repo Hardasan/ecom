@@ -7,6 +7,4 @@ public interface PaymentGateway {
     PaymentInitiation initiate(Order order);
 
     PaymentVerification verify(String paymentReference);
-
-    PaymentRefund refund(Order order, String iban);
 }

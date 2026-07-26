@@ -16,7 +16,6 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -93,81 +92,78 @@ class OrderLifecycleITest extends AbstractCheckoutITest {
     }
 
     @Test
-    void user_cancel_from_paid_creates_refund_transaction() throws Exception {
+    void user_cancel_from_paid_keeps_payment_only_until_admin_refunds() throws Exception {
         Long productId = createActiveProduct("lifecycle-user-cancel-paid", 10, 500);
         long orderId = placeReservedOrder(userToken, productId, 2);
         payAndConfirm(userToken, orderId);
-        setIban(userToken, VALID_IBAN);
         assertTransactionCount(orderId, 1);
 
         cancelByUser(userToken, orderId)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("CANCEL_BY_USER"))
-                .andExpect(jsonPath("$.transactions", hasSize(2)))
-                .andExpect(jsonPath("$.transactions[0].type").value("PAYMENT"))
-                .andExpect(jsonPath("$.transactions[1].type").value("REFUND"))
-                .andExpect(jsonPath("$.transactions[1].iban").value(VALID_IBAN))
-                .andExpect(jsonPath("$.transactions[1].amount").value(183200.0));
+                .andExpect(jsonPath("$.transactions", hasSize(1)))
+                .andExpect(jsonPath("$.transactions[0].type").value("PAYMENT"));
 
         assertEquals(10, inventoryOf(productId));
         assertOrderStatus(orderId, "CANCEL_BY_USER");
+        assertTransactionCount(orderId, 1);
+
+        mockMvc.perform(withAuth(get("/api/admin/orders/refundable"), adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id == " + orderId + ")]").exists());
+
+        mockMvc.perform(withAuth(post("/api/admin/orders/{id}/refund", orderId), adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "reference", "bank-transfer-1",
+                                "iban", VALID_IBAN))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.transactions", hasSize(2)))
+                .andExpect(jsonPath("$.transactions[1].type").value("REFUND"))
+                .andExpect(jsonPath("$.transactions[1].reference").value("bank-transfer-1"))
+                .andExpect(jsonPath("$.transactions[1].iban").value(VALID_IBAN))
+                .andExpect(jsonPath("$.transactions[1].amount").value(183200.0));
+
         assertTransactionCount(orderId, 2);
         assertTransactionType(orderId, "REFUND", 1);
+
+        mockMvc.perform(withAuth(get("/api/admin/orders/refundable"), adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id == " + orderId + ")]").doesNotExist());
     }
 
     @Test
-    void admin_cancel_from_paid_creates_refund_transaction() throws Exception {
+    void admin_cancel_from_paid_keeps_payment_only() throws Exception {
         Long productId = createActiveProduct("lifecycle-admin-cancel", 10, 500);
         long orderId = placeReservedOrder(userToken, productId, 2);
         payAndConfirm(userToken, orderId);
-        setIban(userToken, VALID_IBAN);
 
         cancelByAdmin(orderId)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("CANCEL_BY_ADMIN"))
-                .andExpect(jsonPath("$.transactions", hasSize(2)))
-                .andExpect(jsonPath("$.transactions[1].type").value("REFUND"))
-                .andExpect(jsonPath("$.transactions[1].iban").value(VALID_IBAN));
+                .andExpect(jsonPath("$.transactions", hasSize(1)))
+                .andExpect(jsonPath("$.transactions[0].type").value("PAYMENT"));
 
         assertEquals(10, inventoryOf(productId));
         assertOrderStatus(orderId, "CANCEL_BY_ADMIN");
-        assertTransactionCount(orderId, 2);
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    // IBAN / refund guards
-    // ---------------------------------------------------------------------------------------------
-
-    @Test
-    void cancel_paid_without_iban_is_rejected_and_keeps_payment_only() throws Exception {
-        Long productId = createActiveProduct("lifecycle-no-iban", 10, 500);
-        long orderId = placeReservedOrder(userToken, productId, 1);
-        payAndConfirm(userToken, orderId);
         assertTransactionCount(orderId, 1);
-
-        cancelByUser(userToken, orderId)
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.errorCode").value("USER_IBAN_REQUIRED"));
-
-        assertEquals(9, inventoryOf(productId));
-        assertOrderStatus(orderId, "PAID");
-        assertTransactionCount(orderId, 1);
-        assertTransactionType(orderId, "REFUND", 0);
     }
 
     @Test
-    void admin_cancel_paid_without_iban_is_rejected() throws Exception {
-        Long productId = createActiveProduct("lifecycle-admin-no-iban", 10, 500);
+    void admin_refund_rejects_non_cancelled_order() throws Exception {
+        Long productId = createActiveProduct("lifecycle-refund-paid", 10, 500);
         long orderId = placeReservedOrder(userToken, productId, 1);
         payAndConfirm(userToken, orderId);
 
-        cancelByAdmin(orderId)
+        mockMvc.perform(withAuth(post("/api/admin/orders/{id}/refund", orderId), adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "reference", "bank-transfer-1",
+                                "iban", VALID_IBAN))))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.errorCode").value("USER_IBAN_REQUIRED"));
+                .andExpect(jsonPath("$.errorCode").value("ORDER_INVALID_STATUS"));
 
-        assertOrderStatus(orderId, "PAID");
         assertTransactionCount(orderId, 1);
-        assertEquals(9, inventoryOf(productId));
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -438,14 +434,6 @@ class OrderLifecycleITest extends AbstractCheckoutITest {
 
     private ResultActions receive(String token, long orderId) throws Exception {
         return mockMvc.perform(withAuth(post("/api/orders/{id}/receive", orderId), token));
-    }
-
-    private void setIban(String token, String iban) throws Exception {
-        mockMvc.perform(withAuth(put("/api/user/iban"), token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("iban", iban))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.iban").value(iban));
     }
 
     private void assertOrderStatus(long orderId, String expected) {

@@ -3,6 +3,7 @@ package com.ecommerce.application.controller;
 import com.ecommerce.application.api.dto.order.OrderResponseDto;
 import com.ecommerce.application.api.dto.order.PaymentConfirmRequestDto;
 import com.ecommerce.application.api.dto.order.PaymentInitiationResponseDto;
+import com.ecommerce.application.api.dto.order.RefundRequestDto;
 import com.ecommerce.application.config.security.UserDetailsDto;
 import com.ecommerce.application.service.order.OrderService;
 import jakarta.validation.Valid;
@@ -66,6 +67,12 @@ public class OrderController {
         return orderService.listAllOrders();
     }
 
+    @GetMapping(value = "/admin/orders/refundable", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<OrderResponseDto> listRefundable() {
+        return orderService.listRefundableOrders();
+    }
+
     @GetMapping(value = "/admin/orders/{orderId}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public OrderResponseDto getAdmin(@PathVariable Long orderId) {
@@ -82,6 +89,15 @@ public class OrderController {
     @PreAuthorize("hasRole('ADMIN')")
     public OrderResponseDto send(@PathVariable Long orderId) {
         return orderService.markSending(orderId);
+    }
+
+    @PostMapping(value = "/admin/orders/{orderId}/refund",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public OrderResponseDto refund(@PathVariable Long orderId,
+                                   @Valid @RequestBody RefundRequestDto requestDto) {
+        return orderService.recordRefund(orderId, requestDto);
     }
 
     private Long userId(Authentication authentication) {

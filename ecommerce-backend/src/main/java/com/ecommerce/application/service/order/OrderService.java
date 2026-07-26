@@ -3,23 +3,20 @@ package com.ecommerce.application.service.order;
 import com.ecommerce.application.api.dto.order.OrderResponseDto;
 import com.ecommerce.application.api.dto.order.PaymentConfirmRequestDto;
 import com.ecommerce.application.api.dto.order.PaymentInitiationResponseDto;
+import com.ecommerce.application.api.dto.order.RefundRequestDto;
 import com.ecommerce.application.api.exception.ECOMErrorType;
 import com.ecommerce.application.api.exception.EcommerceException;
 import com.ecommerce.application.service.payment.PaymentGateway;
 import com.ecommerce.application.service.payment.PaymentInitiation;
-import com.ecommerce.application.service.payment.PaymentRefund;
 import com.ecommerce.application.service.payment.PaymentVerification;
-import com.ecommerce.persistence.entity.AppUser;
 import com.ecommerce.persistence.entity.Order;
 import com.ecommerce.persistence.entity.Transaction;
 import com.ecommerce.persistence.entity.enumeration.OrderStatus;
 import com.ecommerce.persistence.entity.enumeration.TransactionType;
-import com.ecommerce.persistence.repository.AppUserRepository;
 import com.ecommerce.persistence.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 import java.util.Date;
 import java.util.EnumSet;
@@ -31,9 +28,10 @@ import java.util.Set;
 public class OrderService {
 
     private static final Set<OrderStatus> CANCELLABLE = EnumSet.of(OrderStatus.RESERVED, OrderStatus.PAID);
+    private static final Set<OrderStatus> CANCELLED = EnumSet.of(
+            OrderStatus.CANCEL_BY_USER, OrderStatus.CANCEL_BY_ADMIN);
 
     private final OrderRepository orderRepository;
-    private final AppUserRepository appUserRepository;
     private final OrderMapper orderMapper;
     private final PaymentGateway paymentGateway;
     private final OrderInventoryRestorer inventoryRestorer;
@@ -60,6 +58,13 @@ public class OrderService {
     @Transactional(readOnly = true)
     public OrderResponseDto getOrderAdmin(Long orderId) {
         return orderMapper.toResponseDto(findOrThrow(orderId));
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderResponseDto> listRefundableOrders() {
+        return orderRepository.findRefundableOrders().stream()
+                .map(orderMapper::toResponseDto)
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -105,6 +110,28 @@ public class OrderService {
         return cancel(order, OrderStatus.CANCEL_BY_ADMIN);
     }
 
+    /**
+     * Admin records a manual bank refund after transferring money to the user IBAN.
+     */
+    @Transactional
+    public OrderResponseDto recordRefund(Long orderId, RefundRequestDto requestDto) {
+        Order order = findOrThrowForUpdate(orderId);
+        if (!CANCELLED.contains(order.getStatus())) {
+            throw new EcommerceException(ECOMErrorType.ORDER_INVALID_STATUS);
+        }
+        boolean hasPayment = order.getTransactions().stream()
+                .anyMatch(tx -> tx.getType() == TransactionType.PAYMENT);
+        boolean alreadyRefunded = order.getTransactions().stream()
+                .anyMatch(tx -> tx.getType() == TransactionType.REFUND);
+        if (!hasPayment || alreadyRefunded) {
+            throw new EcommerceException(ECOMErrorType.ORDER_INVALID_STATUS);
+        }
+
+        order.addTransaction(buildTransaction(
+                TransactionType.REFUND, order, requestDto.getReference(), requestDto.getIban()));
+        return orderMapper.toResponseDto(orderRepository.save(order));
+    }
+
     @Transactional
     public OrderResponseDto markSending(Long orderId) {
         Order order = findOrThrowForUpdate(orderId);
@@ -123,28 +150,10 @@ public class OrderService {
 
     private OrderResponseDto cancel(Order order, OrderStatus cancelStatus) {
         requireCancellable(order);
-        refundIfPaid(order);
         inventoryRestorer.restore(order);
         order.setStatus(cancelStatus);
         order.setReservedUntil(null);
         return orderMapper.toResponseDto(orderRepository.save(order));
-    }
-
-    private void refundIfPaid(Order order) {
-        if (order.getStatus() != OrderStatus.PAID) {
-            return;
-        }
-        AppUser user = appUserRepository.findById(order.getUserId())
-                .orElseThrow(() -> new EcommerceException(ECOMErrorType.USER_NOT_FOUND));
-        if (!StringUtils.hasText(user.getIban())) {
-            throw new EcommerceException(ECOMErrorType.USER_IBAN_REQUIRED);
-        }
-        PaymentRefund refund = paymentGateway.refund(order, user.getIban());
-        if (!refund.success()) {
-            throw new EcommerceException(ECOMErrorType.ORDER_REFUND_FAILED);
-        }
-        order.addTransaction(buildTransaction(
-                TransactionType.REFUND, order, refund.refundReference(), user.getIban()));
     }
 
     private Transaction buildTransaction(TransactionType type, Order order, String reference, String iban) {

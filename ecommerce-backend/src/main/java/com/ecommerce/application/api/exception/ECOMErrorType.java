@@ -39,8 +39,6 @@ public enum ECOMErrorType {
     ORDER_RESERVATION_EXPIRED(HttpStatus.GONE, "error.order.reservation.expired"),
     ORDER_INVALID_STATUS(HttpStatus.CONFLICT, "error.order.invalid.status"),
     ORDER_PAYMENT_FAILED(HttpStatus.PAYMENT_REQUIRED, "error.order.payment.failed"),
-    ORDER_REFUND_FAILED(HttpStatus.BAD_GATEWAY, "error.order.refund.failed"),
-    USER_IBAN_REQUIRED(HttpStatus.CONFLICT, "error.user.iban.required"),
     CATEGORY_NAME_ALREADY_EXISTS(HttpStatus.CONFLICT, "error.category.name.already.exists"),
     EXCEL_PARSING_ERROR(HttpStatus.BAD_REQUEST, "error.excel.parsing"),
     EXCEL_EMPTY_FILE(HttpStatus.BAD_REQUEST, "error.excel.empty.file"),

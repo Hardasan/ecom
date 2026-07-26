@@ -34,6 +34,18 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findExpiredReservations(@Param("now") Date now);
 
     /**
+     * Cancelled orders that were paid and still need a manual refund recorded.
+     */
+    @Query("""
+            SELECT o FROM Order o
+            WHERE o.status IN ('CANCEL_BY_USER', 'CANCEL_BY_ADMIN')
+              AND EXISTS (SELECT 1 FROM Transaction p WHERE p.order = o AND p.type = 'PAYMENT')
+              AND NOT EXISTS (SELECT 1 FROM Transaction r WHERE r.order = o AND r.type = 'REFUND')
+            ORDER BY o.id DESC
+            """)
+    List<Order> findRefundableOrders();
+
+    /**
      * True when the user has a paid-or-later order containing the product — used to stamp a review
      * as a verified purchase. Matched on the snapshotted {@code product_id} of the order line.
      */

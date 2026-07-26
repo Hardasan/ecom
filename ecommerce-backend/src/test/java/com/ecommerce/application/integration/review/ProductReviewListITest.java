@@ -87,9 +87,9 @@ class ProductReviewListITest extends AbstractProductReviewITest {
         Long productId = createActiveProduct("filter-verified", 10);
         // userToken bought the product -> verified; a second user did not.
         insertPaidOrder(userId, productId);
-        postReview(userToken, productId, 5, "Verified buyer", null).andExpect(status().isOk());
+        postAndApproveReview(userToken, productId, 5, "Verified buyer", null);
         String otherToken = registerAndLogin(newMobile());
-        postReview(otherToken, productId, 2, "Not a buyer", null).andExpect(status().isOk());
+        postAndApproveReview(otherToken, productId, 2, "Not a buyer", null);
 
         getReviews(null, productId, Map.of("verifiedOnly", "true"))
                 .andExpect(status().isOk())
@@ -107,8 +107,8 @@ class ProductReviewListITest extends AbstractProductReviewITest {
 
     /** userToken posts a 5-star review, then a second fresh user posts a 3-star review. */
     private void seedTwoReviews(Long productId) throws Exception {
-        postReview(userToken, productId, 5, "First and best", null).andExpect(status().isOk());
+        postAndApproveReview(userToken, productId, 5, "First and best", null);
         String otherToken = registerAndLogin(newMobile());
-        postReview(otherToken, productId, 3, "Second and meh", null).andExpect(status().isOk());
+        postAndApproveReview(otherToken, productId, 3, "Second and meh", null);
     }
 }

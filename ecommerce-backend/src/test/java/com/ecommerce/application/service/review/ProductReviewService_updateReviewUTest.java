@@ -20,7 +20,7 @@ import static org.mockito.Mockito.when;
 class ProductReviewService_updateReviewUTest extends BaseProductReviewServiceUTest {
 
     @Test
-    void updates_own_review_fields_and_preserves_snapshot_status_and_verified() {
+    void editing_a_review_preserves_snapshot_and_resets_status_to_pending() {
         ProductReview existing = review(REVIEW_ID, PRODUCT_ID, USER_ID, 3, ReviewStatus.PUBLISHED, true);
         when(productReviewRepository.findByIdAndProductIdAndUserId(REVIEW_ID, PRODUCT_ID, USER_ID))
                 .thenReturn(Optional.of(existing));
@@ -31,9 +31,9 @@ class ProductReviewService_updateReviewUTest extends BaseProductReviewServiceUTe
         assertEquals(5, response.getRating());
         assertEquals("Updated title", response.getTitle());
         assertEquals("Updated comment", response.getComment());
-        // Snapshot / moderation / verification are not touched on edit.
+        // authorName / verifiedPurchase are preserved; the edited content goes back to PENDING.
         assertEquals("Amir Zaman", response.getAuthorName());
-        assertEquals(ReviewStatus.PUBLISHED, response.getStatus());
+        assertEquals(ReviewStatus.PENDING, response.getStatus());
         assertTrue(response.getVerifiedPurchase());
         verify(productReviewRepository).save(existing);
     }

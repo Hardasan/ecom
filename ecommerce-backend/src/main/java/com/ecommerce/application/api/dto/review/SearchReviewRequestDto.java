@@ -1,6 +1,7 @@
 package com.ecommerce.application.api.dto.review;
 
 import com.ecommerce.application.api.dto.review.enumeration.ReviewSort;
+import com.ecommerce.persistence.entity.enumeration.ReviewStatus;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.Getter;
@@ -21,4 +22,8 @@ public class SearchReviewRequestDto {
     private Integer rating;
 
     private Boolean verifiedOnly;
+
+    // Admin-only moderation-queue filter (e.g. status=PENDING); ignored for non-admin callers,
+    // who always see PUBLISHED only.
+    private ReviewStatus status;
 }

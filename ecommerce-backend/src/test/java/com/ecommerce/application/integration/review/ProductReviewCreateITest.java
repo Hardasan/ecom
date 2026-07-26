@@ -16,7 +16,7 @@ class ProductReviewCreateITest extends AbstractProductReviewITest {
     }
 
     @Test
-    void post_creates_review_that_appears_in_the_public_list() throws Exception {
+    void post_creates_a_pending_review_not_yet_public() throws Exception {
         Long productId = createActiveProduct("create-1", 10);
 
         postReview(userToken, productId, 5, "Excellent", "Would buy again")
@@ -25,14 +25,18 @@ class ProductReviewCreateITest extends AbstractProductReviewITest {
                 .andExpect(jsonPath("$.title").value("Excellent"))
                 .andExpect(jsonPath("$.comment").value("Would buy again"))
                 .andExpect(jsonPath("$.authorName").value("Test User"))
-                .andExpect(jsonPath("$.status").value("PUBLISHED"))
+                .andExpect(jsonPath("$.status").value("PENDING"))
                 .andExpect(jsonPath("$.verifiedPurchase").value(false));
 
+        // Not shown publicly until an admin approves it...
         getReviews(null, productId)
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(0))
+                .andExpect(jsonPath("$.content", hasSize(0)));
+        // ...but the admin sees it, flagged PENDING.
+        getReviews(adminToken, productId)
                 .andExpect(jsonPath("$.totalElements").value(1))
-                .andExpect(jsonPath("$.content", hasSize(1)))
-                .andExpect(jsonPath("$.content[0].rating").value(5));
+                .andExpect(jsonPath("$.content[0].status").value("PENDING"));
 
         assertReviewRows(productId, 1);
     }

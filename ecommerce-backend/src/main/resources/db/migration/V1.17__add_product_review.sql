@@ -1,6 +1,7 @@
 -- =============================================================================
 -- V1.17 : Product reviews & ratings
 -- One review per (user, product): a 1-5 star rating plus optional title/comment.
+-- New reviews start PENDING and become public only once an admin approves them.
 -- No aggregate table -- the average is derived on read from the PUBLISHED rows.
 -- =============================================================================
 
@@ -20,7 +21,7 @@ CREATE TABLE PRODUCT_REVIEW
     TITLE             VARCHAR(255),
     COMMENT           TEXT,
     AUTHOR_NAME       VARCHAR(511) NOT NULL,
-    STATUS            VARCHAR(32)  NOT NULL DEFAULT 'PUBLISHED',
+    STATUS            VARCHAR(32)  NOT NULL DEFAULT 'PENDING', -- PENDING | PUBLISHED | HIDDEN
     VERIFIED_PURCHASE BOOLEAN      NOT NULL DEFAULT FALSE,
     CREATED_AT        TIMESTAMP    NOT NULL DEFAULT NOW(),
     UPDATED_AT        TIMESTAMP    NOT NULL DEFAULT NOW(),

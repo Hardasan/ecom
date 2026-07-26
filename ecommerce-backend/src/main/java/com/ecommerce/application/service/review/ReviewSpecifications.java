@@ -14,14 +14,18 @@ final class ReviewSpecifications {
     private ReviewSpecifications() {
     }
 
-    static Specification<ProductReview> build(Long productId, boolean includeHidden, SearchReviewRequestDto dto) {
+    static Specification<ProductReview> build(Long productId, boolean adminView, SearchReviewRequestDto dto) {
         var rating = dto.getRating();
         var verifiedOnly = dto.getVerifiedOnly();
+        var status = dto.getStatus();
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(cb.equal(root.get("productId"), productId));
-            if (!includeHidden) {
+            if (!adminView) {
+                // The public only ever sees approved reviews; the status filter is admin-only.
                 predicates.add(cb.equal(root.get("status"), ReviewStatus.PUBLISHED));
+            } else if (status != null) {
+                predicates.add(cb.equal(root.get("status"), status));
             }
             if (rating != null) {
                 predicates.add(cb.equal(root.get("rating"), rating));

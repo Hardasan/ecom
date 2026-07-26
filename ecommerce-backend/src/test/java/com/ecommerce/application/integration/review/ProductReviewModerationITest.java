@@ -11,7 +11,7 @@ class ProductReviewModerationITest extends AbstractProductReviewITest {
     @Test
     void admin_hiding_a_review_removes_it_from_public_view_and_the_summary() throws Exception {
         Long productId = createActiveProduct("moderate-hide", 10);
-        long reviewId = postReviewAndGetId(userToken, productId, 5, "Great", null);
+        long reviewId = postAndApproveReview(userToken, productId, 5, "Great", null);
 
         moderate(adminToken, productId, reviewId, ReviewStatus.HIDDEN)
                 .andExpect(status().isOk())

@@ -19,6 +19,18 @@ import static org.mockito.Mockito.when;
 class ProductReviewService_moderateReviewUTest extends BaseProductReviewServiceUTest {
 
     @Test
+    void admin_approves_a_pending_review() {
+        ProductReview pending = review(REVIEW_ID, PRODUCT_ID, OTHER_USER_ID, 5, ReviewStatus.PENDING, false);
+        when(productReviewRepository.findByIdAndProductId(REVIEW_ID, PRODUCT_ID))
+                .thenReturn(Optional.of(pending));
+
+        ReviewResponseDto response = service.moderate(PRODUCT_ID, REVIEW_ID, ReviewStatus.PUBLISHED);
+
+        assertEquals(ReviewStatus.PUBLISHED, response.getStatus());
+        verify(productReviewRepository).save(pending);
+    }
+
+    @Test
     void admin_hides_a_published_review() {
         ProductReview published = review(REVIEW_ID, PRODUCT_ID, OTHER_USER_ID, 2, ReviewStatus.PUBLISHED, false);
         when(productReviewRepository.findByIdAndProductId(REVIEW_ID, PRODUCT_ID))

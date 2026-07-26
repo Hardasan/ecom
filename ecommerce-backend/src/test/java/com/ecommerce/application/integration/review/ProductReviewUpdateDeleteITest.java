@@ -11,17 +11,20 @@ class ProductReviewUpdateDeleteITest extends AbstractProductReviewITest {
     @Test
     void owner_updates_own_review() throws Exception {
         Long productId = createActiveProduct("update-own", 10);
-        long reviewId = postReviewAndGetId(userToken, productId, 3, "Ok", "It was fine");
+        long reviewId = postAndApproveReview(userToken, productId, 3, "Ok", "It was fine");
 
         updateReview(userToken, productId, reviewId, 5, "Actually great", "Grew on me")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.rating").value(5))
                 .andExpect(jsonPath("$.title").value("Actually great"))
-                .andExpect(jsonPath("$.comment").value("Grew on me"));
+                .andExpect(jsonPath("$.comment").value("Grew on me"))
+                .andExpect(jsonPath("$.status").value("PENDING")); // an edit needs re-approval
 
-        getReviews(null, productId)
+        // The edit pulls it back out of the public list until re-approved.
+        getReviews(null, productId).andExpect(jsonPath("$.totalElements").value(0));
+        getReviews(adminToken, productId)
                 .andExpect(jsonPath("$.content[0].rating").value(5))
-                .andExpect(jsonPath("$.content[0].title").value("Actually great"));
+                .andExpect(jsonPath("$.content[0].status").value("PENDING"));
     }
 
     @Test
@@ -58,7 +61,7 @@ class ProductReviewUpdateDeleteITest extends AbstractProductReviewITest {
     @Test
     void owner_deletes_own_review() throws Exception {
         Long productId = createActiveProduct("delete-own", 10);
-        long reviewId = postReviewAndGetId(userToken, productId, 4, "Bye", null);
+        long reviewId = postAndApproveReview(userToken, productId, 4, "Bye", null);
 
         deleteReview(userToken, productId, reviewId).andExpect(status().isOk());
 

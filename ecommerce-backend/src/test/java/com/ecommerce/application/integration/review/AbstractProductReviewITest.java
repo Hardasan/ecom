@@ -189,4 +189,17 @@ public abstract class AbstractProductReviewITest extends AbstractIntegrationITes
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("status", status.name()))));
     }
+
+    /** Admin-approves a review so it becomes public. */
+    void approve(Long productId, long reviewId) throws Exception {
+        moderate(adminToken, productId, reviewId, ReviewStatus.PUBLISHED).andExpect(status().isOk());
+    }
+
+    /** Posts a review as {@code token} and immediately approves it, returning its id. */
+    long postAndApproveReview(String token, Long productId, Integer rating, String title, String comment)
+            throws Exception {
+        long id = postReviewAndGetId(token, productId, rating, title, comment);
+        approve(productId, id);
+        return id;
+    }
 }

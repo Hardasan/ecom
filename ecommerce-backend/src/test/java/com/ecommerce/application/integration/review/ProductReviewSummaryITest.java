@@ -54,6 +54,6 @@ class ProductReviewSummaryITest extends AbstractProductReviewITest {
 
     private void postFreshUser(Long productId, int rating) throws Exception {
         String token = registerAndLogin(newMobile());
-        postReview(token, productId, rating, null, null).andExpect(status().isOk());
+        postAndApproveReview(token, productId, rating, null, null);
     }
 }

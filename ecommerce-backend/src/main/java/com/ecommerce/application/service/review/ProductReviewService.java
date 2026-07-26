@@ -53,7 +53,8 @@ public class ProductReviewService {
         review.setProductId(productId);
         review.setUserId(userId);
         review.setAuthorName(buildAuthorName(author));
-        review.setStatus(ReviewStatus.PUBLISHED);
+        // Held for admin approval before it goes public (see moderate()).
+        review.setStatus(ReviewStatus.PENDING);
         review.setVerifiedPurchase(orderRepository.existsPaidOrderForProduct(userId, productId));
 
         try {
@@ -71,8 +72,10 @@ public class ProductReviewService {
         ProductReview review = productReviewRepository
                 .findByIdAndProductIdAndUserId(reviewId, productId, userId)
                 .orElseThrow(() -> new EcommerceException(ECOMErrorType.PRODUCT_REVIEW_NOT_FOUND));
-        // authorName / verifiedPurchase / status are intentionally left untouched on edit.
+        // authorName / verifiedPurchase are intentionally left untouched on edit.
         productReviewMapper.apply(requestDto, review);
+        // The edited content must be re-approved before it is public again.
+        review.setStatus(ReviewStatus.PENDING);
         return productReviewMapper.toResponseDto(productReviewRepository.save(review));
     }
 

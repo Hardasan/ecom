@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
 class ProductReviewService_createReviewUTest extends BaseProductReviewServiceUTest {
 
     @Test
-    void creates_published_review_with_author_snapshot_and_verified_purchase() {
+    void creates_pending_review_with_author_snapshot_and_verified_purchase() {
         stubProductExists();
         when(productReviewRepository.existsByUserIdAndProductId(USER_ID, PRODUCT_ID)).thenReturn(false);
         when(appUserRepository.findById(USER_ID)).thenReturn(Optional.of(appUser(USER_ID, "Amir", "Zaman")));
@@ -36,7 +36,7 @@ class ProductReviewService_createReviewUTest extends BaseProductReviewServiceUTe
         assertEquals("Loved it", response.getComment());
         assertEquals("Amir Zaman", response.getAuthorName());
         assertEquals(PRODUCT_ID, response.getProductId());
-        assertEquals(ReviewStatus.PUBLISHED, response.getStatus());
+        assertEquals(ReviewStatus.PENDING, response.getStatus());
         assertTrue(response.getVerifiedPurchase());
 
         ArgumentCaptor<ProductReview> saved = ArgumentCaptor.forClass(ProductReview.class);
@@ -44,7 +44,7 @@ class ProductReviewService_createReviewUTest extends BaseProductReviewServiceUTe
         assertEquals(USER_ID, saved.getValue().getUserId());
         assertEquals(PRODUCT_ID, saved.getValue().getProductId());
         assertEquals("Amir Zaman", saved.getValue().getAuthorName());
-        assertEquals(ReviewStatus.PUBLISHED, saved.getValue().getStatus());
+        assertEquals(ReviewStatus.PENDING, saved.getValue().getStatus());
         assertTrue(saved.getValue().getVerifiedPurchase());
     }
 

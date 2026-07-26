@@ -83,7 +83,7 @@ public class UserController {
 
     @PutMapping(value = "/iban", consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public IbanResponseDto updateIban(@Valid @RequestBody UpdateIbanRequestDto requestDto,
+    public IbanResponseDto updateIban(@RequestBody UpdateIbanRequestDto requestDto,
                                       Authentication authentication) {
         return userService.updateIban(requestDto, userId(authentication));
     }

@@ -53,12 +53,13 @@ When the PR touches orders, checkout, payment, or `order_transaction`:
 | Rule | Expectation |
 |------|-------------|
 | Status writes | Load via `findByIdForUpdate` / `findByIdAndUserIdForUpdate` (same lock family as `findExpiredReservations`) |
-| Cancel | Only from `RESERVED`/`PAID`; restore inventory; `PAID` → `PaymentGateway.refund` + `REFUND` transaction (needs user IBAN) |
-| Pay confirm | `RESERVED` + active reservation → `PAID` + `PAYMENT` transaction; public callback stays intentional |
-| Expiry | `ReservationReleaseService` only; `ReservationReleaseJob` gated by `app.checkout.scheduling.enabled` |
+| Cancel | Only from `RESERVED`/`PAID`; restore inventory; no auto `REFUND`. Paid cancel leaves PAYMENT only until admin records refund |
+| Refund | Admin: list refundable (cancelled + PAYMENT + no REFUND); POST refund with reference+iban → `REFUND` tx |
+| Pay | JWT required (`/pay`). Guest checkout returns no token — signup/login same mobile, then pay. Confirm stays public |
+| Expiry | `ReservationReleaseService` + `pg_try_advisory_xact_lock` (other instances skip). Job gated by `app.checkout.scheduling.enabled` |
 | Stock | Decrement at checkout; restore on cancel/`FAILED` — never double-restore |
 
-Flag missing locks, refund without IBAN check, pay/refund without a `Transaction` row, or inventory restore on failed refund.
+Flag missing locks, pay/refund without a `Transaction` row, or refund on non-refundable order.
 
 ---
 

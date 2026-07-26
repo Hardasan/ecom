@@ -47,6 +47,6 @@ Processor order: `lombok` → `lombok-mapstruct-binding` → `mapstruct-processo
 - `@Enumerated(STRING)` on enums inside `@Embeddable` / `@ElementCollection`.
 - Spec map JSONB needs `@JdbcTypeCode(SqlTypes.JSON)`; ObjectMapper accepts case-insensitive enum keys.
 - Images = base64 in DB columns, not files. `ProductOtherImage` / order children: `orphanRemoval` via parent collection.
-- Order status **writes** use pessimistic `*ForUpdate` loaders (serialize with reservation release).
-- Pay/refund → add `Transaction` on the order (`cascade` + `addTransaction`); don’t insert orphan rows.
-- Flyway: `baseline-on-migrate=false`; never edit old files — add `V1.x__…`. Config is `.yml` (legacy `.properties` path in `EcommerceConfiguration` is dead/harmless).
+- Order status **writes** → `*ForUpdate`. Release job → `pg_try_advisory_xact_lock` (other instances skip).
+- Pay/refund → `Transaction` via order `addTransaction` (no orphan inserts).
+- Flyway: `baseline-on-migrate=false`; never edit old files — add `V1.x__…`. Config is `.yml`.

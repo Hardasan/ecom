@@ -9,7 +9,7 @@ Non-obvious domain decisions only. Architecture → [CLAUDE.md](../../CLAUDE.md)
 - Mobile lives in both `username` (Security) and `mobile`.
 - Login requires `isEnabled` **and** `isRegistered`.
 - No single `name` column — use `firstName` + `lastName`.
-- `iban` (`IR` + 24 digits): `GET/PUT /user/iban`. Optional until cancelling a **PAID** order (refund target).
+- `iban` (`IR` + 24 digits): `GET/PUT /user/iban`. Optional.
 
 ---
 
@@ -68,11 +68,11 @@ JWT only; principal `userId` — never from body. No `cart` table: rows are `car
 
 ```
 POST /checkout | /checkout/guest     → RESERVED (stock −, reservedUntil +30m)
-POST /orders/{id}/pay                → IPG initiate (RESERVED)
+POST /orders/{id}/pay                → JWT → IPG initiate (RESERVED)
 POST /orders/{id}/payment/confirm    → public → PAID + PAYMENT tx
-POST /orders/{id}/cancel             → CANCEL_BY_USER (RESERVED|PAID)
-POST /orders/{id}/receive            → RECEIVED (from SENDING)
-POST /admin/orders/{id}/send|cancel  → ROLE_ADMIN
+POST /orders/{id}/cancel|receive
+POST /admin/orders/{id}/send|cancel|refund
+GET  /admin/orders/refundable        → cancelled + PAYMENT + no REFUND
 ```
 
 ```
@@ -81,11 +81,10 @@ RESERVED → PAID → SENDING → RECEIVED
    └─ cancel  → CANCEL_BY_*   (also from PAID)
 ```
 
-- Address + line snapshots at checkout.
-- Cancel restores stock. After `SENDING` — no cancel.
-- **PAID cancel:** `PaymentGateway.refund` + `REFUND` tx (needs IBAN). Missing IBAN → `USER_IBAN_REQUIRED` (order stays PAID). RESERVED cancel = no refund.
-- Ledger: `order_transaction` (`PAYMENT` on confirm, `REFUND` on paid cancel) on order response as `transactions`.
-- Gateway = `PaymentGateway` / `NoOpPaymentGateway` until real IPG. Scheduler: `ReservationReleaseJob` → `ReservationReleaseService` (`app.checkout.scheduling.enabled`).
+- Snapshots at checkout. Cancel restores stock; no cancel after `SENDING`.
+- **Guest:** `/checkout/guest` creates unregistered user + order, **no JWT**. Pay after signup/login with the same mobile.
+- **Refund:** cancel never auto-refunds. Admin: list refundable → bank transfer outside → `POST …/refund` `{reference,iban}` → `REFUND` tx. Amount = order total.
+- IPG: `PaymentGateway` / `NoOpPaymentGateway`. Expiry: `ReservationReleaseJob` → service (`app.checkout.scheduling.enabled`).
 
 ---
 

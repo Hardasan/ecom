@@ -50,4 +50,4 @@ src/main/java/com/ecommerce/
 
 ## Security
 
-Public routes in `PublicEndPoint` (incl. guest checkout + payment confirm). Else `Authorization: Bearer <JWT>`. Product writes / admin order ops → `ROLE_ADMIN`. `GET /products/**` public. JWT TTL `security.jwt.expiration-time` (default `1h`) — **rotate secret before prod**.
+Public routes in `PublicEndPoint` (guest checkout, payment confirm — guest must signup/login before `/pay`). Else `Authorization: Bearer <JWT>`. Product writes / admin order ops → `ROLE_ADMIN`. `GET /products/**` public. JWT TTL `security.jwt.expiration-time` (default `1h`) — **rotate secret before prod**.

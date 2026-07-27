@@ -51,6 +51,9 @@ public class AppUser {
     @Column(name = "national_id", length = 20)
     private String nationalId;
 
+    @Column(name = "iban", length = 26)
+    private String iban;
+
     @Column(name = "email", length = 255)
     private String email;
 

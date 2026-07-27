@@ -12,7 +12,8 @@ public class PublicEndPoint {
             API + "/user/login",
             API + "/user/login-ticket",
             API + "/user/login-ticket/validation",
-            API + "/checkout/guest"
+            API + "/checkout/guest",
+            API + "/orders/*/payment/confirm" // IPG callback
     };
 
     static final String[] GET_PUBLIC_ENDPOINTS = {

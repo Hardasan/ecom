@@ -75,7 +75,7 @@ class GuestCheckoutITest extends AbstractCheckoutITest {
 
         guestCheckout(guestRequest(mobile, productId, 2, Province.TEHRAN))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("PENDING"))
+                .andExpect(jsonPath("$.status").value("RESERVED"))
                 .andExpect(jsonPath("$.items", hasSize(1)))
                 .andExpect(jsonPath("$.itemsCost").value(200.0))
                 .andExpect(jsonPath("$.shippingZone").value("INTRA_PROVINCE"))

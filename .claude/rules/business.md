@@ -1,99 +1,100 @@
 # Business Rules
 
-Non-obvious domain decisions. Anything obvious from reading the code is not repeated here.
-For architecture see [CLAUDE.md](../../CLAUDE.md).
+Non-obvious domain decisions only. Architecture → [CLAUDE.md](../../CLAUDE.md).
 
 ---
 
-## User Model
+## User
 
-- Mobile number is stored in **both** `AppUser.username` (Spring Security) and `AppUser.mobile` (explicit lookups).
-- `UserDetailServiceImpl` checks **both** `isEnabled` AND `isRegistered`. A user with `isRegistered=false` cannot log in even if their account exists.
-- `firstName` + `lastName` — there is no `name` column.
-
----
-
-## Authentication Flows
-
-```
-POST /user/signup-ticket            ← mobileNumber
-POST /user/signup-ticket/validation ← mobileNumber + OTP  →  signupToken (UUID, short-lived)
-POST /user/signup                   ← signupToken + firstName + lastName + password
-
-POST /user/check-registration       ← mobileNumber  →  { isRegistered: true|false }
-
-POST /user/login                    ← mobileNumber + password  →  JWT
-
-POST /user/login-ticket             ← mobileNumber  (rejected if not isRegistered)
-POST /user/login-ticket/validation  ← mobileNumber + OTP  →  JWT
-
-POST /user/change-password          ← newPassword + confirmPassword  (JWT required)
-```
-
-`signupToken` is stored in `SignupCacheService` (cache `SIGNUP_TOKEN`) and proves OTP was completed.
-
-`changePassword` does **not** verify the current password — `ChangePasswordRequestDto` has only `newPassword` + `confirmPassword`.
+- Mobile lives in both `username` (Security) and `mobile`.
+- Login requires `isEnabled` **and** `isRegistered`.
+- No single `name` column — use `firstName` + `lastName`.
+- `iban` (`IR` + 24 digits): `GET/PUT /user/iban`. Optional.
 
 ---
 
-## OTP Rules
-
-Signup and login flows are **completely isolated** — separate rate-limit counters, block lists, and cache buckets.
-
-| Property       | Config key                            | Default |
-|----------------|---------------------------------------|---------|
-| Length         | `app.{flow}.ticket.length`            | 6       |
-| TTL            | `app.{flow}.ticket.time-to-live`      | 2 min   |
-| Block duration | `app.{flow}.ticket.block-duration`    | 10 min  |
-| Max failures   | `app.{flow}.ticket.max-failure-count` | 5       |
-
-After `max-failure-count` failures, the mobile is blocked for `block-duration` (`TICKET_BLOCKED`). Re-send within TTL is rejected with `SEND_TICKET_TIME_LIMIT`.
-
-### OTP class map
+## Auth
 
 ```
-CacheName: SIGNUP_TICKET / SIGNUP_LAST_TICKET  ←  SignupTicketCacheService
-CacheName: LOGIN_TICKET  / LOGIN_LAST_TICKET   ←  LoginTicketCacheService
-                    ↓
-         AbstractTicketCacheService
-
-SignupProperties / LoginProperties  ←  SignupTicketService / LoginTicketService
-                    ↓
-         AbstractTicketService (prepareTicket, sendTicketMessage, validateTicket)
+POST /user/signup-ticket → validation → signupToken
+POST /user/signup                  ← signupToken + name + password
+POST /user/check-registration
+POST /user/login                   ← password → JWT
+POST /user/login-ticket → validation → JWT
+POST /user/change-password         ← new + confirm only (no current-password check)
 ```
 
-To add a new OTP flow: add two `CacheName` values, extend `AbstractTicketCacheService` and `AbstractTicketService`, create a `*Properties` bean in `EcommercePropertiesConfiguration`, add config in `application.yml`.
+`signupToken` in cache `SIGNUP_TOKEN` proves OTP done.
 
 ---
 
-## Product Catalog — Non-Obvious Rules
+## OTP
 
-- **`code` is server-generated**, never from the client: `{categoryId}-{nextval('product_code_seq')}`. `ProductMapper.apply()` ignores it; set it after mapping in `ProductService.create()`.
-- **Images are base64 stored in PostgreSQL**, not files. `mainImage` is embedded in the `product` row (`main_image_data TEXT`). `otherImages` are rows in `product_other_image`, each with its own `id`.
-- **`ProductOtherImage` removal uses `imageId`**, not a list index. `DELETE /products/{id}/images?type=OTHER&imageId={imageId}`.
-- **`isAvailable` filter** checks `inventoryCount` directly (`> 0` = available), not `inventoryStatus`.
-- **`USER_LAST_TICKET` is gone** — renamed `SIGNUP_LAST_TICKET`. Stale cache keys with the old name are invalid after a flush.
+Signup and login are fully isolated (caches, counters, blocks).
+
+| | Config `app.{flow}.ticket.*` | Default |
+|--|--|--|
+| Length | `length` | 6 |
+| TTL | `time-to-live` | 2 min |
+| Block | `block-duration` | 10 min |
+| Max fails | `max-failure-count` | 5 |
+
+Fail limit → `TICKET_BLOCKED`. Re-send in TTL → `SEND_TICKET_TIME_LIMIT`.
+
+Class map: `*TicketCacheService` ← `AbstractTicketCacheService`; `*TicketService` ← `AbstractTicketService` + `*Properties`. New flow = two `CacheName`s + those extensions + yml.
 
 ---
 
-## Shopping Cart — Non-Obvious Rules
+## Catalog
+
+- `code` server-only: `{categoryId}-{product_code_seq}` (set in `ProductService.create`, ignored by mapper).
+- Images = base64 in DB (`main_image_data`; `product_other_image` rows). Delete OTHER by `imageId`.
+- Available = `inventoryCount > 0` (not `inventoryStatus`).
+
+---
+
+## Cart
+
+JWT only; principal `userId` — never from body. No `cart` table: rows are `cart_item` by `user_id`. Empty cart = empty list (no create). Unknown item id → `CART_ITEM_NOT_FOUND`. Clear is idempotent.
+
+- Merge key `(userId, productId, variantType[, variantValue])`.
+- Variant must exist on product → else `PRODUCT_VARIANT_NOT_FOUND`.
+- Stock = product-level `inventoryCount`; only `ACTIVE` → else `PRODUCT_NOT_AVAILABLE` / `INSUFFICIENT_STOCK`.
+- Line prices snapshotted at add; response totals derived (`discountPrice` wins).
+
+---
+
+## Orders
 
 ```
-GET    /cart                            ← current user's cart (created on first access)
-POST   /cart/items                      ← productId + variantType + quantity
-PATCH  /cart/items/{itemId}             ← quantity  (absolute set)
-POST   /cart/items/{itemId}/increment   ← +1
-POST   /cart/items/{itemId}/decrement   ← -1  (line removed when it would hit 0)
-DELETE /cart/items/{itemId}             ← remove one line
-DELETE /cart                            ← clear all lines
+POST /checkout | /checkout/guest     → RESERVED (stock −, reservedUntil +30m)
+POST /orders/{id}/pay                → JWT → IPG initiate (RESERVED)
+POST /orders/{id}/payment/confirm    → public → PAID + PAYMENT tx
+POST /orders/{id}/cancel|receive
+POST /admin/orders/{id}/send|cancel|refund
+GET  /admin/orders/refundable        → cancelled + PAYMENT + no REFUND
 ```
 
-- All cart endpoints require a JWT (any role); they are **not** in `PUBLIC_ENDPOINTS`. The acting user is taken from the JWT principal (`UserDetailsDto.getId()`), never from the request body — a user can only touch their own cart.
-- **There is no `cart` table.** A user's cart is simply the set of `cart_item` rows owned by that user (`cart_item.user_id`). `GET /cart` returns those rows (an empty cart when there are none — nothing is created); item mutations (`PATCH`/increment/decrement/`DELETE /cart/items/{id}`) that reference an id the user doesn't own return `CART_ITEM_NOT_FOUND`. `DELETE /cart` is an idempotent no-op when empty. The `CartResponseDto` is assembled from the rows (totals + `createdAt`/`updatedAt` derived from the items); it has **no** cart id.
-- **A line is keyed by `(userId, productId, variantType)`** (`uk_cart_item_user_product_variant`). The same product in a different variant is a separate line. Re-adding the same product+variant **merges** into the existing line (quantities sum).
-- **`variantType` must be one the product actually offers** — it must match a `Price.variantType` on the product, else `PRODUCT_VARIANT_NOT_FOUND`.
-- **Stock is validated against `Product.inventoryCount`** (single product-level count; the catalog has no per-variant inventory). Add / increment / set-quantity that would push a line above `inventoryCount` returns `INSUFFICIENT_STOCK`. Only `ACTIVE` products are purchasable, else `PRODUCT_NOT_AVAILABLE`.
-- **Price is snapshotted at add time** (`cart_item.unit_price` / `discount_price`) so the cart total is stable even if the catalog price later changes. `effectivePrice` / `lineTotal` / `totalPrice` in the response are derived; `discountPrice` wins over `unitPrice` when present.
+```
+RESERVED → PAID → SENDING → RECEIVED
+   ├─ timeout → FAILED (+ stock)
+   └─ cancel  → CANCEL_BY_*   (also from PAID)
+```
+
+- Snapshots at checkout. Cancel restores stock; no cancel after `SENDING`.
+- **Guest:** `/checkout/guest` creates unregistered user + order, **no JWT**. Pay after signup/login with the same mobile.
+- **Refund:** cancel never auto-refunds. Admin: list refundable → bank transfer outside → `POST …/refund` `{reference,iban}` → `REFUND` tx. Amount = order total.
+- IPG: `PaymentGateway` / `NoOpPaymentGateway`. Expiry: `ReservationReleaseJob` → service (`app.checkout.scheduling.enabled`).
+
+---
+
+## Reviews
+
+Public list/summary; writes JWT. Admin `PATCH …/status` via `@PreAuthorize`.
+
+- Aggregate derived on read (`PUBLISHED` only). One review per `(user, product)`.
+- `rating` 1–5 required; title/comment optional. No purchase gate; `verifiedPurchase` snapshotted if user has PAID/SENDING/RECEIVED line for product.
+- `authorName` snapshotted. New = `PUBLISHED`; admin can `HIDDEN`. Owner deletes own; admin any. Product need only exist (not `ACTIVE`).
 
 ---
 
@@ -140,12 +141,10 @@ PATCH  /products/{productId}/reviews/{reviewId}/status ← approve / hide: PENDI
 - **Reviewing only requires the product to exist**, not to be `ACTIVE`, so a buyer can still review a discontinued item.
 ---
 
-## Error Response Contract
+## Errors
 
 ```json
-{ "errorCode": "INVALID_TICKET", "message": "...", "errorParams": {} }
+{ "errorCode": "…", "message": "…", "errorParams": {} }
 ```
 
-- `message` resolved from `messages.properties` / `messages_fa.properties` via `Accept-Language`. Falls back to the key.
-- `errorParams` is `{ "fieldName": ["msg"] }` for `VALIDATION_ERROR`; `null` for others.
-- Stack traces are **never** included.
+`message` from bundles via `Accept-Language`. `errorParams` only for `VALIDATION_ERROR`. No stack traces.

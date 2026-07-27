@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
@@ -83,6 +82,7 @@ public class CategoryService {
         return categoryMapper.toResponseDto(categoryRepository.save(category));
     }
 
+    @Transactional
     public void delete(Long id) {
         categoryRepository.delete(findOrThrow(id));
     }

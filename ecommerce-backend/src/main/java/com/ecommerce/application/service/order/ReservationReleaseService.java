@@ -1,13 +1,10 @@
 package com.ecommerce.application.service.order;
 
 import com.ecommerce.persistence.entity.Order;
-import com.ecommerce.persistence.entity.OrderItem;
 import com.ecommerce.persistence.entity.enumeration.OrderStatus;
 import com.ecommerce.persistence.repository.OrderRepository;
-import com.ecommerce.persistence.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,23 +13,28 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "app.checkout.scheduling.enabled", havingValue = "true", matchIfMissing = true)
 public class ReservationReleaseService {
 
-    private final OrderRepository orderRepository;
-    private final ProductRepository productRepository;
+    /** Shared across instances; only one schedule run holds it at a time. */
+    private static final long RESERVATION_RELEASE_LOCK_KEY = 874_231_001L;
 
-    @Scheduled(fixedDelayString = "${app.checkout.reservation-release-interval:60000}")
+    private final OrderRepository orderRepository;
+    private final OrderInventoryRestorer inventoryRestorer;
+    private final JdbcTemplate jdbcTemplate;
+
     @Transactional
     public void releaseExpiredReservations() {
+        Boolean acquired = jdbcTemplate.queryForObject(
+                "SELECT pg_try_advisory_xact_lock(?)", Boolean.class, RESERVATION_RELEASE_LOCK_KEY);
+        if (!Boolean.TRUE.equals(acquired)) {
+            return;
+        }
+
         Date now = new Date();
         List<Order> expired = orderRepository.findExpiredReservations(now);
         for (Order order : expired) {
-            for (OrderItem item : order.getItems()) {
-                productRepository.incrementInventory(
-                        item.getProduct().getProductId(), item.getQuantity());
-            }
-            order.setStatus(OrderStatus.EXPIRED);
+            inventoryRestorer.restore(order);
+            order.setStatus(OrderStatus.FAILED);
             orderRepository.save(order);
         }
     }

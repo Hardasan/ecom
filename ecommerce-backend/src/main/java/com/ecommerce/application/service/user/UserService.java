@@ -23,6 +23,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -60,6 +61,7 @@ public class UserService {
         return new SignupTicketValidationResponseDto(signupToken);
     }
 
+    @Transactional
     public void signup(SignupRequestDto requestDto) {
         SignupData signupData = signupCacheService.getSignupData(requestDto.getSignupToken());
         if (signupData == null) {
@@ -117,6 +119,7 @@ public class UserService {
                 Role.valueOf(userDetails.getAuthorities().getFirst().getAuthority()));
     }
 
+    @Transactional
     public void changePassword(ChangePasswordRequestDto requestDto, Long userId) {
         if (!requestDto.getNewPassword().equals(requestDto.getConfirmPassword())) {
             throw new EcommerceException(ECOMErrorType.INVALID_PASSWORD);
@@ -125,6 +128,22 @@ public class UserService {
                 .orElseThrow(() -> new EcommerceException(ECOMErrorType.USER_NOT_FOUND));
         appUser.setPassword(passwordEncoder.encode(requestDto.getNewPassword()));
         appUserRepository.save(appUser);
+    }
+
+    @Transactional
+    public IbanResponseDto updateIban(UpdateIbanRequestDto requestDto, Long userId) {
+        AppUser appUser = appUserRepository.findById(userId)
+                .orElseThrow(() -> new EcommerceException(ECOMErrorType.USER_NOT_FOUND));
+        appUser.setIban(requestDto.getIban());
+        appUserRepository.save(appUser);
+        return new IbanResponseDto(appUser.getIban());
+    }
+
+    @Transactional(readOnly = true)
+    public IbanResponseDto getIban(Long userId) {
+        AppUser appUser = appUserRepository.findById(userId)
+                .orElseThrow(() -> new EcommerceException(ECOMErrorType.USER_NOT_FOUND));
+        return new IbanResponseDto(appUser.getIban());
     }
 
     private TicketGenerateRequestDto buildTicketRequest(String mobileNumber, TicketProperties ticketProperties) {

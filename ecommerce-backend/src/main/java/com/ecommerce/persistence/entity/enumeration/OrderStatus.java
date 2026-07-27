@@ -2,7 +2,11 @@ package com.ecommerce.persistence.entity.enumeration;
 
 public enum OrderStatus {
 
-    PENDING,
+    RESERVED,
     PAID,
-    EXPIRED
+    FAILED,
+    CANCEL_BY_ADMIN,
+    CANCEL_BY_USER,
+    SENDING,
+    RECEIVED
 }

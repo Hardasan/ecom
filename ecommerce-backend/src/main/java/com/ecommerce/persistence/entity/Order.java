@@ -72,6 +72,10 @@ public class Order {
     @BatchSize(size = 25)
     private List<OrderItem> items = new ArrayList<>();
 
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 25)
+    private List<Transaction> transactions = new ArrayList<>();
+
     @Column(name = "reserved_until")
     private Date reservedUntil;
 
@@ -86,5 +90,10 @@ public class Order {
     public void addItem(OrderItem item) {
         item.setOrder(this);
         items.add(item);
+    }
+
+    public void addTransaction(Transaction transaction) {
+        transaction.setOrder(this);
+        transactions.add(transaction);
     }
 }

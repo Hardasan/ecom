@@ -51,6 +51,11 @@ public class OrderResponseDto {
 
     private BigDecimal totalCost;
 
+    // Applied discount code snapshot (null / 0 when no code was used).
+    private String discountCode;
+
+    private BigDecimal discountAmount;
+
     private Integer totalWeightGram;
 
     private ShippingZone shippingZone;

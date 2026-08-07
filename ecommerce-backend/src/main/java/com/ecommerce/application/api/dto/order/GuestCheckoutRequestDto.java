@@ -42,4 +42,9 @@ public class GuestCheckoutRequestDto {
     @NotEmpty
     @Valid
     private List<GuestItemRequestDto> items;
+
+    /**
+     * Optional discount code to apply. Null/blank ⇒ no discount.
+     */
+    private String discountCode;
 }

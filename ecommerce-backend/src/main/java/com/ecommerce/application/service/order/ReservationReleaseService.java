@@ -1,5 +1,6 @@
 package com.ecommerce.application.service.order;
 
+import com.ecommerce.application.service.discount.DiscountRedemptionReleaser;
 import com.ecommerce.persistence.entity.Order;
 import com.ecommerce.persistence.entity.enumeration.OrderStatus;
 import com.ecommerce.persistence.repository.OrderRepository;
@@ -21,6 +22,7 @@ public class ReservationReleaseService {
     private final OrderRepository orderRepository;
     private final OrderInventoryRestorer inventoryRestorer;
     private final JdbcTemplate jdbcTemplate;
+    private final DiscountRedemptionReleaser discountReleaser;
 
     @Transactional
     public void releaseExpiredReservations() {
@@ -34,6 +36,7 @@ public class ReservationReleaseService {
         List<Order> expired = orderRepository.findExpiredReservations(now);
         for (Order order : expired) {
             inventoryRestorer.restore(order);
+            discountReleaser.release(order);
             order.setStatus(OrderStatus.FAILED);
             orderRepository.save(order);
         }

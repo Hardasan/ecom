@@ -6,6 +6,7 @@ import com.ecommerce.application.api.dto.order.PaymentInitiationResponseDto;
 import com.ecommerce.application.api.dto.order.RefundRequestDto;
 import com.ecommerce.application.api.exception.ECOMErrorType;
 import com.ecommerce.application.api.exception.EcommerceException;
+import com.ecommerce.application.service.discount.DiscountRedemptionReleaser;
 import com.ecommerce.application.service.payment.PaymentGateway;
 import com.ecommerce.application.service.payment.PaymentInitiation;
 import com.ecommerce.application.service.payment.PaymentVerification;
@@ -28,16 +29,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class OrderService_UTest {
@@ -54,13 +48,15 @@ class OrderService_UTest {
     private ProductRepository productRepository;
     @Mock
     private PaymentGateway paymentGateway;
+    @Mock
+    private DiscountRedemptionReleaser discountReleaser;
 
     private OrderService orderService;
 
     @BeforeEach
     void setUp() {
         orderService = new OrderService(orderRepository, new OrderMapperImpl(), paymentGateway,
-                new OrderInventoryRestorer(productRepository));
+                new OrderInventoryRestorer(productRepository), discountReleaser);
         lenient().when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
     }
 
@@ -171,6 +167,17 @@ class OrderService_UTest {
         assertEquals(OrderStatus.CANCEL_BY_USER, response.getStatus());
         verify(productRepository).incrementInventory(PRODUCT_ID, 2);
         assertEquals(0, order.getTransactions().size());
+    }
+
+    @Test
+    void cancelByUser_releases_discount_redemption() {
+        Order order = reservedOrder();
+        when(orderRepository.findByIdAndUserIdForUpdate(ORDER_ID, USER_ID)).thenReturn(Optional.of(order));
+
+        orderService.cancelByUser(USER_ID, ORDER_ID);
+
+        // The redemption a discounted order was holding is freed alongside the inventory restore.
+        verify(discountReleaser).release(order);
     }
 
     @Test

@@ -53,4 +53,13 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             + "WHERE o.userId = :userId AND i.product.productId = :productId "
             + "AND o.status IN ('PAID', 'SENDING', 'RECEIVED')")
     boolean existsPaidOrderForProduct(@Param("userId") Long userId, @Param("productId") Long productId);
+
+    /**
+     * How many redemptions of a discount the user is currently holding — orders in a status that
+     * still consumes a slot (a cancelled/failed order has had its redemption released). Backs the
+     * per-user usage limit at apply time.
+     */
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.discountId = :discountId AND o.userId = :userId "
+            + "AND o.status IN ('RESERVED', 'PAID', 'SENDING', 'RECEIVED')")
+    long countActiveByDiscountAndUser(@Param("discountId") Long discountId, @Param("userId") Long userId);
 }

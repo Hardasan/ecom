@@ -7,7 +7,13 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface CategoryRepository extends JpaRepository<Category, Long> {
 
-    boolean existsByName(String name);
+    boolean existsByNameAndParentIdIsNull(String name);
 
-    boolean existsByNameAndIdNot(String name, Long id);
+    boolean existsByNameAndParentIdIsNullAndIdNot(String name, Long id);
+
+    boolean existsByNameAndParentId(String name, Long parentId);
+
+    boolean existsByNameAndParentIdAndIdNot(String name, Long parentId, Long id);
+
+    boolean existsByParentId(Long parentId);
 }

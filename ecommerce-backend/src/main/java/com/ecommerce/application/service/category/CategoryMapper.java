@@ -14,6 +14,7 @@ import java.util.List;
 interface CategoryMapper {
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "parentId", ignore = true)
     void apply(CreateCategoryRequestDto requestDto, @MappingTarget Category category);
 
     @Mapping(target = "id", ignore = true)

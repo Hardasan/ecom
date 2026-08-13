@@ -37,6 +37,15 @@ public class CategoryController {
         return categoryService.create(requestDto);
     }
 
+    @PostMapping(value = "/{parentId}/subcategories",
+            consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    @ResponseStatus(HttpStatus.CREATED)
+    public CategoryResponseDto createSubCategory(@PathVariable Long parentId,
+            @RequestBody CreateCategoryRequestDto requestDto) {
+        return categoryService.createSubCategory(parentId, requestDto);
+    }
+
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")

@@ -21,6 +21,8 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
 
     boolean existsByUrlAndIdNot(String url, Long id);
 
+    boolean existsByCategoryIdOrSubCategoryId(Long categoryId, Long subCategoryId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM Product p WHERE p.id = :id")
     Optional<Product> findByIdWithLock(@Param("id") Long id);

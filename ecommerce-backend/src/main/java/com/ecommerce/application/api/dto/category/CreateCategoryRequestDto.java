@@ -1,6 +1,7 @@
 package com.ecommerce.application.api.dto.category;
 
-import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,10 +9,10 @@ import lombok.Setter;
 @Setter
 public class CreateCategoryRequestDto {
 
-    @NotEmpty
+    @NotBlank
+    @Size(max = 255)
     private String name;
 
+    @Size(max = 255)
     private String localName;
-
-    private Long parentId;
 }

@@ -1,0 +1,209 @@
+<div class="page checkout">
+  <div class="page-scroll">
+    <header class="top-bar">
+      <a routerLink="/cart" class="icon-btn" aria-label="بازگشت">
+        <img [src]="a.iconBack" alt="" width="8" height="16" />
+      </a>
+      <p class="top-bar__title">تأیید سفارش</p>
+      <span class="spacer"></span>
+    </header>
+
+    <div class="steps">
+      <span class="step-dot"></span>
+      <span class="step-line"></span>
+      <span class="step-dot is-active"></span>
+      <span class="step-line is-active"></span>
+      <span class="step-dot is-active"></span>
+    </div>
+
+    @if (error()) {
+      <p class="form-error">{{ error() }}</p>
+    }
+
+    <div class="checkout-body">
+      @if (selectedAddress(); as addr) {
+        <div class="ship-head">
+          <button type="button" class="change-addr" (click)="openSelectSheet()">تغییر آدرس</button>
+          <span class="ship-label">آدرس‌ ارسال</span>
+        </div>
+        <div class="address-card">
+          <strong>
+            {{ addr.title || 'آدرس' }}
+            <img [src]="a.iconMapPin" alt="" width="16" height="16" />
+          </strong>
+          <span>{{ addressText(addr) }}</span>
+        </div>
+      } @else {
+        <button type="button" class="address-empty" (click)="openFormSheet()">
+          <span class="address-empty__title">
+            افزودن آدرس
+            <img [src]="a.iconMapPin" alt="" width="16" height="16" />
+          </span>
+          <span class="address-empty__sub">هنوز آدرسی اضافه نکردید</span>
+        </button>
+      }
+
+      <h2>خلاصه کالاها</h2>
+      <button type="button" class="summary-card" (click)="openItemsSheet()">
+        <div class="summary-card__row">
+          <span>{{ totalLabel() }}</span>
+          <span>تعداد کل کالاها: {{ cartQty() }}</span>
+        </div>
+        <div class="summary-card__thumbs">
+          <img [src]="a.iconBack" alt="" class="summary-card__more" width="20" height="20" />
+          <div class="thumbs">
+            @for (item of cartItems().slice(0, 4); track item.id) {
+              @if (itemThumb(item); as src) {
+                <img [src]="src" [alt]="item.productName" width="64" height="64" />
+              }
+            } @empty {
+              <p class="empty-cart">سبد خالی است</p>
+            }
+          </div>
+        </div>
+      </button>
+
+      <h2>روش پرداخت</h2>
+      <label class="pay-option" [class.is-selected]="payment === 'bank'">
+        <span>درگاه بانکی</span>
+        <input type="radio" name="pay" value="bank" [(ngModel)]="payment" />
+        <img [src]="a.iconRadio" alt="" width="20" height="20" />
+      </label>
+      <label class="pay-option" [class.is-selected]="payment === 'wallet'">
+        <span>کیف پول</span>
+        <input type="radio" name="pay" value="wallet" [(ngModel)]="payment" />
+        <span class="radio-empty"></span>
+      </label>
+      <label class="pay-option" [class.is-selected]="payment === 'cod'">
+        <span>پرداخت در محل</span>
+        <input type="radio" name="pay" value="cod" [(ngModel)]="payment" />
+        <span class="radio-empty"></span>
+      </label>
+
+      <h2>روش ارسال</h2>
+      <div class="ship-option">
+        <span>پست</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <button type="button" class="btn-brand" [disabled]="busy()" (click)="placeOrder()">
+      {{ payButtonLabel() }}
+    </button>
+  </div>
+
+  @if (showSelectSheet()) {
+    <div class="sheet-backdrop" (click)="closeSelectSheet()"></div>
+    <div class="sheet" role="dialog" aria-label="انتخاب آدرس">
+      <div class="sheet-head">انتخاب آدرس</div>
+      <div class="sheet-body select-sheet">
+        @for (addr of addresses(); track addr.id) {
+          <button
+            type="button"
+            class="address-card"
+            [class.is-selected]="selectedAddressId() === addr.id"
+            (click)="selectAddress(addr.id)"
+          >
+            <strong>
+              {{ addr.title || 'آدرس' }}
+              <img [src]="a.iconMapPin" alt="" width="16" height="16" />
+            </strong>
+            <span>{{ addressText(addr) }}</span>
+          </button>
+        }
+      </div>
+      <div class="bottom-bar">
+        <button type="button" class="btn-outline" (click)="openFormSheet()">آدرس جدید</button>
+      </div>
+    </div>
+  }
+
+  @if (showAddressSheet()) {
+    <div class="sheet-backdrop" (click)="closeFormSheet()"></div>
+    <div class="sheet" role="dialog" aria-label="جزییات آدرس">
+      <div class="sheet-head">جزییات آدرس</div>
+      <div class="sheet-body">
+        <div class="row-2">
+          <label>
+            <span>استان</span>
+            <select class="field" [(ngModel)]="province" (ngModelChange)="onProvinceChange()">
+              @for (p of provinces(); track p.code) {
+                <option [value]="p.code">{{ p.name }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            <span>شهر</span>
+            <select class="field" [(ngModel)]="city">
+              @for (c of cities(); track c.id) {
+                <option [value]="c.name">{{ c.name }}</option>
+              }
+            </select>
+          </label>
+        </div>
+        <label>
+          <span>آدرس کامل</span>
+          <input class="field" [(ngModel)]="addressLine" placeholder="خیابان، کوچه، پلاک" />
+        </label>
+        <label>
+          <span>عنوان آدرس</span>
+          <input class="field" [(ngModel)]="title" placeholder="خانه" />
+        </label>
+        <div class="row-2">
+          <label>
+            <span>نام</span>
+            <input class="field" [(ngModel)]="recipientFirstName" />
+          </label>
+          <label>
+            <span>نام خانوادگی</span>
+            <input class="field" [(ngModel)]="recipientLastName" />
+          </label>
+        </div>
+        <label>
+          <span>موبایل گیرنده</span>
+          <input class="field" [(ngModel)]="recipientMobile" placeholder="0912…" />
+        </label>
+        <label>
+          <span>کد پستی</span>
+          <input class="field" [(ngModel)]="postalCode" placeholder="۱۲۳۴۵۶۷۸۹۰" />
+        </label>
+        <label>
+          <span>پلاک</span>
+          <input class="field" [(ngModel)]="plaque" />
+        </label>
+      </div>
+      <div class="bottom-bar">
+        <button type="button" class="btn-brand" [disabled]="busy()" (click)="saveAddress()">
+          {{ busy() ? '…' : 'ذخیره آدرس' }}
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (showItemsSheet()) {
+    <div class="sheet-backdrop" (click)="closeItemsSheet()"></div>
+    <div class="sheet" role="dialog" aria-label="کالاهای انتخاب شده">
+      <div class="sheet-head">کالاهای انتخاب شده</div>
+      <div class="sheet-body items-sheet">
+        @for (item of cartItems(); track item.id) {
+          <div class="sheet-item">
+            @if (itemThumb(item); as src) {
+              <img [src]="src" [alt]="item.productName" width="64" height="64" />
+            }
+            <div class="sheet-item__text">
+              <p class="sheet-item__title">{{ lineLabel(item) }}</p>
+              <div class="sheet-item__meta">
+                <span>{{ lineMeta(item) }}</span>
+                <span>{{ item.quantity }} عدد</span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+      <div class="bottom-bar">
+        <button type="button" class="btn-outline" (click)="closeItemsSheet()">بازگشت</button>
+      </div>
+    </div>
+  }
+</div>

@@ -10,12 +10,15 @@ import com.ecommerce.persistence.cache.AbstractTicketCacheService;
 import com.ecommerce.persistence.cache.BlockedMobileNumbersCacheService;
 import com.ecommerce.persistence.cache.dto.TicketInfoCacheDto;
 import com.ecommerce.persistence.entity.AppUser;
+import com.ecommerce.persistence.entity.MockOtp;
 import com.ecommerce.persistence.repository.AppUserRepository;
+import com.ecommerce.persistence.repository.MockOtpRepository;
 import lombok.RequiredArgsConstructor;
 
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.Date;
+import java.util.Optional;
 
 /**
  * @author AmirHossein ZamanZade
@@ -31,6 +34,7 @@ public abstract class AbstractTicketService {
     private final AbstractTicketCacheService ticketCacheService;
     private final BlockedMobileNumbersCacheService blockedMobileNumbersCacheService;
     private final AppUserRepository appUserRepository;
+    private final MockOtpRepository mockOtpRepository;
 
     protected abstract Duration getBlockDuration();
 
@@ -39,6 +43,9 @@ public abstract class AbstractTicketService {
     protected abstract int getTicketLength(TicketGenerateRequestDto ticketGenerateRequestDto);
 
     public void validateTicket(String cacheKey, String ticket, String mobileNumber) {
+        if (mockOtpCode().filter(ticket::equals).isPresent()) {
+            return;
+        }
         TicketInfoCacheDto result = ticketCacheService.getTicketInfoDto(cacheKey);
         if (result == null || result.getTicket() == null || !result.getTicket().equals(ticket)) {
             handleFailureCount(result, cacheKey, mobileNumber);
@@ -82,6 +89,9 @@ public abstract class AbstractTicketService {
     }
 
     protected void sendTicketMessage(TicketGenerateRequestDto ticketGenerateRequestDto, String ticket) {
+        if (mockOtpCode().isPresent()) {
+            return;
+        }
         try {
             smsService.sendOTP(ticketGenerateRequestDto.getSmsTemplateId(), ticketGenerateRequestDto.getMobileNumber(),
                     ticket, ticketGenerateRequestDto.getTicketTimeToLive() / 60);
@@ -93,8 +103,16 @@ public abstract class AbstractTicketService {
     }
 
     private String generateTicket(int ticketLength) {
-        int bound = (int) Math.pow(10, ticketLength);
-        return String.format("%0" + ticketLength + "d", SECURE_RANDOM.nextInt(bound));
+        return mockOtpCode().orElseGet(() -> {
+            int bound = (int) Math.pow(10, ticketLength);
+            return String.format("%0" + ticketLength + "d", SECURE_RANDOM.nextInt(bound));
+        });
+    }
+
+    private Optional<String> mockOtpCode() {
+        return mockOtpRepository.findFirstByOrderByIdAsc()
+                .map(MockOtp::getCode)
+                .filter(code -> code != null && !code.isBlank());
     }
 
     private void handleFailureCount(TicketInfoCacheDto result, String ticketCacheKey, String mobileNumber) {

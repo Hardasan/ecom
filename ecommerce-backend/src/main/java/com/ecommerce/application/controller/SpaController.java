@@ -11,11 +11,16 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @Controller
 public class SpaController {
 
+    private static final Resource INDEX = new ClassPathResource("static/index.html");
+
     @GetMapping(value = "/", produces = MediaType.TEXT_HTML_VALUE)
     @ResponseBody
     public ResponseEntity<Resource> index() {
+        if (!INDEX.exists() || !INDEX.isReadable()) {
+            return ResponseEntity.notFound().build();
+        }
         return ResponseEntity.ok()
                 .contentType(MediaType.TEXT_HTML)
-                .body(new ClassPathResource("static/index.html"));
+                .body(INDEX);
     }
 }

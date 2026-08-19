@@ -11,18 +11,25 @@ import com.ecommerce.application.service.payment.PaymentGateway;
 import com.ecommerce.application.service.payment.PaymentInitiation;
 import com.ecommerce.application.service.payment.PaymentVerification;
 import com.ecommerce.persistence.entity.Order;
+import com.ecommerce.persistence.entity.Product;
 import com.ecommerce.persistence.entity.Transaction;
 import com.ecommerce.persistence.entity.enumeration.OrderStatus;
 import com.ecommerce.persistence.entity.enumeration.TransactionType;
 import com.ecommerce.persistence.repository.OrderRepository;
+import com.ecommerce.persistence.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +40,7 @@ public class OrderService {
             OrderStatus.CANCEL_BY_USER, OrderStatus.CANCEL_BY_ADMIN);
 
     private final OrderRepository orderRepository;
+    private final ProductRepository productRepository;
     private final OrderMapper orderMapper;
     private final PaymentGateway paymentGateway;
     private final OrderInventoryRestorer inventoryRestorer;
@@ -40,33 +48,33 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public List<OrderResponseDto> listOrders(Long userId) {
-        return orderRepository.findByUserIdOrderByIdDesc(userId).stream()
-                .map(orderMapper::toResponseDto)
-                .toList();
+        List<Order> orders = orderRepository.findByUserIdOrderByIdDesc(userId);
+        Map<Long, Product> products = loadProducts(orders);
+        return orders.stream().map(order -> toDto(order, products)).toList();
     }
 
     @Transactional(readOnly = true)
     public OrderResponseDto getOrder(Long userId, Long orderId) {
-        return orderMapper.toResponseDto(findOwnedOrThrow(userId, orderId));
+        return toDto(findOwnedOrThrow(userId, orderId));
     }
 
     @Transactional(readOnly = true)
     public List<OrderResponseDto> listAllOrders() {
-        return orderRepository.findAllByOrderByIdDesc().stream()
-                .map(orderMapper::toResponseDto)
-                .toList();
+        List<Order> orders = orderRepository.findAllByOrderByIdDesc();
+        Map<Long, Product> products = loadProducts(orders);
+        return orders.stream().map(order -> toDto(order, products)).toList();
     }
 
     @Transactional(readOnly = true)
     public OrderResponseDto getOrderAdmin(Long orderId) {
-        return orderMapper.toResponseDto(findOrThrow(orderId));
+        return toDto(findOrThrow(orderId));
     }
 
     @Transactional(readOnly = true)
     public List<OrderResponseDto> listRefundableOrders() {
-        return orderRepository.findRefundableOrders().stream()
-                .map(orderMapper::toResponseDto)
-                .toList();
+        List<Order> orders = orderRepository.findRefundableOrders();
+        Map<Long, Product> products = loadProducts(orders);
+        return orders.stream().map(order -> toDto(order, products)).toList();
     }
 
     @Transactional(readOnly = true)
@@ -97,7 +105,7 @@ public class OrderService {
                 TransactionType.PAYMENT, order, verification.paymentReference(), null));
         order.setStatus(OrderStatus.PAID);
         order.setReservedUntil(null);
-        return orderMapper.toResponseDto(orderRepository.save(order));
+        return toDto(orderRepository.save(order));
     }
 
     @Transactional
@@ -131,7 +139,7 @@ public class OrderService {
 
         order.addTransaction(buildTransaction(
                 TransactionType.REFUND, order, requestDto.getReference(), requestDto.getIban()));
-        return orderMapper.toResponseDto(orderRepository.save(order));
+        return toDto(orderRepository.save(order));
     }
 
     @Transactional
@@ -139,7 +147,7 @@ public class OrderService {
         Order order = findOrThrowForUpdate(orderId);
         requireStatus(order, OrderStatus.PAID);
         order.setStatus(OrderStatus.SENDING);
-        return orderMapper.toResponseDto(orderRepository.save(order));
+        return toDto(orderRepository.save(order));
     }
 
     @Transactional
@@ -147,7 +155,7 @@ public class OrderService {
         Order order = findOwnedOrThrowForUpdate(userId, orderId);
         requireStatus(order, OrderStatus.SENDING);
         order.setStatus(OrderStatus.RECEIVED);
-        return orderMapper.toResponseDto(orderRepository.save(order));
+        return toDto(orderRepository.save(order));
     }
 
     private OrderResponseDto cancel(Order order, OrderStatus cancelStatus) {
@@ -156,7 +164,32 @@ public class OrderService {
         discountReleaser.release(order);
         order.setStatus(cancelStatus);
         order.setReservedUntil(null);
-        return orderMapper.toResponseDto(orderRepository.save(order));
+        return toDto(orderRepository.save(order));
+    }
+
+    private OrderResponseDto toDto(Order order) {
+        return toDto(order, loadProducts(List.of(order)));
+    }
+
+    private OrderResponseDto toDto(Order order, Map<Long, Product> products) {
+        OrderResponseDto dto = orderMapper.toResponseDto(order);
+        orderMapper.attachMainImages(dto, products);
+        return dto;
+    }
+
+    private Map<Long, Product> loadProducts(Collection<Order> orders) {
+        List<Long> productIds = orders.stream()
+                .filter(Objects::nonNull)
+                .flatMap(order -> order.getItems().stream())
+                .map(item -> item.getProduct().getProductId())
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (productIds.isEmpty()) {
+            return Map.of();
+        }
+        return productRepository.findAllById(productIds).stream()
+                .collect(Collectors.toMap(Product::getId, Function.identity()));
     }
 
     private Transaction buildTransaction(TransactionType type, Order order, String reference, String iban) {

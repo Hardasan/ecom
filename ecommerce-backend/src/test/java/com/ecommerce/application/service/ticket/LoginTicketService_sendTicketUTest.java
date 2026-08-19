@@ -10,13 +10,17 @@ import com.ecommerce.application.util.DateUtil;
 import com.ecommerce.persistence.cache.BlockedMobileNumbersCacheService;
 import com.ecommerce.persistence.cache.LoginTicketCacheService;
 import com.ecommerce.persistence.cache.dto.TicketInfoCacheDto;
+import com.ecommerce.persistence.entity.MockOtp;
 import com.ecommerce.persistence.repository.AppUserRepository;
+import com.ecommerce.persistence.repository.MockOtpRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -34,6 +38,8 @@ class LoginTicketService_sendTicketUTest {
     private BlockedMobileNumbersCacheService blockedMobileNumbersCacheService;
     @Mock
     private AppUserRepository appUserRepository;
+    @Mock
+    private MockOtpRepository mockOtpRepository;
 
     private LoginTicketService loginTicketService;
 
@@ -44,7 +50,7 @@ class LoginTicketService_sendTicketUTest {
         ticketProperties.setLength(6);
         loginProperties.setTicket(ticketProperties);
         loginTicketService = new LoginTicketService(dateUtil, smsService, loginProperties, ticketCacheService,
-                blockedMobileNumbersCacheService, appUserRepository);
+                blockedMobileNumbersCacheService, appUserRepository, mockOtpRepository);
     }
 
     @Test
@@ -101,6 +107,22 @@ class LoginTicketService_sendTicketUTest {
         assertEquals("sms failed", exception.getMessage());
         verify(ticketCacheService).deleteTicket("ticket-cache", null);
         verify(ticketCacheService).deleteLastSentTicketDate("last-sent-cache");
+    }
+
+    @Test
+    void mock_otp_uses_db_code_and_skips_sms() {
+        MockOtp mockOtp = new MockOtp();
+        mockOtp.setCode("123456");
+        when(mockOtpRepository.findFirstByOrderByIdAsc()).thenReturn(Optional.of(mockOtp));
+
+        loginTicketService.sendTicket(requestDto());
+
+        ArgumentCaptor<TicketInfoCacheDto> captor = ArgumentCaptor.forClass(TicketInfoCacheDto.class);
+        verify(ticketCacheService).addTicket(org.mockito.ArgumentMatchers.eq("ticket-cache"),
+                org.mockito.ArgumentMatchers.isNull(),
+                captor.capture(), org.mockito.ArgumentMatchers.any());
+        assertEquals("123456", captor.getValue().getTicket());
+        verify(smsService, never()).sendOTP(any(), any(), any(), any());
     }
 
     private TicketGenerateRequestDto requestDto() {

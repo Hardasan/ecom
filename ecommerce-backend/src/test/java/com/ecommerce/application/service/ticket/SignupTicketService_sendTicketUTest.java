@@ -11,6 +11,7 @@ import com.ecommerce.persistence.cache.BlockedMobileNumbersCacheService;
 import com.ecommerce.persistence.cache.SignupTicketCacheService;
 import com.ecommerce.persistence.cache.dto.TicketInfoCacheDto;
 import com.ecommerce.persistence.repository.AppUserRepository;
+import com.ecommerce.persistence.repository.MockOtpRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +35,8 @@ class SignupTicketService_sendTicketUTest {
     private BlockedMobileNumbersCacheService blockedMobileNumbersCacheService;
     @Mock
     private AppUserRepository appUserRepository;
+    @Mock
+    private MockOtpRepository mockOtpRepository;
 
     private SignupTicketService signupTicketService;
 
@@ -44,7 +47,7 @@ class SignupTicketService_sendTicketUTest {
         ticketProperties.setLength(4);
         signupProperties.setTicket(ticketProperties);
         signupTicketService = new SignupTicketService(dateUtil, smsService, signupProperties, ticketCacheService,
-                blockedMobileNumbersCacheService, appUserRepository);
+                blockedMobileNumbersCacheService, appUserRepository, mockOtpRepository);
     }
 
     @Test

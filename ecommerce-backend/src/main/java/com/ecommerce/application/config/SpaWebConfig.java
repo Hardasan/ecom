@@ -30,7 +30,8 @@ public class SpaWebConfig implements WebMvcConfigurer {
                                 return requestedResource;
                             }
                         }
-                        return location.createRelative("index.html");
+                        Resource index = location.createRelative("index.html");
+                        return (index.exists() && index.isReadable()) ? index : null;
                     }
                 });
     }

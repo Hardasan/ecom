@@ -50,3 +50,13 @@ Processor order: `lombok` → `lombok-mapstruct-binding` → `mapstruct-processo
 - Order status **writes** → `*ForUpdate`. Release job → `pg_try_advisory_xact_lock` (other instances skip).
 - Pay/refund → `Transaction` via order `addTransaction` (no orphan inserts).
 - Flyway: `baseline-on-migrate=false`; never edit old files — add `V1.x__…`. Config is `.yml`.
+
+---
+
+## Frontend (Angular)
+
+- Routes: **`loadComponent` only**. Never `import` a page component in `app.routes.ts`. First paint must not download cart/checkout/login/product/search.
+- No `withPreloading` / `PreloadAllModules`.
+- Never `import` images/fonts into TypeScript (that inlines them into the JS bundle). URLs under `/assets/…` only.
+- Catalog photos live in the API/DB, not in the frontend bundle.
+- Styles: SCSS (`styleUrl: './x.scss'`). New components use `"style": "scss"`.

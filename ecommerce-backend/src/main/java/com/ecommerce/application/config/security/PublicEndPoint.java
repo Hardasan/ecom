@@ -21,6 +21,9 @@ public class PublicEndPoint {
             API + "/products",
             API + "/products/**",
             API + "/categories",
-            API + "/categories/**"
+            API + "/categories/**",
+            API + "/client-config",
+            API + "/geo/provinces",
+            API + "/geo/cities"
     };
 }

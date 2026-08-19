@@ -1,0 +1,47 @@
+<div class="page search-page">
+  <div class="page-scroll">
+    <header class="top-bar">
+      <a routerLink="/" class="icon-btn" aria-label="بازگشت">
+        <img [src]="a.iconBack" alt="" width="8" height="16" />
+      </a>
+      <p class="top-bar__title">جستجو</p>
+      <span class="spacer"></span>
+    </header>
+
+    <form class="search-form" (ngSubmit)="submit()">
+      <input
+        class="field"
+        type="search"
+        [(ngModel)]="query"
+        name="q"
+        placeholder="جستجوی محصول…"
+        autofocus
+      />
+      <button type="submit" class="btn-brand">جستجو</button>
+      <p class="hint">{{ hint() }}</p>
+    </form>
+  </div>
+
+  <nav class="bottom-nav" aria-label="منوی اصلی">
+    <a routerLink="/" class="bottom-nav__item">
+      <img [src]="a.iconHome" alt="" width="24" height="24" />
+      <span>خانه</span>
+    </a>
+    <a routerLink="/search" class="bottom-nav__item is-active">
+      <img [src]="a.iconSearchNav" alt="" width="24" height="24" />
+      <span>جستجو</span>
+    </a>
+    <a routerLink="/categories" class="bottom-nav__item">
+      <img [src]="a.iconGrid" alt="" width="24" height="24" />
+      <span>دسته‌بندی</span>
+    </a>
+    <a
+      [routerLink]="auth.isLoggedIn() ? '/profile' : '/login'"
+      [queryParams]="auth.isLoggedIn() ? null : { returnUrl: '/profile' }"
+      class="bottom-nav__item"
+    >
+      <img [src]="a.iconUser" alt="" width="24" height="24" />
+      <span>پروفایل</span>
+    </a>
+  </nav>
+</div>

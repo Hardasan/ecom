@@ -146,6 +146,41 @@ public class UserService {
         return new IbanResponseDto(appUser.getIban());
     }
 
+    @Transactional(readOnly = true)
+    public UserProfileResponseDto getProfile(Long userId) {
+        AppUser appUser = requireUser(userId);
+        return toProfile(appUser);
+    }
+
+    @Transactional
+    public UserProfileResponseDto updateProfile(UpdateUserProfileRequestDto requestDto, Long userId) {
+        AppUser appUser = requireUser(userId);
+        String newMobile = requestDto.getMobile();
+        if (!newMobile.equals(appUser.getMobile())) {
+            appUserRepository.findByMobile(newMobile)
+                    .filter(other -> !other.getId().equals(userId))
+                    .ifPresent(other -> {
+                        throw new EcommerceException(ECOMErrorType.USER_ALREADY_EXISTS);
+                    });
+            if (appUser.getMobile() != null && appUser.getMobile().equals(appUser.getUsername())) {
+                appUser.setUsername(newMobile);
+            }
+            appUser.setMobile(newMobile);
+        }
+        appUser.setFirstName(requestDto.getFirstName());
+        appUser.setLastName(requestDto.getLastName());
+        return toProfile(appUserRepository.save(appUser));
+    }
+
+    private AppUser requireUser(Long userId) {
+        return appUserRepository.findById(userId)
+                .orElseThrow(() -> new EcommerceException(ECOMErrorType.USER_NOT_FOUND));
+    }
+
+    private UserProfileResponseDto toProfile(AppUser appUser) {
+        return new UserProfileResponseDto(appUser.getFirstName(), appUser.getLastName(), appUser.getMobile());
+    }
+
     private TicketGenerateRequestDto buildTicketRequest(String mobileNumber, TicketProperties ticketProperties) {
         TicketGenerateRequestDto dto = new TicketGenerateRequestDto();
         dto.setMobileNumber(mobileNumber);

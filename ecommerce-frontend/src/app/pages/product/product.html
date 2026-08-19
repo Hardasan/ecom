@@ -1,0 +1,112 @@
+<div class="page product">
+  @if (loading()) {
+    <p class="state">در حال بارگذاری…</p>
+  } @else if (!product()) {
+    <p class="state error">{{ error() || 'محصول پیدا نشد' }}</p>
+    <a routerLink="/" class="btn-brand back-home">خانه</a>
+  } @else {
+    <div class="page-scroll">
+      <div class="gallery">
+        <div class="gallery-actions">
+          <div class="gallery-actions__left">
+            <a routerLink="/cart" class="icon-btn" aria-label="سبد خرید">
+              <img [src]="a.iconCart" alt="" width="20" height="20" />
+            </a>
+            <button type="button" class="icon-btn" aria-label="اشتراک‌گذاری">
+              <img [src]="a.iconShare" alt="" width="20" height="20" />
+            </button>
+            <button type="button" class="icon-btn" aria-label="علاقه‌مندی">
+              <img [src]="a.iconHeart" alt="" width="20" height="20" />
+            </button>
+          </div>
+          <a routerLink="/" class="icon-btn" aria-label="بستن">
+            <img [src]="a.iconClose" alt="" width="20" height="20" />
+          </a>
+        </div>
+        @if (image(); as src) {
+          <img class="gallery-img" [src]="src" [alt]="name()" />
+        }
+      </div>
+
+      <div class="info">
+        <div class="rating">
+          <span class="rating-count">{{ reviewCount() }}</span>
+          <span class="rating-score">{{ ratingText() }}</span>
+          <img [src]="a.iconStar" alt="" width="16" height="16" />
+        </div>
+        <h1>{{ name() }}</h1>
+        <p class="subtitle">{{ product()!.shortDescription || name() }}</p>
+
+        @if (variants().length) {
+          <p class="label">{{ product()!.variantType === 'SIZE' ? 'سایز' : 'رنگ / تنوع' }}</p>
+          <div class="swatches text-swatches">
+            @for (v of variants(); track $index) {
+              <button
+                type="button"
+                class="swatch-chip"
+                [class.is-selected]="selectedVariant() === v.variantValue"
+                (click)="selectVariant(v.variantValue)"
+              >
+                {{ v.variantValue || 'پیش‌فرض' }}
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="tabs">
+        <button type="button" [class.is-active]="activeTab() === 'reviews'" (click)="setTab('reviews')">نظرات</button>
+        <button type="button" [class.is-active]="activeTab() === 'spec'" (click)="setTab('spec')">مشخصات</button>
+        <button type="button" [class.is-active]="activeTab() === 'desc'" (click)="setTab('desc')">توضیحات</button>
+      </div>
+
+      <div class="tab-body">
+        @if (activeTab() === 'desc') {
+          <p>{{ product()!.fullDescription || product()!.shortDescription || 'توضیحی ثبت نشده است.' }}</p>
+        } @else if (activeTab() === 'spec') {
+          @if (specEntries().length) {
+            <ul>
+              @for (s of specEntries(); track s.key) {
+                <li>
+                  <span>{{ s.key }}: {{ s.value }}</span>
+                  <i class="bullet"></i>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p>مشخصاتی ثبت نشده است.</p>
+          }
+        } @else {
+          <p>{{ reviewCount() || 'هنوز نظری ثبت نشده است.' }}</p>
+        }
+      </div>
+    </div>
+
+    <div class="bottom-bar product-bar">
+      @if (error()) {
+        <p class="inline-error">{{ error() }}</p>
+      }
+      <div class="price-row">
+        <div class="price-now">
+          <span class="unit">تومان</span>
+          <strong>{{ currentPrice().replace(' تومان', '') }}</strong>
+        </div>
+        @if (oldPrice(); as old) {
+          <div class="price-old">
+            <span class="strike">{{ old }}</span>
+            @if (discountPercent(); as pct) {
+              <span class="badge">{{ pct }}</span>
+            }
+          </div>
+        }
+      </div>
+      <button type="button" class="btn-brand" [disabled]="buying()" (click)="buy()">
+        {{ buying() ? '…' : 'خرید' }}
+      </button>
+    </div>
+  }
+
+  @if (toast()) {
+    <div class="toast">{{ toast() }}</div>
+  }
+</div>

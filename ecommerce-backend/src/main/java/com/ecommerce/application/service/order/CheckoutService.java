@@ -30,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -57,7 +58,7 @@ public class CheckoutService {
 
         Order order = placeOrder(userId, address, lines, requestDto.getDiscountCode());
         cartItemRepository.deleteByUserId(userId);
-        return orderMapper.toResponseDto(order);
+        return toDto(order);
     }
 
     @Transactional
@@ -70,7 +71,22 @@ public class CheckoutService {
                 .orElseThrow(() -> new EcommerceException(ECOMErrorType.ADDRESS_NOT_FOUND));
 
         List<OrderLineSpec> lines = resolveGuestLines(requestDto.getItems());
-        return orderMapper.toResponseDto(placeOrder(userId, address, lines, requestDto.getDiscountCode()));
+        return toDto(placeOrder(userId, address, lines, requestDto.getDiscountCode()));
+    }
+
+    private OrderResponseDto toDto(Order order) {
+        List<Long> productIds = order.getItems().stream()
+                .map(item -> item.getProduct().getProductId())
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        Map<Long, Product> products = productIds.isEmpty()
+                ? Map.of()
+                : productRepository.findAllById(productIds).stream()
+                        .collect(Collectors.toMap(Product::getId, p -> p));
+        OrderResponseDto dto = orderMapper.toResponseDto(order);
+        orderMapper.attachMainImages(dto, products);
+        return dto;
     }
 
     private Order placeOrder(Long userId, UserAddress address, List<OrderLineSpec> lines, String discountCode) {

@@ -1,0 +1,68 @@
+<div class="page order-detail">
+  <div class="page-scroll">
+    <header class="top-bar">
+      <a routerLink="/orders" class="icon-btn" aria-label="بازگشت">
+        <img [src]="a.iconBack" alt="" width="8" height="16" />
+      </a>
+      <p class="top-bar__title">جزییات سفارش</p>
+      <span class="spacer"></span>
+    </header>
+
+    <div class="detail-body">
+      @if (error()) {
+        <p class="form-error">{{ error() }}</p>
+      }
+
+      @if (order(); as o) {
+        <section class="receipt-card receipt-card--center">
+          <p class="muted">کد پیگیری</p>
+          <p class="tracking">{{ trackingCode() }}</p>
+          @if (orderDate()) {
+            <p class="muted">{{ orderDate() }}</p>
+          }
+          <span class="status">{{ status() }}</span>
+        </section>
+
+        <section class="receipt-card">
+          <p class="muted">تحویل به</p>
+          <p class="body">{{ recipientName() }}</p>
+          <p class="body">{{ recipientMobile() }}</p>
+          <p class="body address">{{ deliveryAddress() }}</p>
+          <span class="badge">ارسال با پست</span>
+        </section>
+
+        <section class="receipt-card">
+          <p class="section-title">اطلاعات پرداخت</p>
+          <div class="line-meta">
+            <span class="amount">{{ total() }}</span>
+            <span class="muted">پرداخت با درگاه بانکی</span>
+          </div>
+          @if (savings(); as save) {
+            <div class="line-meta">
+              <span class="amount amount--sale">{{ save }}</span>
+              <span class="muted">سود شما از خرید</span>
+            </div>
+          }
+        </section>
+
+        <section class="items-block">
+          <h2>خلاصه کالاها</h2>
+          @for (item of o.items; track item.id) {
+            <div class="item-card">
+              @if (itemThumb(item); as src) {
+                <img [src]="src" [alt]="item.productName" width="116" height="116" />
+              }
+              <div class="item-card__text">
+                <p class="item-card__title">{{ itemTitle(item) }}</p>
+                <p class="item-card__price">{{ itemPrice(item) }}</p>
+                <span class="qty-badge">{{ item.quantity }} عدد</span>
+              </div>
+            </div>
+          }
+        </section>
+      } @else if (!error()) {
+        <p class="muted center">در حال بارگذاری…</p>
+      }
+    </div>
+  </div>
+</div>

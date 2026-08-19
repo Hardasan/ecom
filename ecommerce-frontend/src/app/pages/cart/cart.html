@@ -1,0 +1,73 @@
+<div class="page cart">
+  <div class="page-scroll">
+    <header class="top-bar">
+      <a routerLink="/" class="icon-btn" aria-label="بازگشت">
+        <img [src]="a.iconBack" alt="" width="8" height="16" />
+      </a>
+      <p class="top-bar__title">سبد خرید</p>
+      <span class="spacer"></span>
+    </header>
+
+    @if (loading()) {
+      <p class="state">در حال بارگذاری…</p>
+    } @else if (error()) {
+      <p class="state error">{{ error() }}</p>
+    } @else if (!items().length) {
+      <p class="state">سبد خرید خالی است</p>
+    } @else {
+      <div class="cart-body">
+        @for (item of items(); track item.id) {
+          <article class="cart-card">
+            <div class="cart-card__content">
+              <h2>{{ item.productName }}</h2>
+              <p class="meta">{{ item.variantValue || item.productCode || '—' }}</p>
+              <p class="price">
+                <span class="unit">تومان</span>
+                <strong>{{ unitPrice(item).replace(' تومان', '') }}</strong>
+              </p>
+              <div class="cart-card__actions">
+                <div class="qty">
+                  <button type="button" (click)="dec(item)" aria-label="کاهش">
+                    <img [src]="a.iconMinus" alt="" width="14" height="14" />
+                  </button>
+                  <span>{{ item.quantity }}</span>
+                  <button type="button" (click)="inc(item)" aria-label="افزایش">
+                    <img [src]="a.iconPlus" alt="" width="14" height="14" />
+                  </button>
+                </div>
+                <button type="button" class="trash" (click)="remove(item)" aria-label="حذف">
+                  <img [src]="a.iconTrash" alt="" width="20" height="20" />
+                </button>
+              </div>
+            </div>
+            @if (imgOf(item); as src) {
+              <img class="cart-card__img" [src]="src" [alt]="item.productName" width="88" height="88" />
+            } @else {
+              <div class="cart-card__img placeholder"></div>
+            }
+          </article>
+        }
+
+        <div class="coupon">
+          <button type="button" class="coupon-apply">اعمال کد</button>
+          <span>کد تخفیف دارید؟</span>
+        </div>
+
+        <div class="summary">
+          <div class="summary-row">
+            <span>{{ total() }}</span>
+            <span class="muted">جمع کالاها</span>
+          </div>
+          <div class="summary-row">
+            <span class="saving">{{ saving() }}</span>
+            <span class="muted">سود شما از خرید</span>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="bottom-bar">
+    <button type="button" class="btn-brand" [disabled]="!items().length" (click)="checkout()">ادامه و پرداخت</button>
+  </div>
+</div>

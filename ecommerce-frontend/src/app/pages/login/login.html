@@ -1,0 +1,66 @@
+<div class="page login">
+  <div class="login-inner">
+    <div class="logo">LOGO</div>
+
+    @if (error()) {
+      <p class="form-error">{{ error() }}</p>
+    }
+
+    @if (step() === 'phone') {
+      <div class="login-block">
+        <h1>ورود/ثبت نام در فروشگاه</h1>
+        <p class="hint">شماره موبایل خود را وارد کنید</p>
+        <input class="field" type="tel" inputmode="numeric" placeholder="شماره موبایل" [(ngModel)]="phone" />
+        <button type="button" class="btn-brand" [disabled]="busy()" (click)="sendCode()">
+          {{ busy() ? '…' : 'ارسال کد' }}
+        </button>
+      </div>
+    } @else if (step() === 'otp') {
+      <div class="login-block">
+        <h1>ورود/ثبت نام در فروشگاه</h1>
+        <p class="hint">کد ارسال شده به شماره {{ phone }} را وارد کنید</p>
+        <div class="otp-wrap">
+          <div class="otp-row" dir="ltr">
+            @for (i of [0, 1, 2, 3, 4, 5]; track i) {
+              <span class="field otp" [class.active]="otpCode().length === i">{{ otpCode()[i] ?? '' }}</span>
+            }
+          </div>
+          <input
+            #otpInput
+            class="otp-capture"
+            type="text"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            maxlength="6"
+            [value]="otpCode()"
+            (input)="onOtpCodeInput($event)"
+          />
+        </div>
+        @if (ttl() > 0) {
+          <p class="timer">{{ ttl() }} ثانیه</p>
+        } @else {
+          <button type="button" class="resend" [disabled]="busy()" (click)="resendCode()">
+            ارسال مجدد کد
+          </button>
+        }
+        <div class="login-actions">
+          <button type="button" class="btn-outline" (click)="editPhone()">ویرایش شماره</button>
+          <button type="button" class="btn-brand" [disabled]="busy()" (click)="confirmOtp()">
+            {{ busy() ? '…' : 'تایید' }}
+          </button>
+        </div>
+      </div>
+    } @else {
+      <div class="login-block">
+        <h1>تکمیل ثبت‌نام</h1>
+        <p class="hint">اطلاعات حساب را وارد کنید</p>
+        <input class="field" type="text" placeholder="نام" [(ngModel)]="firstName" />
+        <input class="field" type="text" placeholder="نام خانوادگی" [(ngModel)]="lastName" />
+        <input class="field" type="password" placeholder="رمز عبور" [(ngModel)]="password" />
+        <button type="button" class="btn-brand" [disabled]="busy()" (click)="completeSignup()">
+          {{ busy() ? '…' : 'ثبت‌نام و ورود' }}
+        </button>
+      </div>
+    }
+  </div>
+</div>

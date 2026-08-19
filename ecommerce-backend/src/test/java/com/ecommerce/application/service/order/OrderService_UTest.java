@@ -55,9 +55,10 @@ class OrderService_UTest {
 
     @BeforeEach
     void setUp() {
-        orderService = new OrderService(orderRepository, new OrderMapperImpl(), paymentGateway,
+        orderService = new OrderService(orderRepository, productRepository, new OrderMapperImpl(), paymentGateway,
                 new OrderInventoryRestorer(productRepository), discountReleaser);
         lenient().when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        lenient().when(productRepository.findAllById(any())).thenReturn(List.of());
     }
 
     // --- pay / confirm ---

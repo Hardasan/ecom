@@ -1,0 +1,45 @@
+<div class="page orders">
+  <div class="page-scroll">
+    <header class="top-bar">
+      <a routerLink="/profile" class="icon-btn" aria-label="بازگشت">
+        <img [src]="a.iconBack" alt="" width="8" height="16" />
+      </a>
+      <p class="top-bar__title">سفارش‌ها</p>
+      <span class="spacer"></span>
+    </header>
+
+    @if (error()) {
+      <p class="form-error">{{ error() }}</p>
+    }
+
+    <div class="orders-body">
+      @if (loading()) {
+        <p class="empty">در حال بارگذاری…</p>
+      } @else if (!orders().length) {
+        <p class="empty">هنوز سفارشی ثبت نکرده‌اید</p>
+      } @else {
+        @for (order of orders(); track order.id) {
+          <a class="order-card" [routerLink]="['/orders', order.id]">
+            <div class="order-card__row">
+              <span>{{ dateLabel(order) }}</span>
+              <strong>{{ tracking(order) }}</strong>
+            </div>
+            <div class="order-card__row">
+              <span>{{ total(order) }}</span>
+              <span>{{ qty(order) }}</span>
+            </div>
+            <div class="order-card__thumbs">
+              <img [src]="a.iconBack" alt="" class="order-card__more" width="20" height="20" />
+              <div class="thumbs">
+                @for (src of thumbs(order); track $index) {
+                  <img [src]="src" alt="" width="64" height="64" />
+                }
+              </div>
+            </div>
+            <span class="status">{{ status(order) }}</span>
+          </a>
+        }
+      }
+    </div>
+  </div>
+</div>

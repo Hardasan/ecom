@@ -92,6 +92,7 @@ public abstract class AbstractIntegrationITest {
         WIREMOCK.resetAll();
         stubSmsSuccess();
         jdbcTemplate.execute("TRUNCATE TABLE app_user RESTART IDENTITY CASCADE");
+        jdbcTemplate.execute("TRUNCATE TABLE mock_otp");
     }
 
     // ---------------------------------------------------------------------------------------------

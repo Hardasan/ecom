@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 @Mapper(componentModel = "spring")
-interface WishlistMapper {
+public interface WishlistMapper {
 
     @Mapping(target = "addedAt", source = "createdAt")
     @Mapping(target = "productName", ignore = true)

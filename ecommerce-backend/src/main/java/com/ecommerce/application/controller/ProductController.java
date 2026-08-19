@@ -47,6 +47,11 @@ public class ProductController {
         return productService.create(requestDto, image, altText);
     }
 
+    @GetMapping(value = "/special-sale", produces = MediaType.APPLICATION_JSON_VALUE)
+    public SpecialSaleProductListResponseDto specialSale() {
+        return productService.getSpecialSale();
+    }
+
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public GetProductResponseDto getById(@PathVariable Long id) {
         return productService.getById(id);

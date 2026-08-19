@@ -1,0 +1,128 @@
+<div class="page home">
+  <div class="page-scroll">
+    <header class="home-nav">
+      <a routerLink="/cart" class="icon-btn" aria-label="سبد خرید">
+        <img [src]="a.iconCart" alt="" width="20" height="20" />
+      </a>
+      <p class="brand">RiVaNi</p>
+      <a routerLink="/search" class="icon-btn" aria-label="جستجو">
+        <img [src]="a.iconSearch" alt="" width="20" height="20" />
+      </a>
+    </header>
+
+    <section class="hero">
+      @if (heroProduct(); as hero) {
+        <a class="hero-card" [routerLink]="['/product', hero.id]">
+          @if (imgOf(hero); as src) {
+            <img class="hero-bg" [src]="src" [alt]="nameOf(hero)" width="800" height="447" fetchpriority="high" decoding="async" />
+          }
+          <div class="hero-copy">
+            <h1>بی‌صداتر<br />از سکوت</h1>
+            <span class="hero-cta">مشاهده محصول</span>
+          </div>
+        </a>
+      }
+    </section>
+
+    <section>
+      <div class="section-head">
+        <a routerLink="/products" [queryParams]="{ title: 'فروش ویژه' }" class="link">مشاهده همه</a>
+        <h2>فروش ویژه</h2>
+      </div>
+
+      @if (loading()) {
+        <p class="state">در حال بارگذاری…</p>
+      } @else if (error()) {
+        <p class="state error">{{ error() }}</p>
+      } @else if (products().length === 0) {
+        <p class="state">محصولی در فروشگاه نیست</p>
+      } @else {
+        <div class="sale-row">
+          @for (p of products(); track p.id) {
+            <a [routerLink]="['/product', p.id]" class="product-card">
+              <div class="product-card__img">
+                @if (imgOf(p); as src) {
+                  <img [src]="src" [alt]="nameOf(p)" width="160" height="160" loading="lazy" decoding="async" />
+                }
+              </div>
+              <div class="product-card__body">
+                <p class="product-card__name">{{ nameOf(p) }}</p>
+                <div class="product-card__row">
+                  <button
+                    type="button"
+                    class="add-btn"
+                    aria-label="افزودن به سبد"
+                    (click)="addToCart($event, p)"
+                  >
+                    <img [src]="a.iconAdd" alt="" width="26" height="26" />
+                  </button>
+                  <span class="product-card__price">{{ priceOf(p) }}</span>
+                </div>
+              </div>
+            </a>
+          }
+        </div>
+      }
+    </section>
+
+    <section class="promo">
+      <button type="button" class="promo-btn" (click)="promoCode()">دریافت کد</button>
+      <div class="promo-text">
+        <p class="promo-title">٪۴۰ تخفیف اولین خرید</p>
+        <p class="promo-sub">ویژه اعضای جدید اپلیکیشن</p>
+      </div>
+    </section>
+
+    <section class="cats">
+      <div class="section-head">
+        <a routerLink="/categories" class="link">مشاهده همه</a>
+        <h2>دسته‌بندی پیشنهادی</h2>
+      </div>
+      <div class="cat-grid">
+        @for (c of categories(); track c.id; let i = $index) {
+          <a
+            class="cat-card"
+            [class.cat-card--wide]="i === categories().length - 1 && categories().length % 2 === 1"
+            [attr.data-tone]="c.tone"
+            [routerLink]="['/products']"
+            [queryParams]="{ categoryId: c.id, title: c.name }"
+          >
+            <div class="cat-card__img">
+              @if (c.image) {
+                <img [src]="c.image" [alt]="c.name" width="480" height="640" loading="lazy" decoding="async" />
+              }
+            </div>
+            <p>{{ c.name }}</p>
+          </a>
+        }
+      </div>
+    </section>
+  </div>
+
+  @if (toast()) {
+    <div class="toast">{{ toast() }}</div>
+  }
+
+  <nav class="bottom-nav" aria-label="منوی اصلی">
+    <a routerLink="/" class="bottom-nav__item is-active">
+      <img [src]="a.iconHome" alt="" width="24" height="24" />
+      <span>خانه</span>
+    </a>
+    <a routerLink="/search" class="bottom-nav__item">
+      <img [src]="a.iconSearchNav" alt="" width="24" height="24" />
+      <span>جستجو</span>
+    </a>
+    <a routerLink="/categories" class="bottom-nav__item">
+      <img [src]="a.iconGrid" alt="" width="24" height="24" />
+      <span>دسته‌بندی</span>
+    </a>
+    <a
+      [routerLink]="auth.isLoggedIn() ? '/profile' : '/login'"
+      [queryParams]="auth.isLoggedIn() ? null : { returnUrl: '/profile' }"
+      class="bottom-nav__item"
+    >
+      <img [src]="a.iconUser" alt="" width="24" height="24" />
+      <span>پروفایل</span>
+    </a>
+  </nav>
+</div>

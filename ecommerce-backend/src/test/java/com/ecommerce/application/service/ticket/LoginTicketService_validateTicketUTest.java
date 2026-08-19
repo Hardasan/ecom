@@ -9,7 +9,9 @@ import com.ecommerce.application.util.DateUtil;
 import com.ecommerce.persistence.cache.BlockedMobileNumbersCacheService;
 import com.ecommerce.persistence.cache.LoginTicketCacheService;
 import com.ecommerce.persistence.cache.dto.TicketInfoCacheDto;
+import com.ecommerce.persistence.entity.MockOtp;
 import com.ecommerce.persistence.repository.AppUserRepository;
+import com.ecommerce.persistence.repository.MockOtpRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Duration;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -35,6 +38,8 @@ class LoginTicketService_validateTicketUTest {
     private BlockedMobileNumbersCacheService blockedMobileNumbersCacheService;
     @Mock
     private AppUserRepository appUserRepository;
+    @Mock
+    private MockOtpRepository mockOtpRepository;
 
     private LoginTicketService loginTicketService;
 
@@ -46,7 +51,7 @@ class LoginTicketService_validateTicketUTest {
         ticketProperties.setBlockDuration(Duration.ofMinutes(10));
         loginProperties.setTicket(ticketProperties);
         loginTicketService = new LoginTicketService(dateUtil, smsService, loginProperties, ticketCacheService,
-                blockedMobileNumbersCacheService, appUserRepository);
+                blockedMobileNumbersCacheService, appUserRepository, mockOtpRepository);
     }
 
     @Test
@@ -94,5 +99,17 @@ class LoginTicketService_validateTicketUTest {
                 () -> loginTicketService.validateTicket("cache-key", "123456", "09121111118"));
 
         assertEquals(ECOMErrorType.INVALID_TICKET, exception.getEcomErrorType());
+    }
+
+    @Test
+    void mock_otp_is_accepted_even_when_cache_is_empty() {
+        MockOtp mockOtp = new MockOtp();
+        mockOtp.setCode("123456");
+        when(mockOtpRepository.findFirstByOrderByIdAsc()).thenReturn(Optional.of(mockOtp));
+
+        loginTicketService.validateTicket("cache-key", "123456", "09121111118");
+
+        verify(ticketCacheService).deleteTicket("cache-key", null);
+        verify(ticketCacheService, never()).getTicketInfoDto(any());
     }
 }

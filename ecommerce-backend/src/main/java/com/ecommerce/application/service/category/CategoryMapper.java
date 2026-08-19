@@ -11,7 +11,7 @@ import org.mapstruct.MappingTarget;
 import java.util.List;
 
 @Mapper(componentModel = "spring")
-interface CategoryMapper {
+public interface CategoryMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "parentId", ignore = true)

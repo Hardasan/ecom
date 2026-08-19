@@ -1,0 +1,155 @@
+.detail-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 13px;
+  text-align: center;
+}
+
+.receipt-card {
+  width: 100%;
+  background: #fff;
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: right;
+
+  &--center {
+    align-items: center;
+    text-align: center;
+  }
+}
+
+.muted {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-muted);
+  line-height: 1.7;
+}
+
+.center {
+  text-align: center;
+}
+
+.body {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-body);
+  line-height: 1.7;
+}
+
+.address {
+  white-space: normal;
+}
+
+.tracking {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink-body);
+}
+
+.status {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand);
+}
+
+.badge {
+  align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 8px;
+  border-radius: 10px;
+  background: #e2922c;
+  color: #fff;
+  font-size: 14px;
+}
+
+.section-title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.line-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.amount {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+
+  &--sale {
+    color: #9e2b20;
+  }
+}
+
+.items-block {
+  h2 {
+    margin: 0 0 12px;
+    font-size: 16px;
+    font-weight: 700;
+    text-align: right;
+    color: var(--ink-muted);
+  }
+}
+
+.item-card {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  background: #fff;
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  margin-bottom: 12px;
+  text-align: right;
+
+  img {
+    width: 116px;
+    height: 116px;
+    border-radius: var(--radius-md);
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  &__text {
+    flex: 1;
+  }
+
+  &__title {
+    margin: 0 0 8px;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  &__price {
+    margin: 0 0 8px;
+    font-size: 14px;
+    font-weight: 700;
+  }
+}
+
+.qty-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 27px;
+  padding: 0 8px;
+  border-radius: 10px;
+  background: #eff2ee;
+  color: var(--ink-muted);
+  font-size: 13px;
+}

@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
-interface ProductMapper {
+public interface ProductMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "code", ignore = true)

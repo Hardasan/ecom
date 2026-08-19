@@ -1,0 +1,27 @@
+const BASE = '/assets/rivani';
+
+export const ASSETS = {
+  iconStatus: `${BASE}/icon-status.svg`,
+  iconCart: `${BASE}/icon-cart.svg`,
+  iconSearch: `${BASE}/icon-search.svg`,
+  iconAdd: `${BASE}/icon-add.svg`,
+  iconUser: `${BASE}/icon-user.svg`,
+  iconGrid: `${BASE}/icon-grid.svg`,
+  iconSearchNav: `${BASE}/icon-search-nav.svg`,
+  iconHome: `${BASE}/icon-home.svg`,
+  iconShare: `${BASE}/icon-share.svg`,
+  iconHeart: `${BASE}/icon-heart.svg`,
+  iconClose: `${BASE}/icon-close.svg`,
+  iconStar: `${BASE}/icon-star.svg`,
+  iconCheck: `${BASE}/icon-check.svg`,
+  iconDot: `${BASE}/icon-dot.svg`,
+  iconDots: `${BASE}/icon-dots.svg`,
+  iconBack: `${BASE}/icon-back.svg`,
+  iconMinus: `${BASE}/icon-minus.svg`,
+  iconPlus: `${BASE}/icon-plus.svg`,
+  iconTrash: `${BASE}/icon-trash.svg`,
+  iconTick: `${BASE}/icon-tick.svg`,
+  iconDownload: `${BASE}/icon-download.svg`,
+  iconMapPin: `${BASE}/icon-map-pin.svg`,
+  iconRadio: `${BASE}/icon-radio.svg`
+} as const;

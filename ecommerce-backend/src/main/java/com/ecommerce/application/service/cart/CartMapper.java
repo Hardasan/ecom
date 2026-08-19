@@ -2,8 +2,10 @@ package com.ecommerce.application.service.cart;
 
 import com.ecommerce.application.api.dto.cart.CartItemResponseDto;
 import com.ecommerce.application.api.dto.cart.CartResponseDto;
+import com.ecommerce.application.api.dto.product.ProductImageDto;
 import com.ecommerce.persistence.entity.CartItem;
 import com.ecommerce.persistence.entity.Product;
+import com.ecommerce.persistence.entity.ProductImage;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Context;
 import org.mapstruct.Mapper;
@@ -17,13 +19,16 @@ import java.util.Map;
 import java.util.Objects;
 
 @Mapper(componentModel = "spring")
-interface CartMapper {
+public interface CartMapper {
 
     @Mapping(target = "productName", ignore = true)
     @Mapping(target = "productCode", ignore = true)
+    @Mapping(target = "mainImage", ignore = true)
     @Mapping(target = "effectivePrice", ignore = true)
     @Mapping(target = "lineTotal", ignore = true)
     CartItemResponseDto toItemDto(CartItem item, @Context Map<Long, Product> products);
+
+    ProductImageDto toImageDto(ProductImage image);
 
     @AfterMapping
     default void enrichItem(CartItem item, @Context Map<Long, Product> products,
@@ -32,6 +37,7 @@ interface CartMapper {
         if (product != null) {
             dto.setProductName(product.getName());
             dto.setProductCode(product.getCode());
+            dto.setMainImage(toImageDto(product.getMainImage()));
         }
         BigDecimal effectivePrice = item.getDiscountPrice() != null ? item.getDiscountPrice() : item.getUnitPrice();
         dto.setEffectivePrice(effectivePrice);

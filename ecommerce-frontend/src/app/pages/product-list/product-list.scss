@@ -1,0 +1,55 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px 24px;
+}
+
+.list-card {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 12px;
+  color: inherit;
+
+  &__body {
+    flex: 1;
+    text-align: right;
+    min-width: 0;
+
+    h2 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.6;
+    }
+  }
+
+  &__img {
+    width: 96px;
+    height: 96px;
+    border-radius: var(--radius-md);
+    object-fit: cover;
+    flex-shrink: 0;
+    background: #eef2f0;
+  }
+}
+
+.price {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.state {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--ink-muted);
+
+  &.error {
+    color: var(--danger);
+  }
+}

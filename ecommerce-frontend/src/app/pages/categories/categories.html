@@ -1,0 +1,73 @@
+<div class="page categories">
+  <div class="page-scroll">
+    <header class="top-bar">
+      <a routerLink="/" class="icon-btn" aria-label="بازگشت">
+        <img [src]="a.iconBack" alt="" width="8" height="16" />
+      </a>
+      <p class="top-bar__title">دسته‌بندی‌ها</p>
+      <span class="spacer"></span>
+    </header>
+
+    @if (loading()) {
+      <p class="state">در حال بارگذاری…</p>
+    } @else if (error()) {
+      <p class="state error">{{ error() }}</p>
+    } @else if (!items().length) {
+      <p class="state">دسته‌بندی‌ای نیست</p>
+    } @else {
+      <div class="cat-list">
+        @for (item of items(); track item.category.id) {
+          <section class="cat-block">
+            <a
+              class="cat-block__main"
+              [routerLink]="['/products']"
+              [queryParams]="{ categoryId: item.category.id, title: nameOf(item.category) }"
+            >
+              {{ nameOf(item.category) }}
+            </a>
+            @if (item.subCategories?.length) {
+              <div class="cat-block__subs">
+                @for (sub of item.subCategories; track sub.id) {
+                  <a
+                    class="cat-block__sub"
+                    [routerLink]="['/products']"
+                    [queryParams]="{
+                      categoryId: item.category.id,
+                      subCategoryId: sub.id,
+                      title: nameOf(sub)
+                    }"
+                  >
+                    {{ nameOf(sub) }}
+                  </a>
+                }
+              </div>
+            }
+          </section>
+        }
+      </div>
+    }
+  </div>
+
+  <nav class="bottom-nav" aria-label="منوی اصلی">
+    <a routerLink="/" class="bottom-nav__item">
+      <img [src]="a.iconHome" alt="" width="24" height="24" />
+      <span>خانه</span>
+    </a>
+    <a routerLink="/search" class="bottom-nav__item">
+      <img [src]="a.iconSearchNav" alt="" width="24" height="24" />
+      <span>جستجو</span>
+    </a>
+    <a routerLink="/categories" class="bottom-nav__item is-active">
+      <img [src]="a.iconGrid" alt="" width="24" height="24" />
+      <span>دسته‌بندی</span>
+    </a>
+    <a
+      [routerLink]="auth.isLoggedIn() ? '/profile' : '/login'"
+      [queryParams]="auth.isLoggedIn() ? null : { returnUrl: '/profile' }"
+      class="bottom-nav__item"
+    >
+      <img [src]="a.iconUser" alt="" width="24" height="24" />
+      <span>پروفایل</span>
+    </a>
+  </nav>
+</div>

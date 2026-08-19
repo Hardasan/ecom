@@ -47,4 +47,11 @@ public class EcommercePropertiesConfiguration {
     public CheckoutProperties checkoutProperties() {
         return new CheckoutProperties();
     }
+
+    @Bean
+    @Valid
+    @ConfigurationProperties(prefix = "app.client")
+    public ClientProperties clientProperties() {
+        return new ClientProperties();
+    }
 }

@@ -4,6 +4,7 @@ import com.ecommerce.application.api.dto.product.CreateProductRequestDto;
 import com.ecommerce.application.api.dto.product.GetProductResponseDto;
 import com.ecommerce.application.api.dto.product.SearchProductRequestDto;
 import com.ecommerce.application.api.dto.product.SearchProductResponseDto;
+import com.ecommerce.application.api.dto.product.SpecialSaleProductListResponseDto;
 import com.ecommerce.application.api.dto.product.enumeration.ImageType;
 import com.ecommerce.application.api.exception.ECOMErrorType;
 import com.ecommerce.application.api.exception.EcommerceException;
@@ -72,6 +73,20 @@ public class ProductService {
     public Page<SearchProductResponseDto> search(SearchProductRequestDto searchDto, Pageable pageable) {
         return productRepository.findAll(ProductSpecifications.build(searchDto, isAdmin()), pageable)
                 .map(productMapper::toSummaryDto);
+    }
+
+    /**
+     * Home "فروش ویژه" strip. Selection rule can change later; for now return up to 5
+     * active in-stock products (newest id first).
+     */
+    @Transactional(readOnly = true)
+    public SpecialSaleProductListResponseDto getSpecialSale() {
+        var products = productRepository
+                .findTop5ByStatusAndInventoryCountGreaterThanOrderByIdDesc(ProductStatus.ACTIVE, 0)
+                .stream()
+                .map(productMapper::toSummaryDto)
+                .toList();
+        return new SpecialSaleProductListResponseDto(products);
     }
 
     @Transactional

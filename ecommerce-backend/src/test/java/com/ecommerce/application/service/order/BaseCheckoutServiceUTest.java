@@ -62,6 +62,7 @@ abstract class BaseCheckoutServiceUTest {
                 addressService, checkoutProperties, discountService);
         lenient().when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
+        lenient().when(productRepository.findAllById(any())).thenReturn(List.of());
         lenient().when(productRepository.decrementInventory(anyLong(), anyInt())).thenReturn(1);
     }
 

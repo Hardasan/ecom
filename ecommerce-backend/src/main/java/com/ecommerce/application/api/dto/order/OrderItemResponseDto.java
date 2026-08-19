@@ -1,5 +1,6 @@
 package com.ecommerce.application.api.dto.order;
 
+import com.ecommerce.application.api.dto.product.ProductImageDto;
 import com.ecommerce.persistence.entity.enumeration.VariantType;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,6 +18,8 @@ public class OrderItemResponseDto {
     private String productName;
 
     private String productCode;
+
+    private ProductImageDto mainImage;
 
     private VariantType variantType;
 

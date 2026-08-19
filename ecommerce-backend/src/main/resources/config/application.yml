@@ -63,12 +63,15 @@ app:
     caffeine:
       ttl: 10m
       max-size: 10000
+  # Public client config (GET /api/client-config). Keep in sync with ticket time-to-live.
+  client:
+    otp-ttl-seconds: 120
   # Signup
   signup:
     ticket:
       template-id: 123456
       length: 6
-      time-to-live: 2m
+      time-to-live: 120s
       block-duration: 10m
       max-failure-count: 5
     token-ttl: 10m
@@ -77,7 +80,7 @@ app:
     ticket:
       template-id: 123456
       length: 6
-      time-to-live: 2m
+      time-to-live: 120s
       block-duration: 10m
       max-failure-count: 5
     token-ttl: 1h

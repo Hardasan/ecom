@@ -8,7 +8,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
 @Mapper(componentModel = "spring")
-interface ProductReviewMapper {
+public interface ProductReviewMapper {
 
     // Only the client-editable fields (rating/title/comment) are applied; everything else is
     // server-managed and set explicitly in the service.

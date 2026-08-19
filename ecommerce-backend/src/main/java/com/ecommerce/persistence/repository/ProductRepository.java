@@ -1,6 +1,7 @@
 package com.ecommerce.persistence.repository;
 
 import com.ecommerce.persistence.entity.Product;
+import com.ecommerce.persistence.entity.enumeration.ProductStatus;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -22,6 +23,8 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     boolean existsByUrlAndIdNot(String url, Long id);
 
     boolean existsByCategoryIdOrSubCategoryId(Long categoryId, Long subCategoryId);
+
+    List<Product> findTop5ByStatusAndInventoryCountGreaterThanOrderByIdDesc(ProductStatus status, int inventoryCount);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM Product p WHERE p.id = :id")

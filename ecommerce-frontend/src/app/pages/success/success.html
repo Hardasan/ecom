@@ -1,0 +1,65 @@
+<div class="page success">
+  <div class="page-scroll success-scroll">
+    <div class="success-main">
+      <img class="tick" [src]="a.iconTick" alt="" width="64" height="64" />
+      <p class="message">سفارش شما دریافت شد.</p>
+
+      @if (error()) {
+        <p class="form-error">{{ error() }}</p>
+      }
+
+      @if (order(); as o) {
+        <section class="receipt-card receipt-card--center">
+          <p class="muted">کد پیگیری</p>
+          <p class="tracking">{{ trackingCode() }}</p>
+          @if (orderDate()) {
+            <p class="muted">{{ orderDate() }}</p>
+          }
+        </section>
+
+        <section class="receipt-card">
+          <p class="muted">تحویل به</p>
+          <p class="body">{{ recipientName() }}</p>
+          <p class="body">{{ recipientMobile() }}</p>
+          <p class="body address">{{ deliveryAddress() }}</p>
+          <span class="badge">ارسال با پست</span>
+        </section>
+
+        <section class="receipt-card">
+          <p class="section-title">اطلاعات پرداخت</p>
+          <div class="line-meta">
+            <span class="amount">{{ total() }}</span>
+            <span class="muted">پرداخت با درگاه بانکی</span>
+          </div>
+          @if (savings(); as save) {
+            <div class="line-meta">
+              <span class="amount amount--sale">{{ save }}</span>
+              <span class="muted">سود شما از خرید</span>
+            </div>
+          }
+        </section>
+
+        <section class="receipt-card">
+          <p class="section-title section-title--accent">خرید شما</p>
+          @for (item of o.items; track item.id) {
+            <div class="buy-line">
+              <span class="qty-badge">{{ item.quantity }} عدد</span>
+              <p class="buy-title">{{ itemTitle(item) }}</p>
+            </div>
+          }
+        </section>
+      } @else if (!error()) {
+        <p class="muted">جزئیات سفارش در حال بارگذاری است…</p>
+      }
+    </div>
+
+    <div class="success-actions">
+      @if (order(); as o) {
+        <a [routerLink]="['/orders', o.id]" class="text-btn">پیگیری سفارش</a>
+      } @else {
+        <a routerLink="/orders" class="text-btn">پیگیری سفارش</a>
+      }
+      <a routerLink="/" class="btn-outline">خانه</a>
+    </div>
+  </div>
+</div>

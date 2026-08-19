@@ -76,6 +76,18 @@ public class UserController {
         userService.changePassword(requestDto, userDetails.getId());
     }
 
+    @GetMapping(value = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
+    public UserProfileResponseDto getProfile(Authentication authentication) {
+        return userService.getProfile(userId(authentication));
+    }
+
+    @PutMapping(value = "/me", consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public UserProfileResponseDto updateProfile(@RequestBody @Valid UpdateUserProfileRequestDto requestDto,
+            Authentication authentication) {
+        return userService.updateProfile(requestDto, userId(authentication));
+    }
+
     @GetMapping(value = "/iban", produces = MediaType.APPLICATION_JSON_VALUE)
     public IbanResponseDto getIban(Authentication authentication) {
         return userService.getIban(userId(authentication));

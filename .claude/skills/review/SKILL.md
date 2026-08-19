@@ -80,3 +80,13 @@ Read `SecurityConfiguration` + `PublicEndPoint`.
 - No swagger paths unless `springdoc` is in `pom.xml`
 - CORS disabled (same-origin SPA)
 - `SpaController` (`GET /`) must exist (WelcomePageHandlerMapping 500 without it)
+
+---
+
+## 8. Angular bundle
+
+Read `ecommerce-frontend/src/app/app.routes.ts`.
+
+- Every page route uses `loadComponent: () => import('…')`. Flag any `import { Home } from './pages/…'` (or `component: Home`) — that dumps the page into `main.js`.
+- No `PreloadAllModules` / `withPreloading`.
+- No `import` of image/font files in `.ts`.

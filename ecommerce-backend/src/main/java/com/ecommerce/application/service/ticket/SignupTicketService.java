@@ -8,6 +8,7 @@ import com.ecommerce.application.util.DateUtil;
 import com.ecommerce.persistence.cache.BlockedMobileNumbersCacheService;
 import com.ecommerce.persistence.cache.SignupTicketCacheService;
 import com.ecommerce.persistence.repository.AppUserRepository;
+import com.ecommerce.persistence.repository.MockOtpRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -24,8 +25,9 @@ public class SignupTicketService extends AbstractTicketService {
     public SignupTicketService(DateUtil dateUtil, SmsService smsService, SignupProperties signupProperties,
             SignupTicketCacheService ticketCacheService,
             BlockedMobileNumbersCacheService blockedMobileNumbersCacheService,
-            AppUserRepository appUserRepository) {
-        super(dateUtil, smsService, ticketCacheService, blockedMobileNumbersCacheService, appUserRepository);
+            AppUserRepository appUserRepository, MockOtpRepository mockOtpRepository) {
+        super(dateUtil, smsService, ticketCacheService, blockedMobileNumbersCacheService, appUserRepository,
+                mockOtpRepository);
         this.signupProperties = signupProperties;
     }
 

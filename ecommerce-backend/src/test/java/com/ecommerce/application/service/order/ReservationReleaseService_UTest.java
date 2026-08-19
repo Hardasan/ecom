@@ -1,5 +1,6 @@
 package com.ecommerce.application.service.order;
 
+import com.ecommerce.application.service.discount.DiscountRedemptionReleaser;
 import com.ecommerce.persistence.entity.Order;
 import com.ecommerce.persistence.entity.OrderItem;
 import com.ecommerce.persistence.entity.embeddable.ProductSnapshot;
@@ -17,14 +18,8 @@ import java.util.Date;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ReservationReleaseService_UTest {
@@ -35,13 +30,15 @@ class ReservationReleaseService_UTest {
     private ProductRepository productRepository;
     @Mock
     private JdbcTemplate jdbcTemplate;
+    @Mock
+    private DiscountRedemptionReleaser discountReleaser;
 
     private ReservationReleaseService releaseService;
 
     @BeforeEach
     void setUp() {
         releaseService = new ReservationReleaseService(
-                orderRepository, new OrderInventoryRestorer(productRepository), jdbcTemplate);
+                orderRepository, new OrderInventoryRestorer(productRepository), jdbcTemplate, discountReleaser);
     }
 
     @Test
@@ -61,6 +58,7 @@ class ReservationReleaseService_UTest {
         releaseService.releaseExpiredReservations();
 
         verify(productRepository).incrementInventory(10L, 3);
+        verify(discountReleaser).release(order);
         verify(orderRepository).save(order);
         verify(orderRepository).findExpiredReservations(any(Date.class));
         assertEquals(OrderStatus.FAILED, order.getStatus());

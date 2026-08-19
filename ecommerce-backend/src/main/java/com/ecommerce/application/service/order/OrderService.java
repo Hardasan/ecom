@@ -6,6 +6,7 @@ import com.ecommerce.application.api.dto.order.PaymentInitiationResponseDto;
 import com.ecommerce.application.api.dto.order.RefundRequestDto;
 import com.ecommerce.application.api.exception.ECOMErrorType;
 import com.ecommerce.application.api.exception.EcommerceException;
+import com.ecommerce.application.service.discount.DiscountRedemptionReleaser;
 import com.ecommerce.application.service.payment.PaymentGateway;
 import com.ecommerce.application.service.payment.PaymentInitiation;
 import com.ecommerce.application.service.payment.PaymentVerification;
@@ -35,6 +36,7 @@ public class OrderService {
     private final OrderMapper orderMapper;
     private final PaymentGateway paymentGateway;
     private final OrderInventoryRestorer inventoryRestorer;
+    private final DiscountRedemptionReleaser discountReleaser;
 
     @Transactional(readOnly = true)
     public List<OrderResponseDto> listOrders(Long userId) {
@@ -151,6 +153,7 @@ public class OrderService {
     private OrderResponseDto cancel(Order order, OrderStatus cancelStatus) {
         requireCancellable(order);
         inventoryRestorer.restore(order);
+        discountReleaser.release(order);
         order.setStatus(cancelStatus);
         order.setReservedUntil(null);
         return orderMapper.toResponseDto(orderRepository.save(order));

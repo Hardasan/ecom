@@ -9,26 +9,19 @@ import com.ecommerce.application.api.exception.ECOMErrorType;
 import com.ecommerce.application.api.exception.EcommerceException;
 import com.ecommerce.application.config.properties.CheckoutProperties;
 import com.ecommerce.application.service.address.AddressService;
+import com.ecommerce.application.service.discount.AppliedDiscount;
+import com.ecommerce.application.service.discount.DiscountService;
+import com.ecommerce.application.service.discount.DiscountableLine;
 import com.ecommerce.application.service.shipping.ShippingCalculator;
 import com.ecommerce.application.service.shipping.ShippingResult;
-import com.ecommerce.persistence.entity.AppUser;
-import com.ecommerce.persistence.entity.CartItem;
-import com.ecommerce.persistence.entity.Order;
-import com.ecommerce.persistence.entity.OrderItem;
-import com.ecommerce.persistence.entity.Price;
-import com.ecommerce.persistence.entity.Product;
-import com.ecommerce.persistence.entity.UserAddress;
+import com.ecommerce.persistence.entity.*;
 import com.ecommerce.persistence.entity.embeddable.AddressSnapshot;
 import com.ecommerce.persistence.entity.embeddable.ProductSnapshot;
 import com.ecommerce.persistence.entity.enumeration.OrderStatus;
 import com.ecommerce.persistence.entity.enumeration.ProductStatus;
 import com.ecommerce.persistence.entity.enumeration.UserRole;
 import com.ecommerce.persistence.entity.enumeration.VariantType;
-import com.ecommerce.persistence.repository.AppUserRepository;
-import com.ecommerce.persistence.repository.CartItemRepository;
-import com.ecommerce.persistence.repository.OrderRepository;
-import com.ecommerce.persistence.repository.ProductRepository;
-import com.ecommerce.persistence.repository.UserAddressRepository;
+import com.ecommerce.persistence.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -36,14 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -59,6 +45,7 @@ public class CheckoutService {
     private final PasswordEncoder passwordEncoder;
     private final AddressService addressService;
     private final CheckoutProperties checkoutProperties;
+    private final DiscountService discountService;
 
     @Transactional
     public OrderResponseDto checkout(Long userId, CheckoutRequestDto requestDto) {
@@ -68,7 +55,7 @@ public class CheckoutService {
         List<CartItem> cartItems = cartItemRepository.findByUserId(userId);
         List<OrderLineSpec> lines = resolveCartLines(cartItems);
 
-        Order order = placeOrder(userId, address, lines);
+        Order order = placeOrder(userId, address, lines, requestDto.getDiscountCode());
         cartItemRepository.deleteByUserId(userId);
         return orderMapper.toResponseDto(order);
     }
@@ -83,10 +70,10 @@ public class CheckoutService {
                 .orElseThrow(() -> new EcommerceException(ECOMErrorType.ADDRESS_NOT_FOUND));
 
         List<OrderLineSpec> lines = resolveGuestLines(requestDto.getItems());
-        return orderMapper.toResponseDto(placeOrder(userId, address, lines));
+        return orderMapper.toResponseDto(placeOrder(userId, address, lines, requestDto.getDiscountCode()));
     }
 
-    private Order placeOrder(Long userId, UserAddress address, List<OrderLineSpec> lines) {
+    private Order placeOrder(Long userId, UserAddress address, List<OrderLineSpec> lines, String discountCode) {
         if (lines.isEmpty()) {
             throw new EcommerceException(ECOMErrorType.EMPTY_CART);
         }
@@ -98,6 +85,7 @@ public class CheckoutService {
 
         BigDecimal itemsCost = BigDecimal.ZERO;
         int totalWeightGram = 0;
+        List<DiscountableLine> discountableLines = new ArrayList<>();
         for (OrderLineSpec line : lines) {
             BigDecimal effectivePrice = line.discountPrice() != null ? line.discountPrice() : line.unitPrice();
             BigDecimal lineTotal = effectivePrice.multiply(BigDecimal.valueOf(line.quantity()));
@@ -117,14 +105,18 @@ public class CheckoutService {
 
             itemsCost = itemsCost.add(lineTotal);
             totalWeightGram += line.weightGram() * line.quantity();
+            discountableLines.add(new DiscountableLine(line.productId(), line.categoryId(),
+                    line.subCategoryId(), lineTotal, line.quantity()));
         }
+
+        BigDecimal discountAmount = applyDiscount(order, userId, discountCode, discountableLines);
 
         ShippingResult shipping = shippingCalculator.calculate(order.getShippingAddress().getProvince(), totalWeightGram);
         order.setItemsCost(itemsCost);
         order.setTotalWeightGram(totalWeightGram);
         order.setShippingZone(shipping.zone());
         order.setShippingCost(shipping.cost());
-        order.setTotalCost(itemsCost.add(shipping.cost()));
+        order.setTotalCost(itemsCost.subtract(discountAmount).add(shipping.cost()));
 
         for (OrderLineSpec line : lines) {
             int updated = productRepository.decrementInventory(line.productId(), line.quantity());
@@ -136,6 +128,25 @@ public class CheckoutService {
         order.setReservedUntil(Date.from(Instant.now().plus(checkoutProperties.getReservationTimeout())));
 
         return orderRepository.save(order);
+    }
+
+    /**
+     * Validates and applies a discount code, snapshotting it onto the order and claiming a redemption
+     * slot under a pessimistic lock held for this checkout transaction (see
+     * {@code DiscountService.redeemForOrder}). No code (null/blank) leaves the order at zero discount.
+     *
+     * @return the money taken off (zero when no code was applied)
+     */
+    private BigDecimal applyDiscount(Order order, Long userId, String discountCode,
+            List<DiscountableLine> lines) {
+        if (discountCode == null || discountCode.isBlank()) {
+            return BigDecimal.ZERO;
+        }
+        AppliedDiscount applied = discountService.redeemForOrder(discountCode, userId, lines);
+        order.setDiscountId(applied.discountId());
+        order.setDiscountCode(applied.code());
+        order.setDiscountAmount(applied.amount());
+        return applied.amount();
     }
 
     private List<OrderLineSpec> resolveCartLines(List<CartItem> cartItems) {
@@ -153,7 +164,8 @@ public class CheckoutService {
             lines.add(new OrderLineSpec(product.getId(), product.getName(), product.getCode(),
                     entry.getKey().variantType(), entry.getKey().variantValue(), entry.getValue(),
                     price.getPrice(), price.getDiscountPrice(),
-                    product.getWeightGram() == null ? 0 : product.getWeightGram()));
+                    product.getWeightGram() == null ? 0 : product.getWeightGram(),
+                    product.getCategoryId(), product.getSubCategoryId()));
         }
         return lines;
     }
@@ -173,7 +185,8 @@ public class CheckoutService {
             lines.add(new OrderLineSpec(product.getId(), product.getName(), product.getCode(),
                     entry.getKey().variantType(), entry.getKey().variantValue(), entry.getValue(),
                     price.getPrice(), price.getDiscountPrice(),
-                    product.getWeightGram() == null ? 0 : product.getWeightGram()));
+                    product.getWeightGram() == null ? 0 : product.getWeightGram(),
+                    product.getCategoryId(), product.getSubCategoryId()));
         }
         return lines;
     }
@@ -238,6 +251,6 @@ public class CheckoutService {
     private record OrderLineSpec(Long productId, String productName, String productCode,
                                   VariantType variantType, String variantValue, int quantity,
                                   BigDecimal unitPrice, BigDecimal discountPrice,
-                                  int weightGram) {
+                                 int weightGram, Long categoryId, Long subCategoryId) {
     }
 }

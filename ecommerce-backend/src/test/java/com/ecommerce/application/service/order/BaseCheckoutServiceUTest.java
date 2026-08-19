@@ -2,6 +2,7 @@ package com.ecommerce.application.service.order;
 
 import com.ecommerce.application.config.properties.CheckoutProperties;
 import com.ecommerce.application.service.address.AddressService;
+import com.ecommerce.application.service.discount.DiscountService;
 import com.ecommerce.application.service.shipping.ShippingCalculator;
 import com.ecommerce.persistence.entity.*;
 import com.ecommerce.persistence.entity.enumeration.ProductStatus;
@@ -48,6 +49,8 @@ abstract class BaseCheckoutServiceUTest {
     protected AddressService addressService;
     @Mock
     protected CheckoutProperties checkoutProperties;
+    @Mock
+    protected DiscountService discountService;
 
     protected CheckoutService checkoutService;
 
@@ -56,7 +59,7 @@ abstract class BaseCheckoutServiceUTest {
         lenient().when(checkoutProperties.getReservationTimeout()).thenReturn(Duration.ofMinutes(30));
         checkoutService = new CheckoutService(cartItemRepository, productRepository, userAddressRepository,
                 orderRepository, new OrderMapperImpl(), shippingCalculator, appUserRepository, passwordEncoder,
-                addressService, checkoutProperties);
+                addressService, checkoutProperties, discountService);
         lenient().when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
         lenient().when(productRepository.decrementInventory(anyLong(), anyInt())).thenReturn(1);

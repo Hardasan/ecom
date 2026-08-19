@@ -43,7 +43,15 @@ public enum ECOMErrorType {
     EXCEL_PARSING_ERROR(HttpStatus.BAD_REQUEST, "error.excel.parsing"),
     EXCEL_EMPTY_FILE(HttpStatus.BAD_REQUEST, "error.excel.empty.file"),
     EXCEL_INVALID_HEADER(HttpStatus.BAD_REQUEST, "error.excel.invalid.header"),
-    WISHLIST_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "error.wishlist.item.not.found");
+    WISHLIST_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "error.wishlist.item.not.found"),
+    DISCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "error.discount.not.found"),
+    DISCOUNT_CODE_ALREADY_EXISTS(HttpStatus.CONFLICT, "error.discount.code.already.exists"),
+    DISCOUNT_INVALID_CONFIG(HttpStatus.BAD_REQUEST, "error.discount.invalid.config"),
+    DISCOUNT_CODE_INVALID(HttpStatus.NOT_FOUND, "error.discount.code.invalid"),
+    DISCOUNT_EXPIRED(HttpStatus.CONFLICT, "error.discount.expired"),
+    DISCOUNT_USAGE_LIMIT_REACHED(HttpStatus.CONFLICT, "error.discount.usage.limit.reached"),
+    DISCOUNT_MINIMUM_NOT_MET(HttpStatus.CONFLICT, "error.discount.minimum.not.met"),
+    DISCOUNT_NOT_APPLICABLE(HttpStatus.CONFLICT, "error.discount.not.applicable");
 
     private final HttpStatus httpStatus;
     private final String messageKey;

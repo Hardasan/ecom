@@ -3,19 +3,7 @@ package com.ecommerce.persistence.entity;
 import com.ecommerce.persistence.entity.embeddable.AddressSnapshot;
 import com.ecommerce.persistence.entity.enumeration.OrderStatus;
 import com.ecommerce.persistence.entity.enumeration.ShippingZone;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Embedded;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.SequenceGenerator;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.BatchSize;
@@ -50,7 +38,7 @@ public class Order {
     private AddressSnapshot shippingAddress = new AddressSnapshot();
 
     // -----------------------------------------------------------------------------------------
-    // Money / shipping: totalCost = itemsCost + shippingCost
+    // Money / shipping: totalCost = itemsCost - discountAmount + shippingCost
     // -----------------------------------------------------------------------------------------
     @Column(name = "items_cost", nullable = false, precision = 14, scale = 2)
     private BigDecimal itemsCost;
@@ -60,6 +48,17 @@ public class Order {
 
     @Column(name = "total_cost", nullable = false, precision = 14, scale = 2)
     private BigDecimal totalCost;
+
+    // Applied discount code, snapshotted at checkout. discountId lets us release the redemption on
+    // cancel/expiry; code + amount are frozen so the order total stays stable if the code changes.
+    @Column(name = "discount_id")
+    private Long discountId;
+
+    @Column(name = "discount_code", length = 64)
+    private String discountCode;
+
+    @Column(name = "discount_amount", nullable = false, precision = 14, scale = 2)
+    private BigDecimal discountAmount = BigDecimal.ZERO;
 
     @Column(name = "total_weight_gram", nullable = false)
     private Integer totalWeightGram;

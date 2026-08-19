@@ -15,4 +15,9 @@ public class CheckoutRequestDto {
 
     @NotNull
     private Long addressId;
+
+    /**
+     * Optional discount code to apply. Null/blank ⇒ no discount.
+     */
+    private String discountCode;
 }

@@ -1,0 +1,9 @@
+[Unit]
+Description=Pull the rivani image from GHCR and recreate the app if it changed
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+Environment=DEPLOY_DIR=/opt/rivani
+ExecStart=/opt/rivani/watch-image.sh

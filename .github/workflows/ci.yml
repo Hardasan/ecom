@@ -1,16 +1,25 @@
 name: CI
 
 # Build + full test suite on every push to main and every pull request.
+# On push to main, also publish the image to GHCR and deploy to the VPS.
+#
+# Required repository secret (Settings → Secrets and variables → Actions):
+#   SSH_PRIVATE_KEY  — private key that can SSH as root to the app server
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
-# Cancel an in-progress run when a newer commit is pushed to the same ref.
+# Don't cancel a deploy already in progress on main; still cancel superseded PR runs.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   build-and-test:
@@ -59,22 +68,87 @@ jobs:
     name: Docker image build
     runs-on: ubuntu-latest
     needs: build-and-test   # only build the image once the jar + tests are green
+    env:
+      PUSH_IMAGE: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Set image name
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      # Validates the multi-stage Dockerfile (Temurin 25 build + JRE 25 runtime).
-      # Build only — publishing happens in the Release workflow on a version tag.
+      - name: Log in to GHCR
+        if: env.PUSH_IMAGE == 'true'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # PRs: build only. Push to main: publish :sha and :main for the deploy job.
       - name: Build image
         uses: docker/build-push-action@v7
         with:
           context: .
-          push: false
-          load: true
-          tags: ecommerce:ci-${{ github.sha }}
+          push: ${{ env.PUSH_IMAGE == 'true' }}
+          load: ${{ env.PUSH_IMAGE != 'true' }}
+          tags: |
+            ${{ env.IMAGE }}:${{ github.sha }}
+            ${{ env.IMAGE }}:main
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to server
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && secrets.SSH_PRIVATE_KEY != ''
+    timeout-minutes: 15
+    env:
+      DEPLOY_HOST: 45.94.215.219
+      DEPLOY_USER: root
+      DEPLOY_DIR: /opt/rivani
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set image name
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}" >> "$GITHUB_ENV"
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          if [ -z "$SSH_PRIVATE_KEY" ]; then
+            echo "Add repository secret SSH_PRIVATE_KEY (the private key for ${DEPLOY_USER}@${DEPLOY_HOST})"
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          cp deploy/known_hosts ~/.ssh/known_hosts
+
+      - name: Copy compose and deploy script
+        run: |
+          scp -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes \
+            docker-compose.prod.yml \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_DIR}/docker-compose.yml"
+          scp -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes \
+            deploy/update-app.sh deploy/watch-image.sh \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_DIR}/"
+
+      - name: Pull image and recreate app
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            IMAGE="$IMAGE" GHCR_USER="${{ github.actor }}" GHCR_TOKEN="$GHCR_TOKEN" \
+            DEPLOY_DIR="$DEPLOY_DIR" \
+            bash "${DEPLOY_DIR}/update-app.sh"

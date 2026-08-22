@@ -6,7 +6,7 @@ import { CartService } from '../../core/cart.service';
 import { CategoryService } from '../../core/category.service';
 import { ConfigService } from '../../core/config.service';
 import { ProductService } from '../../core/product.service';
-import { ProductDto } from '../../core/models';
+import { CartItemDto, ProductDto } from '../../core/models';
 import { displayName, effectiveUnitPrice, formatPrice, productImageSrc } from '../../core/format';
 
 const CAT_TONES = ['kitchen', 'smart', 'other', 'electric', 'home'] as const;
@@ -22,7 +22,7 @@ export class Home implements OnInit {
   readonly auth = inject(AuthService);
   private readonly productsApi = inject(ProductService);
   private readonly categoriesApi = inject(CategoryService);
-  private readonly cartApi = inject(CartService);
+  readonly cartApi = inject(CartService);
   private readonly configApi = inject(ConfigService);
   private readonly router = inject(Router);
 
@@ -108,6 +108,37 @@ export class Home implements OnInit {
           setTimeout(() => this.toast.set(''), 3000);
         }
       });
+  }
+
+  /** The cart line for a card's product+default variant, so the card can show a stepper. */
+  cartLine(p: ProductDto): CartItemDto | undefined {
+    return this.cartApi.lineFor(p.id, p.prices?.[0]?.variantValue ?? null);
+  }
+
+  faNum(n: number): string {
+    return new Intl.NumberFormat('fa-IR').format(n);
+  }
+
+  inc(event: Event, line: CartItemDto) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.cartApi.increment(line.id).subscribe({
+      error: (err) => {
+        this.toast.set(err?.error?.message ?? 'به‌روزرسانی تعداد ناموفق بود');
+        setTimeout(() => this.toast.set(''), 2500);
+      }
+    });
+  }
+
+  dec(event: Event, line: CartItemDto) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.cartApi.decrement(line.id).subscribe({
+      error: () => {
+        this.toast.set('به‌روزرسانی تعداد ناموفق بود');
+        setTimeout(() => this.toast.set(''), 2500);
+      }
+    });
   }
 
   promoCode() {

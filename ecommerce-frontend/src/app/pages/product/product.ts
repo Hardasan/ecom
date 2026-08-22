@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ASSETS } from '../../assets';
 import { AuthService } from '../../core/auth.service';
@@ -6,6 +6,8 @@ import { CartService } from '../../core/cart.service';
 import { ProductService } from '../../core/product.service';
 import { PriceDto, ProductDto, ReviewSummaryDto } from '../../core/models';
 import { displayName, formatPrice, productImageSrc, toNumber } from '../../core/format';
+
+type TabKey = 'desc' | 'spec' | 'reviews';
 
 @Component({
   selector: 'app-product',
@@ -19,16 +21,23 @@ export class Product implements OnInit {
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
   private readonly productsApi = inject(ProductService);
-  private readonly cartApi = inject(CartService);
+  readonly cartApi = inject(CartService);
 
   readonly product = signal<ProductDto | null>(null);
   readonly summary = signal<ReviewSummaryDto | null>(null);
   readonly selectedVariant = signal<string | null>(null);
-  readonly activeTab = signal<'desc' | 'spec' | 'reviews'>('desc');
+  readonly activeTab = signal<TabKey>('desc');
   readonly loading = signal(true);
   readonly buying = signal(false);
   readonly error = signal('');
   readonly toast = signal('');
+
+  private readonly scrollArea = viewChild<ElementRef<HTMLElement>>('scrollArea');
+  private readonly tabsBar = viewChild<ElementRef<HTMLElement>>('tabsBar');
+  private readonly descSection = viewChild<ElementRef<HTMLElement>>('descSection');
+  private readonly specSection = viewChild<ElementRef<HTMLElement>>('specSection');
+  private readonly reviewsSection = viewChild<ElementRef<HTMLElement>>('reviewsSection');
+  private scrollScheduled = false;
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {
@@ -141,8 +150,66 @@ export class Product implements OnInit {
     this.selectedVariant.set(value ?? null);
   }
 
-  setTab(tab: 'desc' | 'spec' | 'reviews') {
+  private sectionEl(tab: TabKey): HTMLElement | undefined {
+    const map: Record<TabKey, ElementRef<HTMLElement> | undefined> = {
+      desc: this.descSection(),
+      spec: this.specSection(),
+      reviews: this.reviewsSection()
+    };
+    return map[tab]?.nativeElement;
+  }
+
+  /** Click a tab → smooth-scroll its section just below the pinned tab bar. */
+  goToTab(tab: TabKey) {
+    const container = this.scrollArea()?.nativeElement;
+    const target = this.sectionEl(tab);
+    if (!container || !target) {
+      return;
+    }
+    const barHeight = this.tabsBar()?.nativeElement.offsetHeight ?? 0;
+    const top =
+      target.getBoundingClientRect().top -
+      container.getBoundingClientRect().top +
+      container.scrollTop -
+      barHeight -
+      8;
+    container.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
     this.activeTab.set(tab);
+  }
+
+  /** Scroll-spy: rAF-throttled so a scroll storm collapses into one measure. */
+  onSectionsScroll() {
+    if (this.scrollScheduled) {
+      return;
+    }
+    this.scrollScheduled = true;
+    requestAnimationFrame(() => {
+      this.scrollScheduled = false;
+      this.updateActiveTab();
+    });
+  }
+
+  private updateActiveTab() {
+    const container = this.scrollArea()?.nativeElement;
+    if (!container) {
+      return;
+    }
+    // At the very bottom the last section may be too short to reach the line — force it active.
+    if (container.scrollTop + container.clientHeight >= container.scrollHeight - 4) {
+      this.activeTab.set('reviews');
+      return;
+    }
+    const barHeight = this.tabsBar()?.nativeElement.offsetHeight ?? 0;
+    const line = container.getBoundingClientRect().top + barHeight + 8;
+    const order: TabKey[] = ['desc', 'spec', 'reviews'];
+    let current: TabKey = 'desc';
+    for (const tab of order) {
+      const el = this.sectionEl(tab);
+      if (el && el.getBoundingClientRect().top <= line) {
+        current = tab;
+      }
+    }
+    this.activeTab.set(current);
   }
 
   buy() {

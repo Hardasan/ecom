@@ -117,9 +117,13 @@
 }
 
 .tabs {
+  position: sticky;
+  top: 0;
+  z-index: 5;
   display: flex;
   justify-content: space-between;
-  padding: 0 20px;
+  padding: 10px 20px 0;
+  background: var(--surface);
   border-bottom: 1px solid var(--border);
 
   button {
@@ -148,31 +152,43 @@
   }
 }
 
-.tab-body {
+.section {
   padding: 20px;
   text-align: right;
+  scroll-margin-top: 56px;
+
+  &:not(:first-child) {
+    border-top: 8px solid #eef1ee;
+  }
+
+  // Guarantee the last section can scroll under the pinned tab bar even when its
+  // content is short, so every tab can become active and the bar stays pinned.
+  &:last-child {
+    min-height: calc(100dvh - 190px);
+  }
+
+  &__title {
+    margin: 0 0 14px;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--ink);
+  }
 
   p {
-    margin: 0 0 16px;
-    font-size: 12px;
-    line-height: 1.7;
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.9;
     color: var(--ink-muted);
   }
+}
 
-  h2 {
-    margin: 12px 0 16px;
-    font-size: 14px;
-    font-weight: 700;
-  }
-
-  ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
+.spec-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 
   li {
     display: flex;
@@ -181,6 +197,30 @@
     gap: 8px;
     font-size: 14px;
   }
+}
+
+.reviews-summary {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.reviews-score {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  strong {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--ink);
+  }
+}
+
+.reviews-count {
+  font-size: 13px;
+  color: var(--ink-muted);
 }
 
 .bullet {

@@ -72,7 +72,7 @@ img {
 .app-frame {
   width: 100%;
   max-width: var(--app-max);
-  min-height: 100dvh;
+  height: 100dvh;
   background: var(--surface);
   position: relative;
   display: flex;
@@ -84,7 +84,8 @@ img {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  height: 100dvh;
+  min-height: 0;
   background: var(--surface);
   overflow-x: hidden;
 }
@@ -117,6 +118,7 @@ img {
 }
 
 .icon-btn {
+  position: relative;
   width: 40px;
   height: 40px;
   border: none;
@@ -139,6 +141,23 @@ img {
     width: 8px;
     height: 16px;
   }
+}
+
+.cart-badge {
+  position: absolute;
+  top: -3px;
+  inset-inline-end: -3px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-full);
+  background: var(--brand);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  box-shadow: 0 0 0 2px var(--surface);
 }
 
 .btn-brand {

@@ -3,6 +3,9 @@
     <header class="home-nav">
       <a routerLink="/cart" class="icon-btn" aria-label="سبد خرید">
         <img [src]="a.iconCart" alt="" width="20" height="20" />
+        @if (cartApi.totalQuantity() > 0) {
+          <span class="cart-badge">{{ cartApi.badge() }}</span>
+        }
       </a>
       <p class="brand">RiVaNi</p>
       <a routerLink="/search" class="icon-btn" aria-label="جستجو">
@@ -48,15 +51,39 @@
               <div class="product-card__body">
                 <p class="product-card__name">{{ nameOf(p) }}</p>
                 <div class="product-card__row">
-                  <button
-                    type="button"
-                    class="add-btn"
-                    aria-label="افزودن به سبد"
-                    (click)="addToCart($event, p)"
-                  >
-                    <img [src]="a.iconAdd" alt="" width="26" height="26" />
-                  </button>
                   <span class="product-card__price">{{ priceOf(p) }}</span>
+                  <div class="product-card__action">
+                    @if (cartLine(p); as line) {
+                      <div class="qty-stepper">
+                        <button
+                          type="button"
+                          class="qty-btn"
+                          aria-label="افزودن یکی"
+                          (click)="inc($event, line)"
+                        >
+                          <img [src]="a.iconPlus" alt="" width="14" height="14" />
+                        </button>
+                        <span class="qty-value">{{ faNum(line.quantity) }}</span>
+                        <button
+                          type="button"
+                          class="qty-btn"
+                          aria-label="کاستن یکی"
+                          (click)="dec($event, line)"
+                        >
+                          <img [src]="a.iconMinus" alt="" width="14" height="14" />
+                        </button>
+                      </div>
+                    } @else {
+                      <button
+                        type="button"
+                        class="add-btn"
+                        aria-label="افزودن به سبد"
+                        (click)="addToCart($event, p)"
+                      >
+                        <img [src]="a.iconAdd" alt="" width="26" height="26" />
+                      </button>
+                    }
+                  </div>
                 </div>
               </div>
             </a>

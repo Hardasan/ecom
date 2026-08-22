@@ -226,6 +226,7 @@ export class Checkout implements OnInit {
             this.ordersApi.confirmPayment(order.id, pay.paymentReference).subscribe({
               next: () => {
                 this.busy.set(false);
+                this.cartApi.clear();
                 void this.router.navigate(['/success', order.id]);
               },
               error: (err) => this.fail(err)

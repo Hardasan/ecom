@@ -5,12 +5,15 @@
     <p class="state error">{{ error() || 'محصول پیدا نشد' }}</p>
     <a routerLink="/" class="btn-brand back-home">خانه</a>
   } @else {
-    <div class="page-scroll">
+    <div class="page-scroll" #scrollArea (scroll)="onSectionsScroll()">
       <div class="gallery">
         <div class="gallery-actions">
           <div class="gallery-actions__left">
             <a routerLink="/cart" class="icon-btn" aria-label="سبد خرید">
               <img [src]="a.iconCart" alt="" width="20" height="20" />
+              @if (cartApi.totalQuantity() > 0) {
+                <span class="cart-badge">{{ cartApi.badge() }}</span>
+              }
             </a>
             <button type="button" class="icon-btn" aria-label="اشتراک‌گذاری">
               <img [src]="a.iconShare" alt="" width="20" height="20" />
@@ -54,18 +57,22 @@
         }
       </div>
 
-      <div class="tabs">
-        <button type="button" [class.is-active]="activeTab() === 'reviews'" (click)="setTab('reviews')">نظرات</button>
-        <button type="button" [class.is-active]="activeTab() === 'spec'" (click)="setTab('spec')">مشخصات</button>
-        <button type="button" [class.is-active]="activeTab() === 'desc'" (click)="setTab('desc')">توضیحات</button>
+      <div class="tabs" #tabsBar>
+        <button type="button" [class.is-active]="activeTab() === 'desc'" (click)="goToTab('desc')">توضیحات</button>
+        <button type="button" [class.is-active]="activeTab() === 'spec'" (click)="goToTab('spec')">مشخصات</button>
+        <button type="button" [class.is-active]="activeTab() === 'reviews'" (click)="goToTab('reviews')">نظرات</button>
       </div>
 
-      <div class="tab-body">
-        @if (activeTab() === 'desc') {
+      <div class="sections">
+        <section class="section" #descSection>
+          <h2 class="section__title">توضیحات</h2>
           <p>{{ product()!.fullDescription || product()!.shortDescription || 'توضیحی ثبت نشده است.' }}</p>
-        } @else if (activeTab() === 'spec') {
+        </section>
+
+        <section class="section" #specSection>
+          <h2 class="section__title">مشخصات</h2>
           @if (specEntries().length) {
-            <ul>
+            <ul class="spec-list">
               @for (s of specEntries(); track s.key) {
                 <li>
                   <span>{{ s.key }}: {{ s.value }}</span>
@@ -76,9 +83,18 @@
           } @else {
             <p>مشخصاتی ثبت نشده است.</p>
           }
-        } @else {
-          <p>{{ reviewCount() || 'هنوز نظری ثبت نشده است.' }}</p>
-        }
+        </section>
+
+        <section class="section" #reviewsSection>
+          <h2 class="section__title">نظرات</h2>
+          <div class="reviews-summary">
+            <div class="reviews-score">
+              <img [src]="a.iconStar" alt="" width="18" height="18" />
+              <strong>{{ ratingText() }}</strong>
+            </div>
+            <span class="reviews-count">{{ reviewCount() || 'هنوز نظری ثبت نشده است.' }}</span>
+          </div>
+        </section>
       </div>
     </div>
 

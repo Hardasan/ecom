@@ -79,7 +79,7 @@ export class OrderDetail implements OnInit {
   }
 
   total(): string {
-    return formatPrice(this.order()?.totalCost, 'ریال');
+    return formatPrice(this.order()?.totalCost);
   }
 
   savings(): string | null {
@@ -95,7 +95,7 @@ export class OrderDetail implements OnInit {
         save += (unit - disc) * item.quantity;
       }
     }
-    return save > 0 ? formatPrice(save, 'ریال') : null;
+    return save > 0 ? formatPrice(save) : null;
   }
 
   itemTitle(item: OrderItemDto): string {
@@ -106,7 +106,7 @@ export class OrderDetail implements OnInit {
   }
 
   itemPrice(item: OrderItemDto): string {
-    return formatPrice(item.lineTotal, 'تومان');
+    return formatPrice(item.lineTotal);
   }
 
   itemThumb(item: OrderItemDto): string {

@@ -145,7 +145,7 @@ export class Checkout implements OnInit {
   }
 
   totalLabel(): string {
-    return formatPrice(this.cartTotal(), 'ریال');
+    return formatPrice(this.cartTotal());
   }
 
   payButtonLabel(): string {

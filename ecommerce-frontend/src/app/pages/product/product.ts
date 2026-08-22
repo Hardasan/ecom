@@ -1,17 +1,19 @@
 import { Component, ElementRef, OnInit, inject, signal, viewChild } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ASSETS } from '../../assets';
 import { AuthService } from '../../core/auth.service';
 import { CartService } from '../../core/cart.service';
 import { ProductService } from '../../core/product.service';
-import { PriceDto, ProductDto, ReviewSummaryDto } from '../../core/models';
-import { displayName, formatPrice, productImageSrc, toNumber } from '../../core/format';
+import { WishlistService } from '../../core/wishlist.service';
+import { PriceDto, ProductDto, ReviewDto, ReviewSummaryDto } from '../../core/models';
+import { displayName, formatFaDate, formatPrice, productImageSrc, toNumber } from '../../core/format';
 
 type TabKey = 'desc' | 'spec' | 'reviews';
 
 @Component({
   selector: 'app-product',
-  imports: [RouterLink],
+  imports: [RouterLink, FormsModule],
   templateUrl: './product.html',
   styleUrl: './product.scss'
 })
@@ -21,6 +23,7 @@ export class Product implements OnInit {
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
   private readonly productsApi = inject(ProductService);
+  private readonly wishlistApi = inject(WishlistService);
   readonly cartApi = inject(CartService);
 
   readonly product = signal<ProductDto | null>(null);
@@ -31,6 +34,15 @@ export class Product implements OnInit {
   readonly buying = signal(false);
   readonly error = signal('');
   readonly toast = signal('');
+
+  readonly inWishlist = signal(false);
+  readonly reviews = signal<ReviewDto[]>([]);
+  readonly reviewsTotal = signal(0);
+  readonly showReviewForm = signal(false);
+  readonly submittingReview = signal(false);
+  reviewRating = 5;
+  reviewTitle = '';
+  reviewComment = '';
 
   private readonly scrollArea = viewChild<ElementRef<HTMLElement>>('scrollArea');
   private readonly tabsBar = viewChild<ElementRef<HTMLElement>>('tabsBar');
@@ -59,6 +71,10 @@ export class Product implements OnInit {
     this.product.set(null);
     this.summary.set(null);
     this.activeTab.set('desc');
+    this.inWishlist.set(false);
+    this.reviews.set([]);
+    this.reviewsTotal.set(0);
+    this.showReviewForm.set(false);
 
     this.productsApi.getById(id).subscribe({
       next: (p) => {
@@ -73,6 +89,15 @@ export class Product implements OnInit {
         this.loading.set(false);
       }
     });
+
+    this.loadReviews(id);
+
+    if (this.auth.isLoggedIn()) {
+      this.wishlistApi.contains(id).subscribe({
+        next: (res) => this.inWishlist.set(!!res.inWishlist),
+        error: () => undefined
+      });
+    }
 
     this.productsApi.reviewSummary(id).subscribe({
       next: (s) => this.summary.set(s),
@@ -210,6 +235,114 @@ export class Product implements OnInit {
       }
     }
     this.activeTab.set(current);
+  }
+
+  private loadReviews(id: number) {
+    this.productsApi.reviews(id, { size: 10 }).subscribe({
+      next: (page) => {
+        this.reviews.set(page.content ?? []);
+        this.reviewsTotal.set(page.totalElements ?? 0);
+      },
+      error: () => undefined
+    });
+  }
+
+  reviewDate(r: ReviewDto): string {
+    return formatFaDate(r.createdAt);
+  }
+
+  stars(rating: number): number[] {
+    return [1, 2, 3, 4, 5].map((n) => (n <= rating ? 1 : 0));
+  }
+
+  toggleWishlist() {
+    const p = this.product();
+    if (!p) {
+      return;
+    }
+    if (!this.auth.isLoggedIn()) {
+      void this.router.navigate(['/login'], { queryParams: { returnUrl: `/product/${p.id}` } });
+      return;
+    }
+    const wasIn = this.inWishlist();
+    this.inWishlist.set(!wasIn); // optimistic
+    const req = wasIn ? this.wishlistApi.removeByProduct(p.id) : this.wishlistApi.add(p.id);
+    req.subscribe({
+      next: () => this.flash(wasIn ? 'از علاقه‌مندی‌ها حذف شد' : 'به علاقه‌مندی‌ها اضافه شد'),
+      error: () => {
+        this.inWishlist.set(wasIn); // revert on failure
+        this.flash('عملیات ناموفق بود');
+      }
+    });
+  }
+
+  async share() {
+    const p = this.product();
+    if (!p) {
+      return;
+    }
+    const url = `${location.origin}/product/${p.id}`;
+    const nav = navigator as Navigator & {
+      share?: (data: { title?: string; url?: string }) => Promise<void>;
+    };
+    try {
+      if (nav.share) {
+        await nav.share({ title: this.name(), url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      this.flash('لینک محصول کپی شد');
+    } catch {
+      // user dismissed the share sheet — ignore
+    }
+  }
+
+  openReviewForm() {
+    if (!this.auth.isLoggedIn()) {
+      const p = this.product();
+      void this.router.navigate(['/login'], {
+        queryParams: { returnUrl: p ? `/product/${p.id}` : '/' }
+      });
+      return;
+    }
+    this.reviewRating = 5;
+    this.reviewTitle = '';
+    this.reviewComment = '';
+    this.showReviewForm.set(true);
+    this.goToTab('reviews');
+  }
+
+  closeReviewForm() {
+    this.showReviewForm.set(false);
+  }
+
+  setReviewRating(value: number) {
+    this.reviewRating = value;
+  }
+
+  submitReview() {
+    const p = this.product();
+    if (!p || this.submittingReview()) {
+      return;
+    }
+    this.submittingReview.set(true);
+    this.productsApi
+      .createReview(p.id, {
+        rating: this.reviewRating,
+        title: this.reviewTitle.trim() || null,
+        comment: this.reviewComment.trim() || null
+      })
+      .subscribe({
+        next: () => {
+          this.submittingReview.set(false);
+          this.showReviewForm.set(false);
+          this.flash('نظر شما ثبت شد و پس از تأیید نمایش داده می‌شود');
+        },
+        error: (err) => {
+          this.submittingReview.set(false);
+          this.flash(err?.error?.message ?? 'ثبت نظر ناموفق بود');
+        }
+      });
   }
 
   buy() {

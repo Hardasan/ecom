@@ -15,11 +15,17 @@
                 <span class="cart-badge">{{ cartApi.badge() }}</span>
               }
             </a>
-            <button type="button" class="icon-btn" aria-label="اشتراک‌گذاری">
+            <button type="button" class="icon-btn" aria-label="اشتراک‌گذاری" (click)="share()">
               <img [src]="a.iconShare" alt="" width="20" height="20" />
             </button>
-            <button type="button" class="icon-btn" aria-label="علاقه‌مندی">
-              <img [src]="a.iconHeart" alt="" width="20" height="20" />
+            <button
+              type="button"
+              class="icon-btn"
+              [attr.aria-pressed]="inWishlist()"
+              aria-label="علاقه‌مندی"
+              (click)="toggleWishlist()"
+            >
+              <img [src]="inWishlist() ? a.iconHeartFill : a.iconHeart" alt="" width="20" height="20" />
             </button>
           </div>
           <a routerLink="/" class="icon-btn" aria-label="بستن">
@@ -86,14 +92,85 @@
         </section>
 
         <section class="section" #reviewsSection>
-          <h2 class="section__title">نظرات</h2>
+          <div class="reviews-head">
+            <button type="button" class="reviews-add" (click)="openReviewForm()">ثبت نظر</button>
+            <h2 class="section__title">نظرات</h2>
+          </div>
           <div class="reviews-summary">
             <div class="reviews-score">
               <img [src]="a.iconStar" alt="" width="18" height="18" />
               <strong>{{ ratingText() }}</strong>
             </div>
-            <span class="reviews-count">{{ reviewCount() || 'هنوز نظری ثبت نشده است.' }}</span>
+            <span class="reviews-count">{{ reviewCount() }}</span>
           </div>
+
+          @if (showReviewForm()) {
+            <form class="review-form" (ngSubmit)="submitReview()">
+              <div class="rating-input" role="radiogroup" aria-label="امتیاز">
+                @for (n of [1, 2, 3, 4, 5]; track n) {
+                  <button
+                    type="button"
+                    class="star-btn"
+                    [class.on]="reviewRating >= n"
+                    [attr.aria-label]="n + ' ستاره'"
+                    (click)="setReviewRating(n)"
+                  >
+                    <img [src]="a.iconStar" alt="" width="24" height="24" />
+                  </button>
+                }
+              </div>
+              <input
+                class="field"
+                name="reviewTitle"
+                [(ngModel)]="reviewTitle"
+                placeholder="عنوان (اختیاری)"
+                maxlength="255"
+              />
+              <textarea
+                class="field"
+                name="reviewComment"
+                [(ngModel)]="reviewComment"
+                placeholder="نظر شما (اختیاری)"
+                rows="3"
+                maxlength="4000"
+              ></textarea>
+              <div class="review-form__actions">
+                <button type="submit" class="btn-brand" [disabled]="submittingReview()">
+                  {{ submittingReview() ? '…' : 'ارسال نظر' }}
+                </button>
+                <button type="button" class="btn-outline" (click)="closeReviewForm()">انصراف</button>
+              </div>
+            </form>
+          }
+
+          @if (reviews().length) {
+            <ul class="review-list">
+              @for (r of reviews(); track r.id) {
+                <li class="review-card">
+                  <div class="review-card__head">
+                    @if (r.verifiedPurchase) {
+                      <span class="verified">خرید تأییدشده</span>
+                    }
+                    <div class="review-card__stars">
+                      @for (on of stars(r.rating); track $index) {
+                        <img [src]="a.iconStar" alt="" width="13" height="13" [style.opacity]="on ? 1 : 0.25" />
+                      }
+                    </div>
+                    <span class="review-card__author">{{ r.authorName }}</span>
+                  </div>
+                  @if (r.title) {
+                    <p class="review-card__title">{{ r.title }}</p>
+                  }
+                  @if (r.comment) {
+                    <p class="review-card__comment">{{ r.comment }}</p>
+                  }
+                  <span class="review-card__date">{{ reviewDate(r) }}</span>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="reviews-empty">هنوز نظری ثبت نشده است. اولین نفر باشید!</p>
+          }
         </section>
       </div>
     </div>

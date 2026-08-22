@@ -5,9 +5,11 @@ export function toNumber(value: number | string | null | undefined): number {
   return typeof value === 'number' ? value : Number(value);
 }
 
-export function formatPrice(value: number | string | null | undefined, unit = 'تومان'): string {
-  const n = toNumber(value);
-  return `${new Intl.NumberFormat('fa-IR').format(n)} ${unit}`;
+// Monetary values are stored in Rial (shipping tariff + order totals are computed in Rial);
+// shoppers see Toman, so divide by 10 and label تومان everywhere.
+export function formatPrice(value: number | string | null | undefined): string {
+  const toman = Math.round(toNumber(value) / 10);
+  return `${new Intl.NumberFormat('fa-IR').format(toman)} تومان`;
 }
 
 export function imageSrc(image?: { imageData?: string | null } | string | null): string {

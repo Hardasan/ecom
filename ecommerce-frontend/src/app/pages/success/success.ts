@@ -81,7 +81,7 @@ export class Success implements OnInit {
   }
 
   total(): string {
-    return formatPrice(this.order()?.totalCost, 'ریال');
+    return formatPrice(this.order()?.totalCost);
   }
 
   savings(): string | null {
@@ -97,7 +97,7 @@ export class Success implements OnInit {
         save += (unit - disc) * item.quantity;
       }
     }
-    return save > 0 ? formatPrice(save, 'ریال') : null;
+    return save > 0 ? formatPrice(save) : null;
   }
 
   itemTitle(item: OrderItemDto): string {

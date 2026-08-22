@@ -140,6 +140,19 @@ export type ReviewSummaryDto = {
   totalCount: number;
 };
 
+export type ReviewDto = {
+  id: number;
+  productId: number;
+  authorName: string;
+  rating: number;
+  title?: string | null;
+  comment?: string | null;
+  verifiedPurchase?: boolean;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export type PaymentInitiationDto = {
   paymentReference: string;
   redirectUrl: string;

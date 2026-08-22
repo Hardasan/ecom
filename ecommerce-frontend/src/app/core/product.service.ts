@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of, tap } from 'rxjs';
 import { API_BASE_URL } from '../api.config';
-import { Page, ProductDto, ReviewSummaryDto } from './models';
+import { Page, ProductDto, ReviewDto, ReviewSummaryDto } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class ProductService {
@@ -53,5 +53,19 @@ export class ProductService {
 
   reviewSummary(productId: number): Observable<ReviewSummaryDto> {
     return this.http.get<ReviewSummaryDto>(`${API_BASE_URL}/products/${productId}/reviews/summary`);
+  }
+
+  reviews(productId: number, opts: { page?: number; size?: number } = {}): Observable<Page<ReviewDto>> {
+    const params = new HttpParams()
+      .set('page', String(opts.page ?? 0))
+      .set('size', String(opts.size ?? 10));
+    return this.http.get<Page<ReviewDto>>(`${API_BASE_URL}/products/${productId}/reviews`, { params });
+  }
+
+  createReview(
+    productId: number,
+    body: { rating: number; title?: string | null; comment?: string | null }
+  ): Observable<ReviewDto> {
+    return this.http.post<ReviewDto>(`${API_BASE_URL}/products/${productId}/reviews`, body);
   }
 }

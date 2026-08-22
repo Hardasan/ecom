@@ -78,7 +78,7 @@ export class Profile implements OnInit {
   }
 
   total(order: OrderDto): string {
-    return formatPrice(order.totalCost, 'ریال');
+    return formatPrice(order.totalCost);
   }
 
   qty(order: OrderDto): string {

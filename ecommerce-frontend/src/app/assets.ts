@@ -11,6 +11,7 @@ export const ASSETS = {
   iconHome: `${BASE}/icon-home.svg`,
   iconShare: `${BASE}/icon-share.svg`,
   iconHeart: `${BASE}/icon-heart.svg`,
+  iconHeartFill: `${BASE}/icon-heart-fill.svg`,
   iconClose: `${BASE}/icon-close.svg`,
   iconStar: `${BASE}/icon-star.svg`,
   iconCheck: `${BASE}/icon-check.svg`,

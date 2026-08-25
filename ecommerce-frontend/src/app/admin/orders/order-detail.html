@@ -1,0 +1,139 @@
+<div class="admin-page">
+  <div class="admin-page__head">
+    <h1>سفارش #{{ id }}</h1>
+    <a class="admin-btn admin-btn--ghost admin-btn--sm" routerLink="/admin/orders">← بازگشت</a>
+  </div>
+
+  @if (error()) {
+    <p class="admin-error">{{ error() }}</p>
+  }
+
+  @if (loading()) {
+    <p class="admin-empty">در حال بارگذاری…</p>
+  } @else if (order(); as o) {
+    <div class="grid">
+      <div class="admin-card">
+        <div class="head-row">
+          <span [class]="'badge ' + tone(o.status)">{{ statusLabel(o.status) }}</span>
+          <span class="admin-muted">{{ date(o.createdAt) }}</span>
+        </div>
+        <div class="actions">
+          @if (canSend()) {
+            <button type="button" class="admin-btn" [disabled]="busy()" (click)="send()">ثبت ارسال</button>
+          }
+          @if (canCancel()) {
+            <button type="button" class="admin-btn admin-btn--danger" [disabled]="busy()" (click)="cancel()">
+              لغو سفارش
+            </button>
+          }
+          @if (canRefund()) {
+            <button type="button" class="admin-btn" [disabled]="busy()" (click)="showRefund.set(true)">
+              ثبت بازپرداخت
+            </button>
+          }
+          @if (!canSend() && !canCancel() && !canRefund()) {
+            <span class="admin-muted">اقدامی برای این وضعیت در دسترس نیست</span>
+          }
+        </div>
+      </div>
+
+      <div class="admin-card">
+        <h2>گیرنده</h2>
+        <p>{{ o.recipientFirstName }} {{ o.recipientLastName }} — {{ o.recipientMobile }}</p>
+        <p class="admin-muted">
+          {{ o.province }}، {{ o.city }} — {{ o.addressLine }}
+          @if (o.plaque) { — پلاک {{ o.plaque }} }
+          @if (o.postalCode) { — کدپستی {{ o.postalCode }} }
+        </p>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h2>اقلام</h2>
+      <div class="items">
+        @for (it of o.items; track it.id) {
+          <div class="item">
+            @if (img(it.mainImage)) {
+              <img [src]="img(it.mainImage)" alt="" />
+            } @else {
+              <span class="ph"></span>
+            }
+            <div class="item__info">
+              <strong>{{ it.productName }}</strong>
+              <span class="admin-muted">
+                @if (it.variantValue) { {{ it.variantValue }} × } {{ it.quantity }}
+              </span>
+            </div>
+            <span class="item__price">{{ money(it.lineTotal) }}</span>
+          </div>
+        }
+      </div>
+
+      <div class="totals">
+        <div><span>جمع اقلام</span><span>{{ money(o.itemsCost) }}</span></div>
+        @if (o.discountAmount && +o.discountAmount > 0) {
+          <div>
+            <span>تخفیف @if (o.discountCode) { ({{ o.discountCode }}) }</span>
+            <span>- {{ money(o.discountAmount) }}</span>
+          </div>
+        }
+        <div><span>هزینه ارسال</span><span>{{ money(o.shippingCost) }}</span></div>
+        <div class="grand"><span>مبلغ کل</span><span>{{ money(o.totalCost) }}</span></div>
+      </div>
+    </div>
+
+    @if (o.transactions?.length) {
+      <div class="admin-card">
+        <h2>تراکنش‌ها</h2>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr><th>نوع</th><th>مبلغ</th><th>مرجع</th><th>شبا</th><th>تاریخ</th></tr>
+            </thead>
+            <tbody>
+              @for (t of o.transactions; track t.id) {
+                <tr>
+                  <td>
+                    <span [class]="'badge ' + (t.type === 'REFUND' ? 'badge--amber' : 'badge--green')">
+                      {{ t.type === 'REFUND' ? 'بازپرداخت' : 'پرداخت' }}
+                    </span>
+                  </td>
+                  <td>{{ money(t.amount) }}</td>
+                  <td class="admin-muted">{{ t.reference }}</td>
+                  <td class="admin-muted">{{ t.iban }}</td>
+                  <td>{{ date(t.createdAt) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  }
+
+  @if (showRefund()) {
+    <div class="modal-backdrop" (click)="showRefund.set(false)"></div>
+    <div class="modal" role="dialog" aria-label="ثبت بازپرداخت">
+      <h2>ثبت بازپرداخت</h2>
+      <p class="admin-muted">
+        بازپرداخت به‌صورت دستی و خارج از سامانه انجام می‌شود؛ سپس مرجع و شبا را اینجا ثبت کنید.
+      </p>
+      <label>
+        <span>کد پیگیری تراکنش</span>
+        <input class="field" [(ngModel)]="refReference" />
+      </label>
+      <label>
+        <span>شبای مقصد</span>
+        <input class="field" [(ngModel)]="refIban" placeholder="IR + ۲۴ رقم" />
+      </label>
+      <div class="modal__actions">
+        <button type="button" class="admin-btn admin-btn--ghost" (click)="showRefund.set(false)">انصراف</button>
+        <button type="button" class="admin-btn" (click)="submitRefund()">ثبت بازپرداخت</button>
+      </div>
+    </div>
+  }
+
+  @if (toast()) {
+    <div class="admin-toast">{{ toast() }}</div>
+  }
+</div>

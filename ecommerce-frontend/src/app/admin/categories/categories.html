@@ -1,0 +1,71 @@
+<div class="admin-page">
+  <div class="admin-page__head">
+    <h1>دسته‌بندی‌ها</h1>
+  </div>
+
+  @if (error()) {
+    <p class="admin-error">{{ error() }}</p>
+  }
+
+  <div class="admin-card add-root">
+    <input class="field" [(ngModel)]="newRootName" placeholder="نام دسته (انگلیسی)" />
+    <input class="field" [(ngModel)]="newRootLocal" placeholder="نام فارسی" />
+    <button type="button" class="admin-btn" (click)="addRoot()">افزودن دسته اصلی</button>
+  </div>
+
+  @if (loading()) {
+    <p class="admin-empty">در حال بارگذاری…</p>
+  } @else if (!items().length) {
+    <p class="admin-empty">دسته‌ای وجود ندارد</p>
+  } @else {
+    @for (item of items(); track item.category.id) {
+      <div class="admin-card cat">
+        <div class="cat__row">
+          <strong class="cat__name">{{ item.category.localName || item.category.name }}</strong>
+          <span class="admin-muted">{{ item.category.name }}</span>
+          <span class="cat__spacer"></span>
+          <button type="button" class="admin-btn admin-btn--ghost admin-btn--sm" (click)="rename(item.category)">
+            ویرایش نام
+          </button>
+          <button
+            type="button"
+            class="admin-btn admin-btn--danger admin-btn--sm"
+            (click)="remove(item.category.id, item.category.localName || item.category.name)"
+          >حذف</button>
+        </div>
+
+        @if (item.subCategories.length) {
+          <div class="subs">
+            @for (sub of item.subCategories; track sub.id) {
+              <div class="sub__row">
+                <span>{{ sub.localName || sub.name }}</span>
+                <span class="admin-muted">{{ sub.name }}</span>
+                <span class="cat__spacer"></span>
+                <button type="button" class="admin-btn admin-btn--ghost admin-btn--sm" (click)="rename(sub)">
+                  ویرایش
+                </button>
+                <button
+                  type="button"
+                  class="admin-btn admin-btn--danger admin-btn--sm"
+                  (click)="remove(sub.id, sub.localName || sub.name)"
+                >حذف</button>
+              </div>
+            }
+          </div>
+        }
+
+        <div class="sub-add">
+          <input class="field" [(ngModel)]="subDrafts()[item.category.id].name" placeholder="نام زیردسته" />
+          <input class="field" [(ngModel)]="subDrafts()[item.category.id].localName" placeholder="نام فارسی" />
+          <button type="button" class="admin-btn admin-btn--ghost admin-btn--sm" (click)="addSub(item.category.id)">
+            + زیردسته
+          </button>
+        </div>
+      </div>
+    }
+  }
+
+  @if (toast()) {
+    <div class="admin-toast">{{ toast() }}</div>
+  }
+</div>

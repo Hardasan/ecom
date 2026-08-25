@@ -1,0 +1,74 @@
+<div class="admin-page">
+  <div class="admin-page__head">
+    <h1>داشبورد</h1>
+  </div>
+
+  @if (error()) {
+    <p class="admin-error">{{ error() }}</p>
+  }
+
+  @if (stats(); as s) {
+    <div class="admin-stat-grid">
+      <div class="admin-stat admin-stat--accent">
+        <span class="admin-stat__value">{{ money(s.totalRevenue) }}</span>
+        <span class="admin-stat__label">درآمد کل</span>
+      </div>
+      <a class="admin-stat" routerLink="/admin/orders">
+        <span class="admin-stat__value">{{ s.totalOrders }}</span>
+        <span class="admin-stat__label">کل سفارش‌ها</span>
+      </a>
+      <a class="admin-stat" routerLink="/admin/orders">
+        <span class="admin-stat__value">{{ s.awaitingShipment }}</span>
+        <span class="admin-stat__label">در انتظار ارسال</span>
+      </a>
+      <a class="admin-stat" routerLink="/admin/orders">
+        <span class="admin-stat__value">{{ s.refundableOrders }}</span>
+        <span class="admin-stat__label">در انتظار بازپرداخت</span>
+      </a>
+      <a class="admin-stat" routerLink="/admin/products">
+        <span class="admin-stat__value">{{ s.totalProducts }}</span>
+        <span class="admin-stat__label">محصولات — {{ s.outOfStockProducts }} ناموجود</span>
+      </a>
+      <a class="admin-stat" routerLink="/admin/reviews">
+        <span class="admin-stat__value">{{ s.pendingReviews }}</span>
+        <span class="admin-stat__label">نظرات در انتظار تأیید</span>
+      </a>
+    </div>
+  } @else if (loading()) {
+    <p class="admin-empty">در حال بارگذاری…</p>
+  }
+
+  <div class="admin-page__head subhead">
+    <h1>سفارش‌های اخیر</h1>
+    <a class="admin-btn admin-btn--ghost admin-btn--sm" routerLink="/admin/orders">همه سفارش‌ها</a>
+  </div>
+
+  @if (recent().length) {
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>تاریخ</th>
+            <th>گیرنده</th>
+            <th>مبلغ</th>
+            <th>وضعیت</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (o of recent(); track o.id) {
+            <tr>
+              <td><a class="admin-link" routerLink="/admin/orders/{{ o.id }}">{{ o.id }}</a></td>
+              <td>{{ date(o.createdAt) }}</td>
+              <td>{{ o.recipientFirstName }} {{ o.recipientLastName }}</td>
+              <td>{{ money(o.totalCost) }}</td>
+              <td><span [class]="'badge ' + tone(o.status)">{{ statusLabel(o.status) }}</span></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <p class="admin-empty">سفارشی برای نمایش نیست</p>
+  }
+</div>

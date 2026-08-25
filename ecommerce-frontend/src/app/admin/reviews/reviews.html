@@ -1,0 +1,88 @@
+<div class="admin-page">
+  <div class="admin-page__head">
+    <h1>نظرات</h1>
+  </div>
+
+  @if (error()) {
+    <p class="admin-error">{{ error() }}</p>
+  }
+
+  <div class="admin-tabs">
+    @for (f of filters; track f.key) {
+      <button type="button" class="admin-tab" [class.is-active]="filter() === f.key" (click)="select(f.key)">
+        {{ f.label }}
+      </button>
+    }
+  </div>
+
+  @if (loading()) {
+    <p class="admin-empty">در حال بارگذاری…</p>
+  } @else if (!reviews().length) {
+    <p class="admin-empty">نظری در این دسته نیست</p>
+  } @else {
+    <div class="reviews">
+      @for (r of reviews(); track r.id) {
+        <div class="admin-card review">
+          <div class="review__head">
+            <div class="review__meta">
+              <strong>{{ r.authorName }}</strong>
+              @if (r.verifiedPurchase) {
+                <span class="badge badge--green">خرید تأییدشده</span>
+              }
+              <span [class]="'badge ' + tone(r.status)">{{ statusLabel(r.status) }}</span>
+            </div>
+            <span class="stars">{{ stars(r.rating) }}</span>
+          </div>
+
+          <div class="review__product admin-muted">
+            محصول: {{ r.productLocalName || r.productName }} <span>({{ r.productCode }})</span>
+            @if (r.createdAt) { — {{ date(r.createdAt) }} }
+          </div>
+
+          @if (r.title) {
+            <strong class="review__title">{{ r.title }}</strong>
+          }
+          @if (r.comment) {
+            <p class="review__comment">{{ r.comment }}</p>
+          }
+
+          <div class="review__actions">
+            @if (r.status !== 'PUBLISHED') {
+              <button type="button" class="admin-btn admin-btn--sm" (click)="moderate(r, 'PUBLISHED')">
+                تأیید و انتشار
+              </button>
+            }
+            @if (r.status !== 'HIDDEN') {
+              <button type="button" class="admin-btn admin-btn--ghost admin-btn--sm" (click)="moderate(r, 'HIDDEN')">
+                پنهان‌سازی
+              </button>
+            }
+            <button type="button" class="admin-btn admin-btn--danger admin-btn--sm" (click)="remove(r)">حذف</button>
+          </div>
+        </div>
+      }
+    </div>
+
+    @if (totalPages() > 1) {
+      <div class="admin-toolbar pager">
+        <button
+          type="button"
+          class="admin-btn admin-btn--ghost admin-btn--sm"
+          [disabled]="page() === 0"
+          (click)="load(page() - 1)"
+        >قبلی</button>
+        <span class="admin-muted">صفحه {{ page() + 1 }} از {{ totalPages() }}</span>
+        <button
+          type="button"
+          class="admin-btn admin-btn--ghost admin-btn--sm"
+          [disabled]="page() + 1 >= totalPages()"
+          (click)="load(page() + 1)"
+        >بعدی</button>
+      </div>
+    }
+  }
+
+  @if (toast()) {
+    <div class="admin-toast">{{ toast() }}</div>
+  }
+</div>

@@ -62,4 +62,23 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT COUNT(o) FROM Order o WHERE o.discountId = :discountId AND o.userId = :userId "
             + "AND o.status IN ('RESERVED', 'PAID', 'SENDING', 'RECEIVED')")
     long countActiveByDiscountAndUser(@Param("discountId") Long discountId, @Param("userId") Long userId);
+
+    /**
+     * One {@code [status, count, sum(totalCost)]} row per order status present. Backs the admin
+     * dashboard: totals, per-status counts and realised revenue are derived from this single query.
+     */
+    @Query("SELECT o.status, COUNT(o), COALESCE(SUM(o.totalCost), 0) FROM Order o GROUP BY o.status")
+    List<Object[]> aggregateOrderStatus();
+
+    /**
+     * Count matching {@link #findRefundableOrders()} without materialising the orders — for the
+     * dashboard's refundable badge.
+     */
+    @Query("""
+            SELECT COUNT(o) FROM Order o
+            WHERE o.status IN ('CANCEL_BY_USER', 'CANCEL_BY_ADMIN')
+              AND EXISTS (SELECT 1 FROM Transaction p WHERE p.order = o AND p.type = 'PAYMENT')
+              AND NOT EXISTS (SELECT 1 FROM Transaction r WHERE r.order = o AND r.type = 'REFUND')
+            """)
+    long countRefundableOrders();
 }

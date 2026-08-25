@@ -1,0 +1,54 @@
+.reviews {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.review {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  &__title {
+    font-size: 14px;
+  }
+
+  &__comment {
+    margin: 0;
+    font-size: 14px;
+    color: var(--ink-body);
+    line-height: 1.7;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+}
+
+.stars {
+  color: #e0a80f;
+  letter-spacing: 2px;
+  font-size: 14px;
+}
+
+.pager {
+  justify-content: center;
+}

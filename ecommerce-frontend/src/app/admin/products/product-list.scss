@@ -1,0 +1,35 @@
+.thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  display: block;
+  background: var(--surface);
+
+  &--empty {
+    border: 1px dashed var(--border);
+  }
+}
+
+.search {
+  max-width: 320px;
+}
+
+.file-btn {
+  position: relative;
+  cursor: pointer;
+}
+
+.bulk-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.result-line {
+  margin: 12px 0;
+}
+
+.pager {
+  justify-content: center;
+}

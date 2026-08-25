@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ASSETS } from '../../assets';
@@ -25,6 +25,7 @@ export class Profile implements OnInit {
   private readonly ordersApi = inject(OrderService);
   private readonly router = inject(Router);
 
+  readonly isAdmin = computed(() => this.auth.role() === 'ROLE_ADMIN');
   readonly addresses = signal<AddressDto[]>([]);
   readonly recentOrders = signal<OrderDto[]>([]);
   readonly showAddressSheet = signal(false);

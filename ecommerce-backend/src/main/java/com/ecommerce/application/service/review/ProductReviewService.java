@@ -1,5 +1,6 @@
 package com.ecommerce.application.service.review;
 
+import com.ecommerce.application.api.dto.review.AdminReviewResponseDto;
 import com.ecommerce.application.api.dto.review.ReviewRequestDto;
 import com.ecommerce.application.api.dto.review.ReviewResponseDto;
 import com.ecommerce.application.api.dto.review.ReviewSummaryResponseDto;
@@ -104,6 +105,19 @@ public class ProductReviewService {
         Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
                 toSort(searchDto.getSort()));
         return productReviewRepository.findAll(spec, sorted).map(productReviewMapper::toResponseDto);
+    }
+
+    /**
+     * Cross-product moderation queue for admins: all reviews (optionally filtered by {@code status}),
+     * newest first, each carrying its product's name/code. The query already orders the rows, so any
+     * client-supplied sort is dropped and the page size is capped.
+     */
+    @Transactional(readOnly = true)
+    public Page<AdminReviewResponseDto> getModerationQueue(ReviewStatus status, Pageable pageable) {
+        Pageable paged = PageRequest.of(pageable.getPageNumber(), Math.min(pageable.getPageSize(), 100));
+        return status == null
+                ? productReviewRepository.findAllAdminReviews(paged)
+                : productReviewRepository.findAdminReviewsByStatus(status, paged);
     }
 
     @Transactional(readOnly = true)

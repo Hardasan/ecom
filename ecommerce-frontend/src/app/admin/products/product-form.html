@@ -1,0 +1,187 @@
+<div class="admin-page">
+  <div class="admin-page__head">
+    <h1>{{ isEdit ? 'ویرایش محصول' : 'محصول جدید' }}</h1>
+    <a class="admin-btn admin-btn--ghost admin-btn--sm" routerLink="/admin/products">← بازگشت</a>
+  </div>
+
+  @if (error()) {
+    <p class="admin-error">{{ error() }}</p>
+  }
+
+  @if (loading()) {
+    <p class="admin-empty">در حال بارگذاری…</p>
+  } @else {
+    <div class="admin-card">
+      <div class="admin-form">
+        <label>
+          <span>نام محصول *</span>
+          <input class="field" [(ngModel)]="name" />
+        </label>
+        <label>
+          <span>نام نمایشی (فارسی)</span>
+          <input class="field" [(ngModel)]="localName" />
+        </label>
+        <label>
+          <span>شناسه یکتا (url) *</span>
+          <input class="field" [(ngModel)]="url" placeholder="مثلاً smart-lamp-01" />
+        </label>
+        <label>
+          <span>کد برند</span>
+          <input class="field" type="number" [(ngModel)]="brandId" />
+        </label>
+        <label>
+          <span>دسته *</span>
+          <select class="field" [(ngModel)]="categoryId" (ngModelChange)="onCategoryChange()">
+            <option [ngValue]="null">— انتخاب کنید —</option>
+            @for (c of categories(); track c.category.id) {
+              <option [ngValue]="c.category.id">{{ c.category.localName || c.category.name }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          <span>زیردسته</span>
+          <select class="field" [(ngModel)]="subCategoryId" [disabled]="!subCategories().length">
+            <option [ngValue]="null">— بدون زیردسته —</option>
+            @for (s of subCategories(); track s.id) {
+              <option [ngValue]="s.id">{{ s.localName || s.name }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          <span>نوع تنوع</span>
+          <select class="field" [(ngModel)]="variantType">
+            @for (v of variantTypes; track v) {
+              <option [ngValue]="v">{{ v === 'COLOR' ? 'رنگ' : v === 'SIZE' ? 'اندازه' : 'بدون تنوع' }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          <span>وضعیت *</span>
+          <select class="field" [(ngModel)]="status">
+            @for (s of statuses; track s) {
+              <option [ngValue]="s">{{ s === 'ACTIVE' ? 'فعال' : 'غیرفعال' }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          <span>وضعیت انبار</span>
+          <select class="field" [(ngModel)]="inventoryStatus">
+            @for (s of inventoryStatuses; track s) {
+              <option [ngValue]="s">
+                {{ s === 'IN_STOCK' ? 'موجود' : s === 'LOW_STOCK' ? 'موجودی کم' : 'ناموجود' }}
+              </option>
+            }
+          </select>
+        </label>
+        <label>
+          <span>تعداد موجودی *</span>
+          <input class="field" type="number" [(ngModel)]="inventoryCount" />
+        </label>
+        <label>
+          <span>وزن (گرم)</span>
+          <input class="field" type="number" [(ngModel)]="weightGram" />
+        </label>
+        <label class="col-span">
+          <span>توضیح کوتاه</span>
+          <input class="field" [(ngModel)]="shortDescription" />
+        </label>
+        <label class="col-span">
+          <span>توضیح کامل</span>
+          <textarea class="field" [(ngModel)]="fullDescription"></textarea>
+        </label>
+      </div>
+
+      <!-- Prices -->
+      <div class="section-title">
+        <h2>قیمت‌ها</h2>
+        <button type="button" class="admin-btn admin-btn--ghost admin-btn--sm" (click)="addPrice()">+ افزودن قیمت</button>
+      </div>
+      @for (row of prices(); track $index) {
+        <div class="row-editor">
+          <input class="field" [(ngModel)]="row.variantValue" placeholder="مقدار تنوع (اختیاری)" />
+          <input class="field" type="number" [(ngModel)]="row.price" placeholder="قیمت (ریال)" />
+          <input class="field" type="number" [(ngModel)]="row.discountPrice" placeholder="قیمت با تخفیف" />
+          <button type="button" class="admin-btn admin-btn--danger admin-btn--sm" (click)="removePrice($index)">حذف</button>
+        </div>
+      }
+
+      <!-- Specification -->
+      <div class="section-title">
+        <h2>مشخصات فنی</h2>
+        <button type="button" class="admin-btn admin-btn--ghost admin-btn--sm" (click)="addSpec()">+ افزودن مشخصه</button>
+      </div>
+      @if (!specs().length) {
+        <p class="admin-muted">مشخصه‌ای اضافه نشده است.</p>
+      }
+      @for (s of specs(); track $index) {
+        <div class="row-editor row-editor--spec">
+          <select class="field" [(ngModel)]="s.key">
+            @for (k of specKeys; track k) {
+              <option [ngValue]="k">{{ k }}</option>
+            }
+          </select>
+          <input class="field" [(ngModel)]="s.value" placeholder="مقدار" />
+          <button type="button" class="admin-btn admin-btn--danger admin-btn--sm" (click)="removeSpec($index)">حذف</button>
+        </div>
+      }
+
+      <!-- Create-only main image -->
+      @if (!isEdit) {
+        <div class="section-title"><h2>تصویر اصلی</h2></div>
+        <div class="row-editor">
+          <input class="field" type="file" accept="image/*" (change)="onMainImage($event)" />
+          <input class="field" [(ngModel)]="altText" placeholder="متن جایگزین تصویر (اختیاری)" />
+        </div>
+      }
+
+      <div class="form-actions">
+        <button type="button" class="admin-btn" [disabled]="busy()" (click)="save()">
+          {{ busy() ? '…' : isEdit ? 'ذخیره تغییرات' : 'ایجاد محصول' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Edit-only image management -->
+    @if (isEdit && product(); as p) {
+      <div class="admin-card">
+        <div class="section-title"><h2>مدیریت تصاویر</h2></div>
+        <div class="images">
+          <div class="image-slot">
+            <span class="admin-muted">تصویر اصلی</span>
+            @if (img(p.mainImage)) {
+              <img class="image-preview" [src]="img(p.mainImage)" alt="" />
+              <button type="button" class="admin-btn admin-btn--danger admin-btn--sm" (click)="removeImage('MAIN')">حذف</button>
+            } @else {
+              <span class="image-preview image-preview--empty"></span>
+            }
+            <label class="admin-btn admin-btn--ghost admin-btn--sm file-btn">
+              {{ img(p.mainImage) ? 'جایگزینی' : 'بارگذاری' }}
+              <input type="file" accept="image/*" hidden (change)="uploadImage('MAIN', $event)" />
+            </label>
+          </div>
+
+          @for (other of p.otherImages ?? []; track other.id) {
+            <div class="image-slot">
+              <span class="admin-muted">#{{ other.id }}</span>
+              <img class="image-preview" [src]="img(other.imageData)" alt="" />
+              <button type="button" class="admin-btn admin-btn--danger admin-btn--sm" (click)="removeImage('OTHER', other.id)">حذف</button>
+            </div>
+          }
+
+          <div class="image-slot">
+            <span class="admin-muted">تصویر جدید (گالری)</span>
+            <span class="image-preview image-preview--empty"></span>
+            <label class="admin-btn admin-btn--ghost admin-btn--sm file-btn">
+              افزودن
+              <input type="file" accept="image/*" hidden (change)="uploadImage('OTHER', $event)" />
+            </label>
+          </div>
+        </div>
+      </div>
+    }
+  }
+
+  @if (toast()) {
+    <div class="admin-toast">{{ toast() }}</div>
+  }
+</div>

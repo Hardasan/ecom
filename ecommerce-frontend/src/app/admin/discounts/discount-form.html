@@ -1,0 +1,95 @@
+<div class="admin-page">
+  <div class="admin-page__head">
+    <h1>{{ isEdit ? 'ویرایش کد تخفیف' : 'کد تخفیف جدید' }}</h1>
+    <a class="admin-btn admin-btn--ghost admin-btn--sm" routerLink="/admin/discounts">← بازگشت</a>
+  </div>
+
+  @if (error()) {
+    <p class="admin-error">{{ error() }}</p>
+  }
+
+  @if (loading()) {
+    <p class="admin-empty">در حال بارگذاری…</p>
+  } @else {
+    <div class="admin-card">
+      <div class="admin-form">
+        <label>
+          <span>کد *</span>
+          <input class="field" [(ngModel)]="code" placeholder="مثلاً NOWRUZ" />
+        </label>
+        <label>
+          <span>نوع *</span>
+          <select class="field" [(ngModel)]="type">
+            <option [ngValue]="'PERCENTAGE'">درصدی</option>
+            <option [ngValue]="'FIXED_AMOUNT'">مبلغ ثابت</option>
+          </select>
+        </label>
+        <label>
+          <span>{{ type === 'PERCENTAGE' ? 'درصد (۱ تا ۱۰۰)' : 'مبلغ (ریال)' }} *</span>
+          <input class="field" type="number" [(ngModel)]="value" />
+        </label>
+        @if (type === 'PERCENTAGE') {
+          <label>
+            <span>سقف تخفیف (ریال)</span>
+            <input class="field" type="number" [(ngModel)]="maxDiscountAmount" />
+          </label>
+        }
+        <label>
+          <span>حداقل مبلغ سبد (ریال)</span>
+          <input class="field" type="number" [(ngModel)]="minimumCartAmount" />
+        </label>
+        <label>
+          <span>دامنه *</span>
+          <select class="field" [(ngModel)]="scope">
+            <option [ngValue]="'ALL'">کل سبد خرید</option>
+            <option [ngValue]="'PRODUCTS'">محصولات منتخب</option>
+            <option [ngValue]="'CATEGORIES'">دسته‌های منتخب</option>
+          </select>
+        </label>
+        <label>
+          <span>تاریخ انقضا</span>
+          <input class="field" type="date" [(ngModel)]="expiresAt" />
+        </label>
+        <label>
+          <span>سقف کل استفاده</span>
+          <input class="field" type="number" [(ngModel)]="usageLimit" />
+        </label>
+        <label>
+          <span>سقف استفاده هر کاربر</span>
+          <input class="field" type="number" [(ngModel)]="perUserLimit" />
+        </label>
+
+        @if (scope === 'PRODUCTS') {
+          <label class="col-span">
+            <span>شناسه محصولات (با کاما جدا کنید)</span>
+            <input class="field" [(ngModel)]="productIdsText" placeholder="مثلاً 12, 34, 56" />
+          </label>
+        }
+        @if (scope === 'CATEGORIES') {
+          <div class="col-span">
+            <span class="admin-muted">دسته‌های مشمول</span>
+            <div class="cat-picker">
+              @for (node of allCategoryNodes(); track node.id) {
+                <label class="cat-chip" [class.is-on]="isCatSelected(node.id)">
+                  <input
+                    type="checkbox"
+                    [checked]="isCatSelected(node.id)"
+                    (change)="toggleCategory(node.id)"
+                    hidden
+                  />
+                  {{ node.label }}
+                </label>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="admin-btn" [disabled]="busy()" (click)="save()">
+          {{ busy() ? '…' : isEdit ? 'ذخیره' : 'ایجاد کد' }}
+        </button>
+      </div>
+    </div>
+  }
+</div>

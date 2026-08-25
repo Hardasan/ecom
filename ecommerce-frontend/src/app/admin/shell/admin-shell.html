@@ -1,0 +1,41 @@
+<div class="admin-shell">
+  @if (menuOpen()) {
+    <div class="admin-backdrop" (click)="closeMenu()"></div>
+  }
+
+  <aside class="admin-sidebar" [class.is-open]="menuOpen()">
+    <div class="admin-brand">
+      <span class="admin-brand__mark">RiVaNi</span>
+      <span class="admin-brand__sub">پنل مدیریت</span>
+    </div>
+
+    <nav class="admin-nav">
+      @for (item of nav; track item.path) {
+        <a
+          [routerLink]="item.path"
+          routerLinkActive="is-active"
+          [routerLinkActiveOptions]="{ exact: item.exact }"
+          (click)="closeMenu()"
+          class="admin-nav__item"
+        >{{ item.label }}</a>
+      }
+    </nav>
+
+    <div class="admin-sidebar__foot">
+      <a routerLink="/" class="admin-nav__item admin-nav__item--muted">← بازگشت به فروشگاه</a>
+      <button type="button" class="admin-nav__item admin-nav__item--muted" (click)="logout()">
+        خروج از حساب
+      </button>
+    </div>
+  </aside>
+
+  <div class="admin-body">
+    <header class="admin-topbar">
+      <button type="button" class="admin-hamburger" (click)="toggleMenu()" aria-label="منو">☰</button>
+      <span class="admin-topbar__title">پنل مدیریت فروشگاه</span>
+    </header>
+    <main class="admin-content">
+      <router-outlet />
+    </main>
+  </div>
+</div>

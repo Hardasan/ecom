@@ -42,4 +42,8 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     List<String> findAllUrls();
 
     List<Product> findByCodeIn(Collection<String> codes);
+
+    long countByStatus(ProductStatus status);
+
+    long countByInventoryCount(int inventoryCount);
 }

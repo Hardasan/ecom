@@ -1,0 +1,135 @@
+<div class="admin-page">
+  <div class="admin-page__head">
+    <h1>محصولات <span class="admin-muted">({{ totalElements() }})</span></h1>
+    <div class="admin-toolbar">
+      <button type="button" class="admin-btn admin-btn--ghost" (click)="showBulk.set(!showBulk())">
+        بارگذاری گروهی
+      </button>
+      <a class="admin-btn" routerLink="/admin/products/new">+ محصول جدید</a>
+    </div>
+  </div>
+
+  @if (error()) {
+    <p class="admin-error">{{ error() }}</p>
+  }
+
+  @if (showBulk()) {
+    <div class="admin-card">
+      <div class="bulk-row">
+        <button type="button" class="admin-btn admin-btn--ghost admin-btn--sm" (click)="downloadTemplate()">
+          دانلود قالب اکسل
+        </button>
+        <label class="admin-btn admin-btn--sm file-btn">
+          {{ bulkBusy() ? 'در حال بارگذاری…' : 'انتخاب فایل اکسل' }}
+          <input type="file" accept=".xlsx" (change)="onBulkFile($event)" hidden [disabled]="bulkBusy()" />
+        </label>
+      </div>
+      @if (bulkResult(); as r) {
+        <p class="admin-muted result-line">
+          {{ r.totalRows }} ردیف — {{ r.createdCount }} ایجاد، {{ r.updatedCount }} بروزرسانی،
+          {{ r.failureCount }} خطا
+        </p>
+        @if (r.errors?.length) {
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr><th>ردیف</th><th>فیلد</th><th>خطا</th></tr>
+              </thead>
+              <tbody>
+                @for (e of r.errors; track $index) {
+                  <tr><td>{{ e.rowNumber }}</td><td>{{ e.field }}</td><td>{{ e.message }}</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    </div>
+  }
+
+  <div class="admin-toolbar">
+    <input
+      class="field search"
+      [(ngModel)]="query"
+      (keyup.enter)="search()"
+      placeholder="جستجوی نام محصول…"
+    />
+    <button type="button" class="admin-btn admin-btn--ghost" (click)="search()">جستجو</button>
+  </div>
+
+  @if (loading()) {
+    <p class="admin-empty">در حال بارگذاری…</p>
+  } @else if (!products().length) {
+    <p class="admin-empty">محصولی یافت نشد</p>
+  } @else {
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>تصویر</th>
+            <th>نام</th>
+            <th>کد</th>
+            <th>قیمت</th>
+            <th>موجودی</th>
+            <th>وضعیت</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of products(); track p.id) {
+            <tr>
+              <td>
+                @if (img(p.mainImage)) {
+                  <img class="thumb" [src]="img(p.mainImage)" alt="" />
+                } @else {
+                  <span class="thumb thumb--empty"></span>
+                }
+              </td>
+              <td>{{ name(p) }}</td>
+              <td class="admin-muted">{{ p.code }}</td>
+              <td>{{ price(p) }}</td>
+              <td>
+                <span [class]="'badge ' + (stock(p) > 0 ? 'badge--green' : 'badge--red')">{{ stock(p) }}</span>
+              </td>
+              <td>
+                <span [class]="'badge ' + (p.status === 'ACTIVE' ? 'badge--green' : 'badge--gray')">
+                  {{ p.status === 'ACTIVE' ? 'فعال' : 'غیرفعال' }}
+                </span>
+              </td>
+              <td class="cell-actions">
+                <a class="admin-btn admin-btn--ghost admin-btn--sm" routerLink="/admin/products/{{ p.id }}">
+                  ویرایش
+                </a>
+                <button type="button" class="admin-btn admin-btn--danger admin-btn--sm" (click)="remove(p)">
+                  حذف
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (totalPages() > 1) {
+      <div class="admin-toolbar pager">
+        <button
+          type="button"
+          class="admin-btn admin-btn--ghost admin-btn--sm"
+          [disabled]="page() === 0"
+          (click)="load(page() - 1)"
+        >قبلی</button>
+        <span class="admin-muted">صفحه {{ page() + 1 }} از {{ totalPages() }}</span>
+        <button
+          type="button"
+          class="admin-btn admin-btn--ghost admin-btn--sm"
+          [disabled]="page() + 1 >= totalPages()"
+          (click)="load(page() + 1)"
+        >بعدی</button>
+      </div>
+    }
+  }
+
+  @if (toast()) {
+    <div class="admin-toast">{{ toast() }}</div>
+  }
+</div>

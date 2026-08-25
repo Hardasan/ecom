@@ -1,0 +1,65 @@
+<div class="admin-page">
+  <div class="admin-page__head">
+    <h1>سفارش‌ها</h1>
+  </div>
+
+  @if (error()) {
+    <p class="admin-error">{{ error() }}</p>
+  }
+
+  <div class="admin-tabs">
+    @for (f of filters; track f.key) {
+      <button type="button" class="admin-tab" [class.is-active]="filter() === f.key" (click)="select(f.key)">
+        {{ f.label }}
+      </button>
+    }
+  </div>
+
+  <div class="admin-toolbar">
+    <input
+      class="field search"
+      [ngModel]="query()"
+      (ngModelChange)="query.set($event)"
+      placeholder="جستجو با شماره سفارش، نام یا موبایل…"
+    />
+  </div>
+
+  @if (loading()) {
+    <p class="admin-empty">در حال بارگذاری…</p>
+  } @else if (!visible().length) {
+    <p class="admin-empty">سفارشی یافت نشد</p>
+  } @else {
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>تاریخ</th>
+            <th>گیرنده</th>
+            <th>موبایل</th>
+            <th>اقلام</th>
+            <th>مبلغ</th>
+            <th>وضعیت</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (o of visible(); track o.id) {
+            <tr>
+              <td>{{ o.id }}</td>
+              <td>{{ date(o.createdAt) }}</td>
+              <td>{{ o.recipientFirstName }} {{ o.recipientLastName }}</td>
+              <td class="admin-muted">{{ o.recipientMobile }}</td>
+              <td>{{ count(o.items) }}</td>
+              <td>{{ money(o.totalCost) }}</td>
+              <td><span [class]="'badge ' + tone(o.status)">{{ statusLabel(o.status) }}</span></td>
+              <td class="cell-actions">
+                <a class="admin-btn admin-btn--ghost admin-btn--sm" routerLink="/admin/orders/{{ o.id }}">جزئیات</a>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

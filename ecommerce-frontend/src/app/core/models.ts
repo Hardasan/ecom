@@ -130,8 +130,24 @@ export type OrderDto = {
   itemsCost: number | string;
   shippingCost: number | string;
   totalCost: number | string;
+  discountCode?: string | null;
+  discountAmount?: number | string | null;
+  totalWeightGram?: number | null;
+  shippingZone?: string | null;
+  reservedUntil?: string | null;
+  recipientNationalId?: string | null;
   createdAt?: string;
-  transactions?: { id: number; type: string; amount: number | string; reference?: string }[];
+  updatedAt?: string;
+  transactions?: TransactionDto[];
+};
+
+export type TransactionDto = {
+  id: number;
+  type: 'PAYMENT' | 'REFUND' | string;
+  amount: number | string;
+  reference?: string | null;
+  iban?: string | null;
+  createdAt?: string;
 };
 
 export type ReviewSummaryDto = {
@@ -166,4 +182,100 @@ export type GeoProvinceDto = {
 export type GeoCityDto = {
   id: number;
   name: string;
+};
+
+// ---- Admin domain types -------------------------------------------------------------------------
+
+export type ProductStatus = 'ACTIVE' | 'INACTIVE';
+export type InventoryStatus = 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK';
+export type VariantTypeValue = 'COLOR' | 'SIZE';
+export type DiscountType = 'PERCENTAGE' | 'FIXED_AMOUNT';
+export type DiscountScope = 'ALL' | 'PRODUCTS' | 'CATEGORIES';
+export type ReviewStatus = 'PENDING' | 'PUBLISHED' | 'HIDDEN';
+export type ImageType = 'MAIN' | 'OTHER';
+
+export const SPEC_KEYS = [
+  'COLOR', 'SIZE', 'WEIGHT', 'MATERIAL', 'DIMENSIONS', 'CONNECTIVITY', 'POWER_CONSUMPTION',
+  'WARRANTY', 'COUNTRY_OF_ORIGIN', 'MODEL_NUMBER', 'PROCESSOR', 'MEMORY', 'STORAGE',
+  'DISPLAY_SIZE', 'OPERATING_SYSTEM'
+] as const;
+export type SpecificationKey = (typeof SPEC_KEYS)[number];
+
+/** Payload for POST/PUT /api/products (mirrors the server CreateProductRequestDto). */
+export type ProductWriteDto = {
+  categoryId: number;
+  subCategoryId?: number | null;
+  url: string;
+  variantType?: VariantTypeValue | null;
+  prices: PriceDto[];
+  shortDescription?: string | null;
+  fullDescription?: string | null;
+  specification?: Record<string, string>;
+  name: string;
+  localName?: string | null;
+  brandId?: number | null;
+  inventoryStatus: InventoryStatus;
+  status: ProductStatus;
+  inventoryCount: number;
+  weightGram?: number | null;
+};
+
+export type DiscountDto = {
+  id?: number;
+  code: string;
+  type: DiscountType;
+  value: number | string;
+  maxDiscountAmount?: number | string | null;
+  minimumCartAmount?: number | string | null;
+  scope: DiscountScope;
+  productIds?: number[] | null;
+  categoryIds?: number[] | null;
+  expiresAt?: string | null;
+  usageLimit?: number | null;
+  usageCount?: number | null;
+  perUserLimit?: number | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type BatchRowErrorDto = { rowNumber: number; field: string; message: string };
+export type BatchUploadResultDto = {
+  totalRows: number;
+  successCount: number;
+  createdCount: number;
+  updatedCount: number;
+  failureCount: number;
+  errors: BatchRowErrorDto[];
+  elapsedTimeMs: number;
+};
+
+export type AdminReviewDto = {
+  id: number;
+  productId: number;
+  productName?: string;
+  productLocalName?: string | null;
+  productCode?: string;
+  authorName: string;
+  rating: number;
+  title?: string | null;
+  comment?: string | null;
+  verifiedPurchase?: boolean;
+  status: ReviewStatus;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type AdminStatsDto = {
+  totalOrders: number;
+  ordersByStatus: Record<string, number>;
+  totalRevenue: number | string;
+  awaitingShipment: number;
+  reservedOrders: number;
+  refundableOrders: number;
+  totalProducts: number;
+  activeProducts: number;
+  outOfStockProducts: number;
+  totalCategories: number;
+  totalDiscounts: number;
+  pendingReviews: number;
 };

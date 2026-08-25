@@ -1,0 +1,56 @@
+<div class="admin-page">
+  <div class="admin-page__head">
+    <h1>کدهای تخفیف</h1>
+    <a class="admin-btn" routerLink="/admin/discounts/new">+ کد جدید</a>
+  </div>
+
+  @if (error()) {
+    <p class="admin-error">{{ error() }}</p>
+  }
+
+  @if (loading()) {
+    <p class="admin-empty">در حال بارگذاری…</p>
+  } @else if (!discounts().length) {
+    <p class="admin-empty">کد تخفیفی ثبت نشده است</p>
+  } @else {
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>کد</th>
+            <th>نوع</th>
+            <th>مقدار</th>
+            <th>دامنه</th>
+            <th>استفاده</th>
+            <th>انقضا</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (d of discounts(); track d.id) {
+            <tr>
+              <td><strong>{{ d.code }}</strong></td>
+              <td>{{ typeLabel(d.type) }}</td>
+              <td>{{ valueLabel(d) }}</td>
+              <td>{{ scopeLabel(d.scope) }}</td>
+              <td>{{ d.usageCount ?? 0 }}@if (d.usageLimit) { / {{ d.usageLimit }} }</td>
+              <td>{{ d.expiresAt ? date(d.expiresAt) : 'بدون انقضا' }}</td>
+              <td class="cell-actions">
+                <a class="admin-btn admin-btn--ghost admin-btn--sm" routerLink="/admin/discounts/{{ d.id }}">
+                  ویرایش
+                </a>
+                <button type="button" class="admin-btn admin-btn--danger admin-btn--sm" (click)="remove(d)">
+                  حذف
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (toast()) {
+    <div class="admin-toast">{{ toast() }}</div>
+  }
+</div>

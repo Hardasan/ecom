@@ -1,0 +1,59 @@
+.add-root {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+
+  .field {
+    max-width: 240px;
+  }
+}
+
+.cat {
+  padding: 16px;
+}
+
+.cat__row,
+.sub__row,
+.sub-add {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cat__row {
+  margin-bottom: 6px;
+}
+
+.cat__name {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.cat__spacer {
+  flex: 1;
+}
+
+.subs {
+  margin: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-inline-start: 2px solid var(--border);
+  padding-inline-start: 14px;
+}
+
+.sub__row {
+  font-size: 14px;
+}
+
+.sub-add {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+
+  .field {
+    max-width: 200px;
+  }
+}

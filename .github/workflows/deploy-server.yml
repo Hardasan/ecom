@@ -1,0 +1,68 @@
+name: Deploy server
+
+# Shared by CD (main) and Release (version tags). Not run on its own.
+on:
+  workflow_call:
+    inputs:
+      image:
+        description: GHCR image ref to roll out, e.g. ghcr.io/owner/repo:sha
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  deploy:
+    name: Deploy to server
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DEPLOY_HOST: 45.94.215.219
+      DEPLOY_USER: root
+      DEPLOY_DIR: /opt/rivani
+      IMAGE: ${{ inputs.image }}
+
+    steps:
+      - name: Configure SSH
+        id: ssh
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          if [ -z "$SSH_PRIVATE_KEY" ]; then
+            echo "SSH_PRIVATE_KEY is not set; skipping SSH deploy."
+            echo "skipped=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo "skipped=false" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        if: steps.ssh.outputs.skipped != 'true'
+        uses: actions/checkout@v7
+
+      - name: Copy compose and deploy script
+        if: steps.ssh.outputs.skipped != 'true'
+        run: |
+          cp deploy/known_hosts ~/.ssh/known_hosts
+          scp -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes \
+            docker-compose.prod.yml \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_DIR}/docker-compose.yml"
+          scp -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes \
+            deploy/update-app.sh deploy/watch-image.sh \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_DIR}/"
+
+      - name: Pull image and recreate app
+        if: steps.ssh.outputs.skipped != 'true'
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            IMAGE="$IMAGE" GHCR_USER="${{ github.actor }}" GHCR_TOKEN="$GHCR_TOKEN" \
+            DEPLOY_DIR="$DEPLOY_DIR" \
+            bash "${DEPLOY_DIR}/update-app.sh"

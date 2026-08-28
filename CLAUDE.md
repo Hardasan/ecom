@@ -6,6 +6,7 @@ End-user e-commerce REST API — OTP auth, product catalog, cart, orders (reserv
 |-----------|------|
 | Business rules | [.claude/rules/business.md](.claude/rules/business.md) |
 | Development rules | [.claude/rules/development.md](.claude/rules/development.md) |
+| Deploy / CI/CD | [.claude/rules/deploy.md](.claude/rules/deploy.md) |
 
 ---
 

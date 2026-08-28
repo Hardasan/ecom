@@ -2,8 +2,7 @@ name: Release
 
 # Cut a release by pushing a version tag, e.g.:
 #   git tag v0.1.0 && git push origin v0.1.0
-# This builds the jar (attached to a GitHub Release) and publishes a Docker
-# image to the GitHub Container Registry (GHCR) for that tag.
+# Publishes the jar + versioned GHCR image, then deploys that image to the VPS.
 on:
   push:
     tags: ['v*']
@@ -12,13 +11,12 @@ permissions:
   contents: write   # required to create the GitHub Release
   packages: write   # required to push the image to GHCR
 
-env:
-  IMAGE: ghcr.io/${{ github.repository }}
-
 jobs:
   release:
     name: Build & publish jar + image
     runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.image.outputs.image }}
 
     steps:
       - name: Checkout
@@ -41,6 +39,12 @@ jobs:
           files: ecommerce-backend/target/*.jar
           generate_release_notes: true
 
+      - name: Set image name
+        id: image
+        run: |
+          echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+          echo "image=ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
@@ -56,7 +60,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ${{ env.IMAGE }}
+          images: ghcr.io/${{ github.repository }}
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -71,3 +75,11 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy
+    needs: release
+    uses: ./.github/workflows/deploy-server.yml
+    secrets: inherit
+    with:
+      image: ${{ needs.release.outputs.image }}

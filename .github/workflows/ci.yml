@@ -1,8 +1,10 @@
 name: CI
 
-# Merge-request gate only: tests + a Docker build check. No publish, no deploy.
-# Shipping the image is CD (merge to main) and Release (version tag).
+# Tests + Docker build check. No publish, no deploy.
+# Runs on PRs and on pushes to main (including skip-cd pushes). Shipping is CD / Release.
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
 

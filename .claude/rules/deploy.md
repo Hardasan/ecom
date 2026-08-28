@@ -8,8 +8,8 @@ Non-obvious CI/CD only. Architecture → [CLAUDE.md](../../CLAUDE.md).
 
 | Phase | File | When | What |
 |-------|------|------|------|
-| **CI** | `.github/workflows/ci.yml` | PR to `main` | Tests + Docker *build check*. No publish, no deploy. |
-| **CD** | `.github/workflows/cd.yml` | Push/merge to `main`, or **Actions → CD → Run workflow** | Publish image (`:sha`, `:main`) then deploy. Does **not** re-run tests (CI already did on the PR). |
+| **CI** | `.github/workflows/ci.yml` | PR to `main`, or push to `main` | Tests + Docker *build check*. No publish, no deploy. `skip cd` does **not** skip CI. |
+| **CD** | `.github/workflows/cd.yml` | Push/merge to `main`, or **Actions → CD → Run workflow** | Publish image (`:sha`, `:main`) then deploy. Does **not** re-run tests. |
 | **Release** | `.github/workflows/release.yml` | Push tag `v*` | Tests + GitHub Release jar + versioned image (`0.1.0`, `latest`) then deploy that image. |
 | *(helper)* | `.github/workflows/deploy-server.yml` | Called by CD and Release | `docker pull` + recreate `ecom`. Not a phase. |
 

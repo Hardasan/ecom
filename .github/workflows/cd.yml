@@ -1,6 +1,7 @@
 name: CD
 
-# After a merge to main: publish the image and deploy. Tests already ran on the PR (CI).
+# After a merge/push to main: publish the image and deploy.
+# Tests run in CI (PR and every push to main), including when CD is skipped.
 # Skip auto-deploy: put "skip cd" (or [skip cd]) in the merge/push commit message.
 # Deploy later: Actions → CD → Run workflow. Release tags still deploy.
 #

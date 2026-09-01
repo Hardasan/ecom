@@ -3,6 +3,7 @@ import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { AuthService } from './core/auth.service';
 import { CartService } from './core/cart.service';
+import { isDashboardHost } from './core/host';
 
 @Component({
   selector: 'app-root',
@@ -16,12 +17,15 @@ export class App {
   private readonly router = inject(Router);
 
   // The admin area renders full-bleed; the storefront stays in the centered 390px phone frame.
-  readonly isAdminRoute = signal(this.router.url.startsWith('/admin'));
+  // On the dashboard host every route is admin, so it is always full-bleed.
+  readonly isAdminRoute = signal(isDashboardHost() || this.router.url.startsWith('/admin'));
 
   constructor() {
     this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
-      .subscribe((e) => this.isAdminRoute.set(e.urlAfterRedirects.startsWith('/admin')));
+      .subscribe((e) =>
+        this.isAdminRoute.set(isDashboardHost() || e.urlAfterRedirects.startsWith('/admin'))
+      );
 
     // Keep the cart badge in sync with auth state: load on app start / login, clear on logout.
     effect(() => {

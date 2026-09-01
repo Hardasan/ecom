@@ -1,0 +1,42 @@
+<div class="admin-login">
+  <form class="admin-login__card" (ngSubmit)="submit()">
+    <div class="admin-login__brand">
+      <span class="mark">RiVaNi</span>
+      <span class="sub">پنل مدیریت</span>
+    </div>
+    <h1>ورود مدیران</h1>
+
+    @if (error()) {
+      <p class="admin-error">{{ error() }}</p>
+    }
+
+    <label>
+      <span>شماره موبایل</span>
+      <input
+        class="field"
+        type="tel"
+        inputmode="numeric"
+        name="mobile"
+        autocomplete="username"
+        [(ngModel)]="mobile"
+        placeholder="09123456789"
+      />
+    </label>
+    <label>
+      <span>رمز عبور</span>
+      <input
+        class="field"
+        type="password"
+        name="password"
+        autocomplete="current-password"
+        [(ngModel)]="password"
+      />
+    </label>
+
+    <button type="submit" class="admin-btn login-btn" [disabled]="busy()">
+      {{ busy() ? '…' : 'ورود' }}
+    </button>
+
+    <a class="shop-link" [href]="shopUrl">بازگشت به فروشگاه</a>
+  </form>
+</div>

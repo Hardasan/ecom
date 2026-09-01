@@ -44,3 +44,20 @@ git tag v0.1.0 && git push origin v0.1.0
 - VPS: `root@45.94.215.219`, stack `/opt/rivani`, compose service `ecom`, local image `rivani:latest`.
 - Host Nginx proxies to `127.0.0.1:8080` (`deploy/nginx-rivani.conf`).
 - A systemd timer on the VPS also pulls `:main` if the digest changed (`deploy/watch-image.sh`).
+
+---
+
+## Admin dashboard subdomain
+
+The admin panel is served on **`dashboard.rivany.ir`**, the storefront on `rivany.ir` — one host-aware
+Angular build, one backend. The browser hostname selects the mode (`core/host.ts`): `dashboard.*` →
+admin route table (login + `/admin`); anything else → storefront. Admins sign in with **mobile +
+password** (`POST /user/login`, must be `ROLE_ADMIN`); the shop's `/admin` path is gone.
+
+One-time VPS setup (no image rebuild needed — it's front-end + Nginx only, already in the image):
+1. **DNS**: `dashboard.rivany.ir` A record → `45.94.215.219`.
+2. **TLS**: `certbot --nginx -d dashboard.rivany.ir` (or add `-d dashboard.rivany.ir --expand`).
+3. **Nginx**: install `deploy/nginx-dashboard-rivani.conf`, then `nginx -t && systemctl reload nginx`.
+
+The existing `server_name _` catch-all already forwards the subdomain over HTTP, so step 3 is only for
+the subdomain's own HTTPS vhost.

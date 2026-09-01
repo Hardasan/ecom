@@ -1,0 +1,74 @@
+:host {
+  display: block;
+}
+
+.admin-login {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--surface);
+
+  &__card {
+    width: 100%;
+    max-width: 380px;
+    background: var(--surface-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: 32px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    box-shadow: var(--shadow-soft);
+  }
+
+  &__brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    margin-bottom: 6px;
+
+    .mark {
+      font-size: 26px;
+      font-weight: 900;
+      color: var(--brand);
+      letter-spacing: 0.5px;
+    }
+
+    .sub {
+      font-size: 13px;
+      color: var(--ink-muted);
+    }
+  }
+
+  h1 {
+    margin: 0 0 6px;
+    font-size: 18px;
+    font-weight: 800;
+    text-align: center;
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--ink-muted);
+  }
+}
+
+.login-btn {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 6px;
+  font-size: 16px;
+}
+
+.shop-link {
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-muted);
+  margin-top: 4px;
+}

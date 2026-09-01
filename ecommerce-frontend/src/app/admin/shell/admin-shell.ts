@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
+import { storefrontUrl } from '../../core/host';
 
 type NavItem = { path: string; label: string; exact: boolean };
 
@@ -15,6 +16,7 @@ export class AdminShell {
   private readonly router = inject(Router);
 
   readonly menuOpen = signal(false);
+  readonly shopUrl = storefrontUrl();
 
   readonly nav: NavItem[] = [
     { path: '/admin', label: 'داشبورد', exact: true },
@@ -35,6 +37,6 @@ export class AdminShell {
 
   logout(): void {
     this.auth.logout();
-    void this.router.navigateByUrl('/');
+    void this.router.navigateByUrl('/login');
   }
 }

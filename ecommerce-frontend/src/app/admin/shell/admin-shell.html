@@ -22,7 +22,7 @@
     </nav>
 
     <div class="admin-sidebar__foot">
-      <a routerLink="/" class="admin-nav__item admin-nav__item--muted">← بازگشت به فروشگاه</a>
+      <a [href]="shopUrl" class="admin-nav__item admin-nav__item--muted">← بازگشت به فروشگاه</a>
       <button type="button" class="admin-nav__item admin-nav__item--muted" (click)="logout()">
         خروج از حساب
       </button>

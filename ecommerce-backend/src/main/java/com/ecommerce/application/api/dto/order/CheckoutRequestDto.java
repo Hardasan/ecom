@@ -1,5 +1,6 @@
 package com.ecommerce.application.api.dto.order;
 
+import com.ecommerce.persistence.entity.enumeration.PaymentMethod;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,4 +21,11 @@ public class CheckoutRequestDto {
      * Optional discount code to apply. Null/blank ⇒ no discount.
      */
     private String discountCode;
+
+    /**
+     * How the order is paid. Null defaults to {@link PaymentMethod#ONLINE} (pay via the gateway
+     * before shipping). {@link PaymentMethod#CASH_ON_DELIVERY} places the order without online
+     * payment.
+     */
+    private PaymentMethod paymentMethod;
 }

@@ -56,7 +56,7 @@ export class Orders implements OnInit {
   }
 
   status(order: OrderDto): string {
-    return orderStatusLabel(order.status);
+    return orderStatusLabel(order.status, order.paymentMethod);
   }
 
   thumbs(order: OrderDto): string[] {

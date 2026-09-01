@@ -44,7 +44,15 @@
           @for (item of o.items; track item.id) {
             <div class="buy-line">
               <span class="qty-badge">{{ item.quantity }} عدد</span>
-              <p class="buy-title">{{ itemTitle(item) }}</p>
+              <p class="buy-title">
+                {{ item.productName }}
+                @if (variantText(item); as label) {
+                  @if (variantHex(item); as hex) {
+                    <span class="color-dot" [style.background]="hex"></span>
+                  }
+                  <span class="buy-variant">{{ label }}</span>
+                }
+              </p>
             </div>
           }
         </section>

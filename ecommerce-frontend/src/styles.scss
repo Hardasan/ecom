@@ -197,6 +197,27 @@ img {
   cursor: pointer;
 }
 
+.btn-danger-outline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 16px;
+  border: 1px solid #d92d20;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: #d92d20;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
 .field {
   width: 100%;
   padding: 12px 14px;
@@ -214,6 +235,39 @@ img {
   &:focus {
     border-color: var(--brand);
   }
+
+  &.invalid,
+  &.invalid:focus {
+    border-color: #d92d20;
+    background: #fff6f5;
+  }
+}
+
+// Inline color swatch for COLOR variants shown in lists (cart, order, success). COLOR variant
+// values are hex codes; shoppers must see the actual color, so we render a dot, not the code.
+.color-dot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  vertical-align: -2px;
+  margin-inline-start: 6px;
+}
+
+// Required-field marker and inline validation message on form fields.
+.req {
+  color: #d92d20;
+  font-weight: 700;
+}
+
+.field-error {
+  display: block;
+  margin-top: 4px;
+  color: #d92d20;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: right;
 }
 
 .bottom-bar {

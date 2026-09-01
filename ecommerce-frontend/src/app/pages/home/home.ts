@@ -85,12 +85,7 @@ export class Home implements OnInit {
   addToCart(event: Event, p: ProductDto) {
     event.preventDefault();
     event.stopPropagation();
-    if (!this.auth.isLoggedIn()) {
-      void this.router.navigate(['/login'], {
-        queryParams: { returnUrl: `/product/${p.id}` }
-      });
-      return;
-    }
+    // Guests get a local cart; they are only asked to sign in when they proceed to checkout.
     this.cartApi
       .addItem({
         productId: p.id,

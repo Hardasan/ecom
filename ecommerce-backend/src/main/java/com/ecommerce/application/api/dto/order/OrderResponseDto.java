@@ -1,6 +1,7 @@
 package com.ecommerce.application.api.dto.order;
 
 import com.ecommerce.persistence.entity.enumeration.OrderStatus;
+import com.ecommerce.persistence.entity.enumeration.PaymentMethod;
 import com.ecommerce.persistence.entity.enumeration.Province;
 import com.ecommerce.persistence.entity.enumeration.ShippingZone;
 import lombok.Getter;
@@ -19,6 +20,8 @@ public class OrderResponseDto {
     private Long userId;
 
     private OrderStatus status;
+
+    private PaymentMethod paymentMethod;
 
     // Shipping address snapshot
     private String recipientFirstName;

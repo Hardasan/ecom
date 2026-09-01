@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ASSETS } from '../../assets';
@@ -7,8 +7,16 @@ import { AuthService } from '../../core/auth.service';
 import { CartService } from '../../core/cart.service';
 import { OrderService } from '../../core/order.service';
 import { GeoService } from '../../core/geo.service';
-import { AddressDto, CartItemDto, GeoCityDto, GeoProvinceDto } from '../../core/models';
-import { formatPrice, imageSrc, toNumber } from '../../core/format';
+import {
+  AddressDto,
+  CartItemDto,
+  CheckoutQuoteDto,
+  GeoCityDto,
+  GeoProvinceDto,
+  PaymentMethod
+} from '../../core/models';
+import { colorHex, formatPrice, imageSrc, toNumber, variantLabel } from '../../core/format';
+import { validateAddressFields } from '../../core/address-form';
 
 @Component({
   selector: 'app-checkout',
@@ -32,11 +40,13 @@ export class Checkout implements OnInit {
   readonly cartItems = signal<CartItemDto[]>([]);
   readonly cartTotal = signal(0);
   readonly cartQty = signal(0);
+  readonly quote = signal<CheckoutQuoteDto | null>(null);
   readonly showSelectSheet = signal(false);
   readonly showAddressSheet = signal(false);
   readonly showItemsSheet = signal(false);
   readonly busy = signal(false);
   readonly error = signal('');
+  readonly fieldErrors = signal<Record<string, string>>({});
 
   readonly selectedAddress = computed(() => {
     const id = this.selectedAddressId();
@@ -53,6 +63,27 @@ export class Checkout implements OnInit {
   addressLine = '';
   postalCode = '';
   plaque = '';
+
+  constructor() {
+    // Whenever the chosen address (or the cart) changes, re-quote so the shown total — and the
+    // amount actually charged — reflects this address's shipping cost.
+    effect(() => {
+      const addressId = this.selectedAddressId();
+      const hasItems = this.cartItems().length > 0;
+      if (addressId != null && hasItems) {
+        this.loadQuote(addressId);
+      } else {
+        this.quote.set(null);
+      }
+    });
+  }
+
+  private loadQuote(addressId: number) {
+    this.ordersApi.quote(addressId).subscribe({
+      next: (q) => this.quote.set(q),
+      error: () => this.quote.set(null)
+    });
+  }
 
   ngOnInit(): void {
     if (!this.auth.isLoggedIn()) {
@@ -99,9 +130,18 @@ export class Checkout implements OnInit {
   }
 
   openFormSheet() {
+    this.fieldErrors.set({});
     this.showSelectSheet.set(false);
     this.showItemsSheet.set(false);
     this.showAddressSheet.set(true);
+  }
+
+  clearFieldError(field: string) {
+    const errors = this.fieldErrors();
+    if (errors[field]) {
+      const { [field]: _removed, ...rest } = errors;
+      this.fieldErrors.set(rest);
+    }
   }
 
   closeFormSheet() {
@@ -148,6 +188,28 @@ export class Checkout implements OnInit {
     return formatPrice(this.cartTotal());
   }
 
+  /** Items subtotal (from the quote once an address is chosen, else the cart total). */
+  itemsSubtotalLabel(): string {
+    const q = this.quote();
+    return formatPrice(q ? q.itemsCost : this.cartTotal());
+  }
+
+  /** True once we know shipping (an address is selected and the quote has loaded). */
+  hasShipping(): boolean {
+    return this.quote() != null;
+  }
+
+  shippingLabel(): string {
+    const q = this.quote();
+    return q ? formatPrice(q.shippingCost) : 'پس از انتخاب آدرس';
+  }
+
+  /** The amount actually charged: items + shipping once quoted, else the items subtotal. */
+  payableLabel(): string {
+    const q = this.quote();
+    return formatPrice(q ? q.totalCost : this.cartTotal());
+  }
+
   payButtonLabel(): string {
     if (this.busy()) {
       return '…';
@@ -155,19 +217,29 @@ export class Checkout implements OnInit {
     if (this.selectedAddressId() == null) {
       return 'تعیین آدرس';
     }
-    return `پرداخت ${this.totalLabel()}`;
+    const verb = this.payment === 'cod' ? 'ثبت سفارش' : 'پرداخت';
+    return `${verb} ${this.payableLabel()}`;
+  }
+
+  variantHex(item: CartItemDto): string {
+    return colorHex(item.variantValue);
+  }
+
+  variantText(item: CartItemDto): string {
+    return variantLabel(item.variantType, item.variantValue);
   }
 
   saveAddress() {
-    if (
-      !this.recipientFirstName.trim() ||
-      !this.recipientLastName.trim() ||
-      !this.recipientMobile.trim() ||
-      !this.city.trim() ||
-      !this.postalCode.trim() ||
-      !this.addressLine.trim()
-    ) {
-      this.error.set('فیلدهای آدرس را کامل کنید');
+    const errors = validateAddressFields({
+      recipientFirstName: this.recipientFirstName,
+      recipientLastName: this.recipientLastName,
+      recipientMobile: this.recipientMobile,
+      city: this.city,
+      postalCode: this.postalCode,
+      addressLine: this.addressLine
+    });
+    this.fieldErrors.set(errors);
+    if (Object.keys(errors).length) {
       return;
     }
     this.busy.set(true);
@@ -219,8 +291,16 @@ export class Checkout implements OnInit {
     this.busy.set(true);
     this.error.set('');
 
-    this.ordersApi.checkout(addressId).subscribe({
+    const method: PaymentMethod = this.payment === 'cod' ? 'CASH_ON_DELIVERY' : 'ONLINE';
+    this.ordersApi.checkout(addressId, method).subscribe({
       next: (order) => {
+        if (method === 'CASH_ON_DELIVERY') {
+          // Cash on delivery: the order is placed; no online payment step.
+          this.busy.set(false);
+          this.cartApi.clear();
+          void this.router.navigate(['/success', order.id]);
+          return;
+        }
         this.ordersApi.pay(order.id).subscribe({
           next: (pay) => {
             this.ordersApi.confirmPayment(order.id, pay.paymentReference).subscribe({

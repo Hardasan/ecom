@@ -1,6 +1,7 @@
 package com.ecommerce.application.service.order;
 
 import com.ecommerce.application.api.dto.address.AddressResponseDto;
+import com.ecommerce.application.api.dto.order.CheckoutQuoteResponseDto;
 import com.ecommerce.application.api.dto.order.CheckoutRequestDto;
 import com.ecommerce.application.api.dto.order.GuestCheckoutRequestDto;
 import com.ecommerce.application.api.dto.order.GuestItemRequestDto;
@@ -18,7 +19,10 @@ import com.ecommerce.persistence.entity.*;
 import com.ecommerce.persistence.entity.embeddable.AddressSnapshot;
 import com.ecommerce.persistence.entity.embeddable.ProductSnapshot;
 import com.ecommerce.persistence.entity.enumeration.OrderStatus;
+import com.ecommerce.persistence.entity.enumeration.PaymentMethod;
 import com.ecommerce.persistence.entity.enumeration.ProductStatus;
+import com.ecommerce.persistence.entity.enumeration.Province;
+import com.ecommerce.persistence.entity.enumeration.ShippingZone;
 import com.ecommerce.persistence.entity.enumeration.UserRole;
 import com.ecommerce.persistence.entity.enumeration.VariantType;
 import com.ecommerce.persistence.repository.*;
@@ -56,9 +60,33 @@ public class CheckoutService {
         List<CartItem> cartItems = cartItemRepository.findByUserId(userId);
         List<OrderLineSpec> lines = resolveCartLines(cartItems);
 
-        Order order = placeOrder(userId, address, lines, requestDto.getDiscountCode());
+        Order order = placeOrder(userId, address, lines, requestDto.getDiscountCode(),
+                resolvePaymentMethod(requestDto.getPaymentMethod()));
         cartItemRepository.deleteByUserId(userId);
         return toDto(order);
+    }
+
+    /**
+     * Price preview for the current cart shipped to one of the caller's addresses — the same
+     * items + shipping {@link #checkout} would charge, computed without creating an order or
+     * touching inventory. Lets the checkout screen show the real total (with shipping) up front.
+     */
+    @Transactional(readOnly = true)
+    public CheckoutQuoteResponseDto quote(Long userId, Long addressId) {
+        UserAddress address = userAddressRepository.findByIdAndUserId(addressId, userId)
+                .orElseThrow(() -> new EcommerceException(ECOMErrorType.ADDRESS_NOT_FOUND));
+
+        List<OrderLineSpec> lines = resolveCartLines(cartItemRepository.findByUserId(userId));
+        if (lines.isEmpty()) {
+            throw new EcommerceException(ECOMErrorType.EMPTY_CART);
+        }
+        CostBreakdown costs = computeCosts(lines, address.getProvince());
+        return new CheckoutQuoteResponseDto(costs.itemsCost(), costs.shippingCost(),
+                costs.itemsCost().add(costs.shippingCost()));
+    }
+
+    private PaymentMethod resolvePaymentMethod(PaymentMethod requested) {
+        return requested == null ? PaymentMethod.ONLINE : requested;
     }
 
     @Transactional
@@ -71,7 +99,7 @@ public class CheckoutService {
                 .orElseThrow(() -> new EcommerceException(ECOMErrorType.ADDRESS_NOT_FOUND));
 
         List<OrderLineSpec> lines = resolveGuestLines(requestDto.getItems());
-        return toDto(placeOrder(userId, address, lines, requestDto.getDiscountCode()));
+        return toDto(placeOrder(userId, address, lines, requestDto.getDiscountCode(), PaymentMethod.ONLINE));
     }
 
     private OrderResponseDto toDto(Order order) {
@@ -89,7 +117,8 @@ public class CheckoutService {
         return dto;
     }
 
-    private Order placeOrder(Long userId, UserAddress address, List<OrderLineSpec> lines, String discountCode) {
+    private Order placeOrder(Long userId, UserAddress address, List<OrderLineSpec> lines, String discountCode,
+            PaymentMethod paymentMethod) {
         if (lines.isEmpty()) {
             throw new EcommerceException(ECOMErrorType.EMPTY_CART);
         }
@@ -97,14 +126,12 @@ public class CheckoutService {
         Order order = new Order();
         order.setUserId(userId);
         order.setStatus(OrderStatus.RESERVED);
+        order.setPaymentMethod(paymentMethod);
         applyAddressSnapshot(address, order);
 
-        BigDecimal itemsCost = BigDecimal.ZERO;
-        int totalWeightGram = 0;
         List<DiscountableLine> discountableLines = new ArrayList<>();
         for (OrderLineSpec line : lines) {
-            BigDecimal effectivePrice = line.discountPrice() != null ? line.discountPrice() : line.unitPrice();
-            BigDecimal lineTotal = effectivePrice.multiply(BigDecimal.valueOf(line.quantity()));
+            BigDecimal lineTotal = effectivePrice(line).multiply(BigDecimal.valueOf(line.quantity()));
 
             OrderItem orderItem = new OrderItem();
             ProductSnapshot productSnapshot = orderItem.getProduct();
@@ -119,20 +146,20 @@ public class CheckoutService {
             orderItem.setLineTotal(lineTotal);
             order.addItem(orderItem);
 
-            itemsCost = itemsCost.add(lineTotal);
-            totalWeightGram += line.weightGram() * line.quantity();
             discountableLines.add(new DiscountableLine(line.productId(), line.categoryId(),
                     line.subCategoryId(), lineTotal, line.quantity()));
         }
 
+        // Validate/claim the discount before computing shipping: an invalid code must abort the
+        // checkout before any further work.
         BigDecimal discountAmount = applyDiscount(order, userId, discountCode, discountableLines);
+        CostBreakdown costs = computeCosts(lines, order.getShippingAddress().getProvince());
 
-        ShippingResult shipping = shippingCalculator.calculate(order.getShippingAddress().getProvince(), totalWeightGram);
-        order.setItemsCost(itemsCost);
-        order.setTotalWeightGram(totalWeightGram);
-        order.setShippingZone(shipping.zone());
-        order.setShippingCost(shipping.cost());
-        order.setTotalCost(itemsCost.subtract(discountAmount).add(shipping.cost()));
+        order.setItemsCost(costs.itemsCost());
+        order.setTotalWeightGram(costs.totalWeightGram());
+        order.setShippingZone(costs.shippingZone());
+        order.setShippingCost(costs.shippingCost());
+        order.setTotalCost(costs.itemsCost().subtract(discountAmount).add(costs.shippingCost()));
 
         for (OrderLineSpec line : lines) {
             int updated = productRepository.decrementInventory(line.productId(), line.quantity());
@@ -141,9 +168,39 @@ public class CheckoutService {
             }
         }
 
-        order.setReservedUntil(Date.from(Instant.now().plus(checkoutProperties.getReservationTimeout())));
+        // Online orders hold their stock only for a limited window; if unpaid, ReservationReleaseService
+        // fails them and restores stock. Cash-on-delivery orders are placed for good and shipped later,
+        // so they never expire (reservedUntil stays null → excluded from findExpiredReservations).
+        if (paymentMethod != PaymentMethod.CASH_ON_DELIVERY) {
+            order.setReservedUntil(Date.from(Instant.now().plus(checkoutProperties.getReservationTimeout())));
+        }
 
         return orderRepository.save(order);
+    }
+
+    /** The per-unit price actually charged for a line: its discount price when set, else the unit price. */
+    private BigDecimal effectivePrice(OrderLineSpec line) {
+        return line.discountPrice() != null ? line.discountPrice() : line.unitPrice();
+    }
+
+    /**
+     * Items subtotal, total weight, and shipping for a set of order lines to a destination province —
+     * the pre-discount cost math shared by {@link #placeOrder} and {@link #quote} so a quote can never
+     * drift from what checkout actually charges.
+     */
+    private CostBreakdown computeCosts(List<OrderLineSpec> lines, Province province) {
+        BigDecimal itemsCost = BigDecimal.ZERO;
+        int totalWeightGram = 0;
+        for (OrderLineSpec line : lines) {
+            itemsCost = itemsCost.add(effectivePrice(line).multiply(BigDecimal.valueOf(line.quantity())));
+            totalWeightGram += line.weightGram() * line.quantity();
+        }
+        ShippingResult shipping = shippingCalculator.calculate(province, totalWeightGram);
+        return new CostBreakdown(itemsCost, totalWeightGram, shipping.zone(), shipping.cost());
+    }
+
+    private record CostBreakdown(BigDecimal itemsCost, int totalWeightGram, ShippingZone shippingZone,
+            BigDecimal shippingCost) {
     }
 
     /**

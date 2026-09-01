@@ -176,6 +176,37 @@
   font-weight: 600;
 }
 
+.cost-summary {
+  margin-top: 20px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.cost-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  color: var(--ink-muted);
+  padding: 6px 0;
+
+  .muted {
+    color: var(--ink-subtle);
+    font-weight: 400;
+  }
+
+  &--total {
+    margin-top: 6px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--ink);
+  }
+}
+
 .pay-option {
   cursor: pointer;
 

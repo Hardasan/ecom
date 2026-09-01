@@ -48,15 +48,21 @@
 
         @if (variants().length) {
           <p class="label">{{ product()!.variantType === 'SIZE' ? 'سایز' : 'رنگ / تنوع' }}</p>
-          <div class="swatches text-swatches">
+          <div class="swatches" [class.text-swatches]="!isColorVariant()">
             @for (v of variants(); track $index) {
               <button
                 type="button"
                 class="swatch-chip"
+                [class.is-color]="isColorVariant() && variantHex(v)"
                 [class.is-selected]="selectedVariant() === v.variantValue"
                 (click)="selectVariant(v.variantValue)"
+                [attr.title]="variantText(v)"
+                [attr.aria-label]="variantText(v)"
               >
-                {{ v.variantValue || 'پیش‌فرض' }}
+                @if (isColorVariant() && variantHex(v); as hex) {
+                  <span class="swatch-dot" [style.background]="hex"></span>
+                }
+                <span class="swatch-text">{{ variantText(v) }}</span>
               </button>
             }
           </div>

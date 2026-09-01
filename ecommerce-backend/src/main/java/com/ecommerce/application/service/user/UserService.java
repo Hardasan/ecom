@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -92,8 +93,15 @@ public class UserService {
     }
 
     public LoginResponseDto login(LoginRequestDto requestDto) {
-        Authentication authenticate = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(requestDto.getMobileNumber(), requestDto.getPassword()));
+        Authentication authenticate;
+        try {
+            authenticate = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(requestDto.getMobileNumber(), requestDto.getPassword()));
+        } catch (AuthenticationException e) {
+            // Wrong mobile/password (or disabled account): surface a clear, localized message instead
+            // of the generic "unexpected error". A uniform message avoids leaking which field was wrong.
+            throw new EcommerceException(ECOMErrorType.INVALID_CREDENTIALS);
+        }
         UserDetailsDto userDetails = (UserDetailsDto) authenticate.getPrincipal();
         return new LoginResponseDto(jwtService.generateToken(userDetails),
                 Role.valueOf(userDetails.getAuthorities().getFirst().getAuthority()));

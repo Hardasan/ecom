@@ -1,10 +1,9 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ASSETS } from '../../assets';
-import { AuthService } from '../../core/auth.service';
 import { CartService } from '../../core/cart.service';
 import { CartDto, CartItemDto } from '../../core/models';
-import { formatPrice, imageSrc, toNumber } from '../../core/format';
+import { colorHex, formatPrice, imageSrc, toNumber, variantLabel } from '../../core/format';
 
 @Component({
   selector: 'app-cart',
@@ -14,7 +13,6 @@ import { formatPrice, imageSrc, toNumber } from '../../core/format';
 })
 export class Cart implements OnInit {
   readonly a = ASSETS;
-  private readonly auth = inject(AuthService);
   private readonly cartApi = inject(CartService);
   private readonly router = inject(Router);
 
@@ -23,10 +21,7 @@ export class Cart implements OnInit {
   readonly error = signal('');
 
   ngOnInit(): void {
-    if (!this.auth.isLoggedIn()) {
-      void this.router.navigate(['/login'], { queryParams: { returnUrl: '/cart' } });
-      return;
-    }
+    // Guests can view and edit their (local) cart; sign-in is only required at checkout.
     this.reload();
   }
 
@@ -62,6 +57,16 @@ export class Cart implements OnInit {
 
   imgOf(item: CartItemDto): string {
     return imageSrc(item.mainImage);
+  }
+
+  /** CSS color for a COLOR variant line, or '' when the value is not a hex code. */
+  variantHex(item: CartItemDto): string {
+    return colorHex(item.variantValue);
+  }
+
+  /** Readable variant label: color name (or hex) for COLOR, raw value otherwise. */
+  variantText(item: CartItemDto): string {
+    return variantLabel(item.variantType, item.variantValue);
   }
 
   saving(): string {

@@ -2,6 +2,7 @@ package com.ecommerce.persistence.entity;
 
 import com.ecommerce.persistence.entity.embeddable.AddressSnapshot;
 import com.ecommerce.persistence.entity.enumeration.OrderStatus;
+import com.ecommerce.persistence.entity.enumeration.PaymentMethod;
 import com.ecommerce.persistence.entity.enumeration.ShippingZone;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -33,6 +34,10 @@ public class Order {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 32)
     private OrderStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method", nullable = false, length = 32)
+    private PaymentMethod paymentMethod = PaymentMethod.ONLINE;
 
     @Embedded
     private AddressSnapshot shippingAddress = new AddressSnapshot();

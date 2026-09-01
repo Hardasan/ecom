@@ -8,6 +8,7 @@ import { GeoService } from '../../core/geo.service';
 import { OrderService } from '../../core/order.service';
 import { AddressDto, GeoCityDto, GeoProvinceDto, OrderDto } from '../../core/models';
 import { formatFaDate, formatPrice, imageSrc, orderItemCount, orderStatusLabel } from '../../core/format';
+import { validateAddressFields } from '../../core/address-form';
 
 @Component({
   selector: 'app-profile',
@@ -31,6 +32,7 @@ export class Profile implements OnInit {
   readonly busy = signal(false);
   readonly error = signal('');
   readonly toast = signal('');
+  readonly fieldErrors = signal<Record<string, string>>({});
 
   firstName = '';
   lastName = '';
@@ -86,7 +88,7 @@ export class Profile implements OnInit {
   }
 
   status(order: OrderDto): string {
-    return orderStatusLabel(order.status);
+    return orderStatusLabel(order.status, order.paymentMethod);
   }
 
   thumbs(order: OrderDto): string[] {
@@ -121,6 +123,7 @@ export class Profile implements OnInit {
   }
 
   openNewAddress() {
+    this.fieldErrors.set({});
     this.editingAddressId = null;
     this.title = 'خانه';
     this.recipientFirstName = this.firstName;
@@ -135,6 +138,7 @@ export class Profile implements OnInit {
   }
 
   openEditAddress(addr: AddressDto) {
+    this.fieldErrors.set({});
     this.editingAddressId = addr.id ?? null;
     this.title = addr.title || 'خانه';
     this.recipientFirstName = addr.recipientFirstName;
@@ -156,16 +160,29 @@ export class Profile implements OnInit {
     this.loadCities();
   }
 
+  clearFieldError(field: string) {
+    const errors = this.fieldErrors();
+    if (errors[field]) {
+      const { [field]: _removed, ...rest } = errors;
+      this.fieldErrors.set(rest);
+    }
+  }
+
+  private validateAddress(): boolean {
+    const errors = validateAddressFields({
+      recipientFirstName: this.recipientFirstName,
+      recipientLastName: this.recipientLastName,
+      recipientMobile: this.recipientMobile,
+      city: this.city,
+      postalCode: this.postalCode,
+      addressLine: this.addressLine
+    });
+    this.fieldErrors.set(errors);
+    return Object.keys(errors).length === 0;
+  }
+
   saveAddress() {
-    if (
-      !this.recipientFirstName.trim() ||
-      !this.recipientLastName.trim() ||
-      !this.recipientMobile.trim() ||
-      !this.city.trim() ||
-      !this.postalCode.trim() ||
-      !this.addressLine.trim()
-    ) {
-      this.error.set('فیلدهای آدرس را کامل کنید');
+    if (!this.validateAddress()) {
       return;
     }
     const body: AddressDto = {

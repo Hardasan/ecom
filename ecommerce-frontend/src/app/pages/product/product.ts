@@ -7,7 +7,16 @@ import { CartService } from '../../core/cart.service';
 import { ProductService } from '../../core/product.service';
 import { WishlistService } from '../../core/wishlist.service';
 import { PriceDto, ProductDto, ReviewDto, ReviewSummaryDto } from '../../core/models';
-import { displayName, formatFaDate, formatPrice, productImageSrc, toNumber } from '../../core/format';
+import {
+  colorHex,
+  displayName,
+  formatFaDate,
+  formatPrice,
+  isColorVariant,
+  productImageSrc,
+  toNumber,
+  variantLabel
+} from '../../core/format';
 
 type TabKey = 'desc' | 'spec' | 'reviews';
 
@@ -173,6 +182,21 @@ export class Product implements OnInit {
 
   selectVariant(value: string | null | undefined) {
     this.selectedVariant.set(value ?? null);
+  }
+
+  /** COLOR variants store a hex code; the picker shows the real color, not the raw string. */
+  isColorVariant(): boolean {
+    return isColorVariant(this.product()?.variantType);
+  }
+
+  /** The CSS color for a variant swatch, or '' when the value is not a hex code. */
+  variantHex(v: PriceDto): string {
+    return colorHex(v.variantValue);
+  }
+
+  /** Readable label for a variant: color name (or hex) for COLOR, the raw value otherwise. */
+  variantText(v: PriceDto): string {
+    return variantLabel(this.product()?.variantType, v.variantValue) || 'پیش‌فرض';
   }
 
   private sectionEl(tab: TabKey): HTMLElement | undefined {
@@ -350,13 +374,7 @@ export class Product implements OnInit {
     if (!p || this.buying()) {
       return;
     }
-    if (!this.auth.isLoggedIn()) {
-      void this.router.navigate(['/login'], {
-        queryParams: { returnUrl: `/product/${p.id}` }
-      });
-      return;
-    }
-
+    // Guests get a local cart; the sign-in prompt is deferred to checkout.
     this.buying.set(true);
     this.error.set('');
     this.cartApi

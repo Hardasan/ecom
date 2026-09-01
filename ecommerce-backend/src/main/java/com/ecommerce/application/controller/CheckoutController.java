@@ -1,5 +1,6 @@
 package com.ecommerce.application.controller;
 
+import com.ecommerce.application.api.dto.order.CheckoutQuoteResponseDto;
 import com.ecommerce.application.api.dto.order.CheckoutRequestDto;
 import com.ecommerce.application.api.dto.order.GuestCheckoutRequestDto;
 import com.ecommerce.application.api.dto.order.OrderResponseDto;
@@ -23,6 +24,12 @@ public class CheckoutController {
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public OrderResponseDto checkout(@RequestBody CheckoutRequestDto requestDto, Authentication authentication) {
         return checkoutService.checkout(userId(authentication), requestDto);
+    }
+
+    @PostMapping(value = "/quote", consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public CheckoutQuoteResponseDto quote(@RequestBody CheckoutRequestDto requestDto, Authentication authentication) {
+        return checkoutService.quote(userId(authentication), requestDto.getAddressId());
     }
 
     @PostMapping(value = "/guest", consumes = MediaType.APPLICATION_JSON_VALUE,

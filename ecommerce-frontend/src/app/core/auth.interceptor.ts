@@ -8,9 +8,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
   const router = inject(Router);
   const token = auth.token();
-  const authedReq = token
-    ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
-    : req;
+  // The whole UI is Persian, so ask the API for Persian error/message bundles (Accept-Language).
+  const headers: Record<string, string> = { 'Accept-Language': 'fa' };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  const authedReq = req.clone({ setHeaders: headers });
 
   return next(authedReq).pipe(
     catchError((err: HttpErrorResponse) => {

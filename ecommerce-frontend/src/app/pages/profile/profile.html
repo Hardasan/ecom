@@ -130,7 +130,7 @@
       <div class="sheet-body">
         <div class="row-2">
           <label>
-            <span>استان</span>
+            <span>استان <span class="req">*</span></span>
             <select class="field" [(ngModel)]="province" (ngModelChange)="onProvinceChange()">
               @for (p of provinces(); track p.code) {
                 <option [value]="p.code">{{ p.name }}</option>
@@ -138,17 +138,34 @@
             </select>
           </label>
           <label>
-            <span>شهر</span>
-            <select class="field" [(ngModel)]="city">
+            <span>شهر <span class="req">*</span></span>
+            <select
+              class="field"
+              [class.invalid]="fieldErrors()['city']"
+              [(ngModel)]="city"
+              (ngModelChange)="clearFieldError('city')"
+            >
               @for (c of cities(); track c.id) {
                 <option [value]="c.name">{{ c.name }}</option>
               }
             </select>
+            @if (fieldErrors()['city']; as msg) {
+              <span class="field-error">{{ msg }}</span>
+            }
           </label>
         </div>
         <label>
-          <span>آدرس کامل</span>
-          <input class="field" [(ngModel)]="addressLine" placeholder="خیابان، کوچه، پلاک" />
+          <span>آدرس کامل <span class="req">*</span></span>
+          <input
+            class="field"
+            [class.invalid]="fieldErrors()['addressLine']"
+            [(ngModel)]="addressLine"
+            (ngModelChange)="clearFieldError('addressLine')"
+            placeholder="خیابان، کوچه، پلاک"
+          />
+          @if (fieldErrors()['addressLine']; as msg) {
+            <span class="field-error">{{ msg }}</span>
+          }
         </label>
         <label>
           <span>عنوان آدرس</span>
@@ -156,21 +173,55 @@
         </label>
         <div class="row-2">
           <label>
-            <span>نام</span>
-            <input class="field" [(ngModel)]="recipientFirstName" />
+            <span>نام <span class="req">*</span></span>
+            <input
+              class="field"
+              [class.invalid]="fieldErrors()['recipientFirstName']"
+              [(ngModel)]="recipientFirstName"
+              (ngModelChange)="clearFieldError('recipientFirstName')"
+            />
+            @if (fieldErrors()['recipientFirstName']; as msg) {
+              <span class="field-error">{{ msg }}</span>
+            }
           </label>
           <label>
-            <span>نام خانوادگی</span>
-            <input class="field" [(ngModel)]="recipientLastName" />
+            <span>نام خانوادگی <span class="req">*</span></span>
+            <input
+              class="field"
+              [class.invalid]="fieldErrors()['recipientLastName']"
+              [(ngModel)]="recipientLastName"
+              (ngModelChange)="clearFieldError('recipientLastName')"
+            />
+            @if (fieldErrors()['recipientLastName']; as msg) {
+              <span class="field-error">{{ msg }}</span>
+            }
           </label>
         </div>
         <label>
-          <span>موبایل گیرنده</span>
-          <input class="field" [(ngModel)]="recipientMobile" placeholder="0912…" />
+          <span>موبایل گیرنده <span class="req">*</span></span>
+          <input
+            class="field"
+            [class.invalid]="fieldErrors()['recipientMobile']"
+            [(ngModel)]="recipientMobile"
+            (ngModelChange)="clearFieldError('recipientMobile')"
+            placeholder="0912…"
+          />
+          @if (fieldErrors()['recipientMobile']; as msg) {
+            <span class="field-error">{{ msg }}</span>
+          }
         </label>
         <label>
-          <span>کد پستی</span>
-          <input class="field" [(ngModel)]="postalCode" />
+          <span>کد پستی <span class="req">*</span></span>
+          <input
+            class="field"
+            [class.invalid]="fieldErrors()['postalCode']"
+            [(ngModel)]="postalCode"
+            (ngModelChange)="clearFieldError('postalCode')"
+            inputmode="numeric"
+          />
+          @if (fieldErrors()['postalCode']; as msg) {
+            <span class="field-error">{{ msg }}</span>
+          }
         </label>
         <label>
           <span>پلاک</span>

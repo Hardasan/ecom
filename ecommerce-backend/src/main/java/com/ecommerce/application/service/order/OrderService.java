@@ -14,6 +14,7 @@ import com.ecommerce.persistence.entity.Order;
 import com.ecommerce.persistence.entity.Product;
 import com.ecommerce.persistence.entity.Transaction;
 import com.ecommerce.persistence.entity.enumeration.OrderStatus;
+import com.ecommerce.persistence.entity.enumeration.PaymentMethod;
 import com.ecommerce.persistence.entity.enumeration.TransactionType;
 import com.ecommerce.persistence.repository.OrderRepository;
 import com.ecommerce.persistence.repository.ProductRepository;
@@ -145,7 +146,7 @@ public class OrderService {
     @Transactional
     public OrderResponseDto markSending(Long orderId) {
         Order order = findOrThrowForUpdate(orderId);
-        requireStatus(order, OrderStatus.PAID);
+        requireShippable(order);
         order.setStatus(OrderStatus.SENDING);
         return toDto(orderRepository.save(order));
     }
@@ -223,6 +224,19 @@ public class OrderService {
 
     private void requireStatus(Order order, OrderStatus expected) {
         if (order.getStatus() != expected) {
+            throw new EcommerceException(ECOMErrorType.ORDER_INVALID_STATUS);
+        }
+    }
+
+    /**
+     * An order is ready to ship when it is a paid online order, or a cash-on-delivery order still
+     * RESERVED (COD is settled in cash on delivery, so it ships without an online payment first).
+     */
+    private void requireShippable(Order order) {
+        boolean shippable = order.getStatus() == OrderStatus.PAID
+                || (order.getStatus() == OrderStatus.RESERVED
+                        && order.getPaymentMethod() == PaymentMethod.CASH_ON_DELIVERY);
+        if (!shippable) {
             throw new EcommerceException(ECOMErrorType.ORDER_INVALID_STATUS);
         }
     }

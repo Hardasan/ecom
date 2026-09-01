@@ -444,6 +444,26 @@
     border-color: var(--brand-soft);
     color: #fff;
   }
+
+  // COLOR variants: a real color swatch (dot) next to its name, never the raw hex code.
+  &.is-color {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding-inline-start: 10px;
+
+    &.is-selected .swatch-dot {
+      box-shadow: 0 0 0 2px #fff;
+    }
+  }
+}
+
+.swatch-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  flex: none;
 }
 
 .state {

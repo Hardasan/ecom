@@ -20,7 +20,12 @@
           <article class="cart-card">
             <div class="cart-card__content">
               <h2>{{ item.productName }}</h2>
-              <p class="meta">{{ item.variantValue || item.productCode || '—' }}</p>
+              <p class="meta">
+                @if (variantHex(item); as hex) {
+                  <span class="color-dot" [style.background]="hex"></span>
+                }
+                {{ variantText(item) || item.productCode || '—' }}
+              </p>
               <p class="price">
                 <span class="unit">تومان</span>
                 <strong>{{ unitPrice(item).replace(' تومان', '') }}</strong>

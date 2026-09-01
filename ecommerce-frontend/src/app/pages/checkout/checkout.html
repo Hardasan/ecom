@@ -69,11 +69,6 @@
         <input type="radio" name="pay" value="bank" [(ngModel)]="payment" />
         <img [src]="a.iconRadio" alt="" width="20" height="20" />
       </label>
-      <label class="pay-option" [class.is-selected]="payment === 'wallet'">
-        <span>کیف پول</span>
-        <input type="radio" name="pay" value="wallet" [(ngModel)]="payment" />
-        <span class="radio-empty"></span>
-      </label>
       <label class="pay-option" [class.is-selected]="payment === 'cod'">
         <span>پرداخت در محل</span>
         <input type="radio" name="pay" value="cod" [(ngModel)]="payment" />
@@ -83,6 +78,21 @@
       <h2>روش ارسال</h2>
       <div class="ship-option">
         <span>پست</span>
+      </div>
+
+      <div class="cost-summary">
+        <div class="cost-row">
+          <span>{{ itemsSubtotalLabel() }}</span>
+          <span>جمع کالاها</span>
+        </div>
+        <div class="cost-row">
+          <span [class.muted]="!hasShipping()">{{ shippingLabel() }}</span>
+          <span>هزینه ارسال</span>
+        </div>
+        <div class="cost-row cost-row--total">
+          <span>{{ payableLabel() }}</span>
+          <span>مبلغ قابل پرداخت</span>
+        </div>
       </div>
     </div>
   </div>
@@ -126,7 +136,7 @@
       <div class="sheet-body">
         <div class="row-2">
           <label>
-            <span>استان</span>
+            <span>استان <span class="req">*</span></span>
             <select class="field" [(ngModel)]="province" (ngModelChange)="onProvinceChange()">
               @for (p of provinces(); track p.code) {
                 <option [value]="p.code">{{ p.name }}</option>
@@ -134,17 +144,34 @@
             </select>
           </label>
           <label>
-            <span>شهر</span>
-            <select class="field" [(ngModel)]="city">
+            <span>شهر <span class="req">*</span></span>
+            <select
+              class="field"
+              [class.invalid]="fieldErrors()['city']"
+              [(ngModel)]="city"
+              (ngModelChange)="clearFieldError('city')"
+            >
               @for (c of cities(); track c.id) {
                 <option [value]="c.name">{{ c.name }}</option>
               }
             </select>
+            @if (fieldErrors()['city']; as msg) {
+              <span class="field-error">{{ msg }}</span>
+            }
           </label>
         </div>
         <label>
-          <span>آدرس کامل</span>
-          <input class="field" [(ngModel)]="addressLine" placeholder="خیابان، کوچه، پلاک" />
+          <span>آدرس کامل <span class="req">*</span></span>
+          <input
+            class="field"
+            [class.invalid]="fieldErrors()['addressLine']"
+            [(ngModel)]="addressLine"
+            (ngModelChange)="clearFieldError('addressLine')"
+            placeholder="خیابان، کوچه، پلاک"
+          />
+          @if (fieldErrors()['addressLine']; as msg) {
+            <span class="field-error">{{ msg }}</span>
+          }
         </label>
         <label>
           <span>عنوان آدرس</span>
@@ -152,21 +179,56 @@
         </label>
         <div class="row-2">
           <label>
-            <span>نام</span>
-            <input class="field" [(ngModel)]="recipientFirstName" />
+            <span>نام <span class="req">*</span></span>
+            <input
+              class="field"
+              [class.invalid]="fieldErrors()['recipientFirstName']"
+              [(ngModel)]="recipientFirstName"
+              (ngModelChange)="clearFieldError('recipientFirstName')"
+            />
+            @if (fieldErrors()['recipientFirstName']; as msg) {
+              <span class="field-error">{{ msg }}</span>
+            }
           </label>
           <label>
-            <span>نام خانوادگی</span>
-            <input class="field" [(ngModel)]="recipientLastName" />
+            <span>نام خانوادگی <span class="req">*</span></span>
+            <input
+              class="field"
+              [class.invalid]="fieldErrors()['recipientLastName']"
+              [(ngModel)]="recipientLastName"
+              (ngModelChange)="clearFieldError('recipientLastName')"
+            />
+            @if (fieldErrors()['recipientLastName']; as msg) {
+              <span class="field-error">{{ msg }}</span>
+            }
           </label>
         </div>
         <label>
-          <span>موبایل گیرنده</span>
-          <input class="field" [(ngModel)]="recipientMobile" placeholder="0912…" />
+          <span>موبایل گیرنده <span class="req">*</span></span>
+          <input
+            class="field"
+            [class.invalid]="fieldErrors()['recipientMobile']"
+            [(ngModel)]="recipientMobile"
+            (ngModelChange)="clearFieldError('recipientMobile')"
+            placeholder="0912…"
+          />
+          @if (fieldErrors()['recipientMobile']; as msg) {
+            <span class="field-error">{{ msg }}</span>
+          }
         </label>
         <label>
-          <span>کد پستی</span>
-          <input class="field" [(ngModel)]="postalCode" placeholder="۱۲۳۴۵۶۷۸۹۰" />
+          <span>کد پستی <span class="req">*</span></span>
+          <input
+            class="field"
+            [class.invalid]="fieldErrors()['postalCode']"
+            [(ngModel)]="postalCode"
+            (ngModelChange)="clearFieldError('postalCode')"
+            placeholder="۱۲۳۴۵۶۷۸۹۰"
+            inputmode="numeric"
+          />
+          @if (fieldErrors()['postalCode']; as msg) {
+            <span class="field-error">{{ msg }}</span>
+          }
         </label>
         <label>
           <span>پلاک</span>
@@ -192,7 +254,15 @@
               <img [src]="src" [alt]="item.productName" width="64" height="64" />
             }
             <div class="sheet-item__text">
-              <p class="sheet-item__title">{{ lineLabel(item) }}</p>
+              <p class="sheet-item__title">
+                {{ lineLabel(item) }}
+                @if (variantText(item); as label) {
+                  @if (variantHex(item); as hex) {
+                    <span class="color-dot" [style.background]="hex"></span>
+                  }
+                  <span class="sheet-item__variant">{{ label }}</span>
+                }
+              </p>
               <div class="sheet-item__meta">
                 <span>{{ lineMeta(item) }}</span>
                 <span>{{ item.quantity }} عدد</span>

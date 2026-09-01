@@ -4,7 +4,15 @@ import { ASSETS } from '../../assets';
 import { AuthService } from '../../core/auth.service';
 import { OrderService } from '../../core/order.service';
 import { OrderDto, OrderItemDto } from '../../core/models';
-import { formatFaDate, formatPrice, imageSrc, orderStatusLabel, toNumber } from '../../core/format';
+import {
+  colorHex,
+  formatFaDate,
+  formatPrice,
+  imageSrc,
+  orderStatusLabel,
+  toNumber,
+  variantLabel
+} from '../../core/format';
 
 @Component({
   selector: 'app-order-detail',
@@ -21,6 +29,8 @@ export class OrderDetail implements OnInit {
 
   readonly order = signal<OrderDto | null>(null);
   readonly error = signal('');
+  readonly busy = signal(false);
+  readonly toast = signal('');
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('orderId'));
@@ -48,7 +58,61 @@ export class OrderDetail implements OnInit {
   }
 
   status(): string {
-    return orderStatusLabel(this.order()?.status);
+    return orderStatusLabel(this.order()?.status, this.order()?.paymentMethod);
+  }
+
+  /** The buyer may cancel while the order is still RESERVED or PAID (not yet shipped). */
+  canCancel(): boolean {
+    const s = this.order()?.status;
+    return s === 'RESERVED' || s === 'PAID';
+  }
+
+  /** The buyer confirms receipt once the order is on its way (SENDING). */
+  canReceive(): boolean {
+    return this.order()?.status === 'SENDING';
+  }
+
+  cancelOrder() {
+    const o = this.order();
+    if (!o || this.busy()) {
+      return;
+    }
+    this.busy.set(true);
+    this.ordersApi.cancel(o.id).subscribe({
+      next: (updated) => {
+        this.order.set(updated);
+        this.busy.set(false);
+        this.flash('سفارش لغو شد');
+      },
+      error: (err) => {
+        this.busy.set(false);
+        this.flash(err?.error?.message ?? 'لغو سفارش ناموفق بود');
+      }
+    });
+  }
+
+  receiveOrder() {
+    const o = this.order();
+    if (!o || this.busy()) {
+      return;
+    }
+    this.busy.set(true);
+    this.ordersApi.receive(o.id).subscribe({
+      next: (updated) => {
+        this.order.set(updated);
+        this.busy.set(false);
+        this.flash('دریافت سفارش ثبت شد');
+      },
+      error: (err) => {
+        this.busy.set(false);
+        this.flash(err?.error?.message ?? 'ثبت دریافت ناموفق بود');
+      }
+    });
+  }
+
+  private flash(message: string) {
+    this.toast.set(message);
+    setTimeout(() => this.toast.set(''), 2500);
   }
 
   recipientName(): string {
@@ -98,11 +162,14 @@ export class OrderDetail implements OnInit {
     return save > 0 ? formatPrice(save) : null;
   }
 
-  itemTitle(item: OrderItemDto): string {
-    if (item.variantValue) {
-      return `${item.productName} | ${item.variantValue}`;
-    }
-    return item.productName;
+  /** CSS color for a COLOR variant line, or '' when the value is not a hex code. */
+  variantHex(item: OrderItemDto): string {
+    return colorHex(item.variantValue);
+  }
+
+  /** Readable variant label: color name (or hex) for COLOR, raw value otherwise. */
+  variantText(item: OrderItemDto): string {
+    return variantLabel(item.variantType, item.variantValue);
   }
 
   itemPrice(item: OrderItemDto): string {

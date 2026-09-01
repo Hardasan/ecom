@@ -4,7 +4,7 @@ import { ASSETS } from '../../assets';
 import { AuthService } from '../../core/auth.service';
 import { OrderService } from '../../core/order.service';
 import { OrderDto, OrderItemDto } from '../../core/models';
-import { formatPrice, toNumber } from '../../core/format';
+import { colorHex, formatPrice, toNumber, variantLabel } from '../../core/format';
 
 @Component({
   selector: 'app-success',
@@ -100,10 +100,13 @@ export class Success implements OnInit {
     return save > 0 ? formatPrice(save) : null;
   }
 
-  itemTitle(item: OrderItemDto): string {
-    if (item.variantValue) {
-      return `${item.productName} | ${item.variantValue}`;
-    }
-    return item.productName;
+  /** CSS color for a COLOR variant line, or '' when the value is not a hex code. */
+  variantHex(item: OrderItemDto): string {
+    return colorHex(item.variantValue);
+  }
+
+  /** Readable variant label: color name (or hex) for COLOR, raw value otherwise. */
+  variantText(item: OrderItemDto): string {
+    return variantLabel(item.variantType, item.variantValue);
   }
 }

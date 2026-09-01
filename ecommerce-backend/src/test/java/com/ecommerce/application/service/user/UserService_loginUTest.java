@@ -3,6 +3,8 @@ package com.ecommerce.application.service.user;
 import com.ecommerce.application.api.dto.user.LoginRequestDto;
 import com.ecommerce.application.api.dto.user.LoginResponseDto;
 import com.ecommerce.application.api.dto.user.enumeration.Role;
+import com.ecommerce.application.api.exception.ECOMErrorType;
+import com.ecommerce.application.api.exception.EcommerceException;
 import com.ecommerce.application.config.properties.LoginProperties;
 import com.ecommerce.application.config.properties.SignupProperties;
 import com.ecommerce.application.config.security.UserDetailsDto;
@@ -105,12 +107,13 @@ class UserService_loginUTest {
     }
 
     @Test
-    void bad_credentials_exception_is_propagated() {
+    void bad_credentials_map_to_invalid_credentials_error() {
         when(authenticationManager.authenticate(any()))
                 .thenThrow(new BadCredentialsException("Bad credentials"));
 
-        assertThrows(BadCredentialsException.class,
+        EcommerceException exception = assertThrows(EcommerceException.class,
                 () -> userService.login(requestDto("09121111118", "wrong")));
+        assertEquals(ECOMErrorType.INVALID_CREDENTIALS, exception.getEcomErrorType());
     }
 
     private LoginRequestDto requestDto(String mobile, String password) {

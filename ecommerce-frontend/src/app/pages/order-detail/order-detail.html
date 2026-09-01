@@ -35,7 +35,9 @@
           <p class="section-title">اطلاعات پرداخت</p>
           <div class="line-meta">
             <span class="amount">{{ total() }}</span>
-            <span class="muted">پرداخت با درگاه بانکی</span>
+            <span class="muted">{{
+              o.paymentMethod === 'CASH_ON_DELIVERY' ? 'پرداخت در محل' : 'پرداخت با درگاه بانکی'
+            }}</span>
           </div>
           @if (savings(); as save) {
             <div class="line-meta">
@@ -53,16 +55,43 @@
                 <img [src]="src" [alt]="item.productName" width="116" height="116" />
               }
               <div class="item-card__text">
-                <p class="item-card__title">{{ itemTitle(item) }}</p>
+                <p class="item-card__title">{{ item.productName }}</p>
+                @if (variantText(item); as label) {
+                  <p class="item-card__variant">
+                    @if (variantHex(item); as hex) {
+                      <span class="color-dot" [style.background]="hex"></span>
+                    }
+                    {{ label }}
+                  </p>
+                }
                 <p class="item-card__price">{{ itemPrice(item) }}</p>
                 <span class="qty-badge">{{ item.quantity }} عدد</span>
               </div>
             </div>
           }
         </section>
+
+        @if (canReceive() || canCancel()) {
+          <section class="order-actions">
+            @if (canReceive()) {
+              <button type="button" class="btn-brand" [disabled]="busy()" (click)="receiveOrder()">
+                تأیید دریافت سفارش
+              </button>
+            }
+            @if (canCancel()) {
+              <button type="button" class="btn-danger-outline" [disabled]="busy()" (click)="cancelOrder()">
+                لغو سفارش
+              </button>
+            }
+          </section>
+        }
       } @else if (!error()) {
         <p class="muted center">در حال بارگذاری…</p>
       }
     </div>
   </div>
+
+  @if (toast()) {
+    <div class="toast">{{ toast() }}</div>
+  }
 </div>

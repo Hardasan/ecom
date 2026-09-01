@@ -2,6 +2,7 @@ import { Component, DestroyRef, ElementRef, OnInit, inject, signal, viewChild } 
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
+import { CartService } from '../../core/cart.service';
 import { ConfigService } from '../../core/config.service';
 
 type Step = 'phone' | 'otp' | 'signup';
@@ -14,6 +15,7 @@ type Step = 'phone' | 'otp' | 'signup';
 })
 export class Login implements OnInit {
   private readonly auth = inject(AuthService);
+  private readonly cartApi = inject(CartService);
   private readonly configApi = inject(ConfigService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -109,10 +111,7 @@ export class Login implements OnInit {
 
     if (this.registered) {
       this.auth.validateLoginTicket(this.phone, ticket).subscribe({
-        next: () => {
-          this.busy.set(false);
-          void this.router.navigateByUrl(this.returnUrl);
-        },
+        next: () => this.finishLogin(),
         error: (err) => this.fail(err)
       });
       return;
@@ -146,15 +145,22 @@ export class Login implements OnInit {
       .subscribe({
         next: () => {
           this.auth.login(this.phone, this.password).subscribe({
-            next: () => {
-              this.busy.set(false);
-              void this.router.navigateByUrl(this.returnUrl);
-            },
+            next: () => this.finishLogin(),
             error: (err) => this.fail(err)
           });
         },
         error: (err) => this.fail(err)
       });
+  }
+
+  /** Adopt the guest cart into the account, then continue to where the user was headed. */
+  private finishLogin() {
+    this.cartApi.onLogin().subscribe({
+      next: () => {
+        this.busy.set(false);
+        void this.router.navigateByUrl(this.returnUrl);
+      }
+    });
   }
 
   private focusOtp() {

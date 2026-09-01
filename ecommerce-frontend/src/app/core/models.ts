@@ -113,10 +113,19 @@ export type OrderItemDto = {
   lineTotal: number | string;
 };
 
+export type PaymentMethod = 'ONLINE' | 'CASH_ON_DELIVERY';
+
+export type CheckoutQuoteDto = {
+  itemsCost: number | string;
+  shippingCost: number | string;
+  totalCost: number | string;
+};
+
 export type OrderDto = {
   id: number;
   userId: number;
   status: string;
+  paymentMethod?: PaymentMethod;
   recipientFirstName?: string;
   recipientLastName?: string;
   recipientMobile?: string;

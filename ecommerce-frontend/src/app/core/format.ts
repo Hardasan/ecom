@@ -51,6 +51,62 @@ export function displayName(product: { localName?: string; name?: string }): str
   return product.localName || product.name || 'محصول';
 }
 
+// ---- Variant display -----------------------------------------------------------------------------
+// COLOR variants store a CSS hex code (e.g. "#FFFFFF") in variantValue. The shopper must see the
+// actual color (a swatch) — and a readable name where we know it — never the raw hex string.
+
+export function isColorVariant(variantType?: string | null): boolean {
+  return (variantType ?? '').toUpperCase() === 'COLOR';
+}
+
+const HEX_RE = /^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
+/** The stored value as a CSS color ("#RRGGBB"), or '' when it is not a hex code. */
+export function colorHex(value?: string | null): string {
+  const v = (value ?? '').trim();
+  if (!HEX_RE.test(v)) {
+    return '';
+  }
+  return v.startsWith('#') ? v : `#${v}`;
+}
+
+const COLOR_NAMES_FA: Record<string, string> = {
+  '#FFFFFF': 'سفید',
+  '#000000': 'مشکی',
+  '#FF0000': 'قرمز',
+  '#00FF00': 'سبز',
+  '#008000': 'سبز',
+  '#0000FF': 'آبی',
+  '#FFFF00': 'زرد',
+  '#FFA500': 'نارنجی',
+  '#800080': 'بنفش',
+  '#FFC0CB': 'صورتی',
+  '#A52A2A': 'قهوه‌ای',
+  '#808080': 'خاکستری',
+  '#C0C0C0': 'نقره‌ای',
+  '#FFD700': 'طلایی',
+  '#008080': 'فیروزه‌ای',
+  '#000080': 'سرمه‌ای'
+};
+
+/**
+ * Human label for a variant value: a color name (falling back to the hex) for COLOR variants,
+ * the raw value (e.g. a size) otherwise. Empty when there is no variant.
+ */
+export function variantLabel(variantType?: string | null, variantValue?: string | null): string {
+  const v = (variantValue ?? '').trim();
+  if (!v) {
+    return '';
+  }
+  if (isColorVariant(variantType)) {
+    const hex = colorHex(v);
+    if (hex) {
+      return COLOR_NAMES_FA[hex.toUpperCase()] ?? hex;
+    }
+  }
+  return v;
+}
+
 export function formatFaDate(value?: string | Date | null): string {
   if (!value) {
     return '';
@@ -80,9 +136,14 @@ const ORDER_STATUS_FA: Record<string, string> = {
   CANCEL_BY_ADMIN: 'لغو شده'
 };
 
-export function orderStatusLabel(status?: string | null): string {
+export function orderStatusLabel(status?: string | null, paymentMethod?: string | null): string {
   if (!status) {
     return '';
+  }
+  // A cash-on-delivery order sits at RESERVED until an admin ships it — there is no "pending payment"
+  // for the shopper, so label it as awaiting shipment rather than "reserved".
+  if (status === 'RESERVED' && paymentMethod === 'CASH_ON_DELIVERY') {
+    return 'در انتظار ارسال';
   }
   return ORDER_STATUS_FA[status] ?? status;
 }

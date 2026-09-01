@@ -27,12 +27,22 @@ export class App {
         this.isAdminRoute.set(isDashboardHost() || e.urlAfterRedirects.startsWith('/admin'))
       );
 
-    // Keep the cart badge in sync with auth state: load on app start / login, clear on logout.
+    // Keep the cart in sync with auth state across transitions. A guest keeps a local cart, so we
+    // must not wipe it on first load; we only drop it on an actual sign-out. The guest→signed-in
+    // merge is owned by the login page (it awaits the merge before navigating), so here we just
+    // (re)load the badge on initial load and on sign-out.
+    let wasLoggedIn = this.auth.isLoggedIn();
     effect(() => {
-      if (this.auth.isLoggedIn()) {
-        this.cart.refresh();
-      } else {
-        this.cart.clear();
+      const loggedIn = this.auth.isLoggedIn();
+      const transitioned = loggedIn !== wasLoggedIn;
+      const previous = wasLoggedIn;
+      wasLoggedIn = loggedIn;
+      if (transitioned && !loggedIn) {
+        this.cart.onLogout(); // just signed out — drop the guest cart and clear the badge
+      } else if (transitioned && loggedIn) {
+        // just signed in — login page merges the guest cart; nothing to do here
+      } else if (!previous || loggedIn) {
+        this.cart.refresh(); // initial load (guest or server cart), or a reload while signed in
       }
     });
   }

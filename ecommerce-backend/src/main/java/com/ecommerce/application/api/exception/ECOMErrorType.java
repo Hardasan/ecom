@@ -16,6 +16,7 @@ public enum ECOMErrorType {
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "error.validation"),
     INVALID_TICKET(HttpStatus.BAD_REQUEST, "error.invalid.ticket"),
     INVALID_PASSWORD(HttpStatus.BAD_REQUEST, "error.invalid.password"),
+    INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "error.invalid.credentials"),
     INVALID_SIGNUP_TOKEN(HttpStatus.BAD_REQUEST, "error.invalid.signup.token"),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "error.user.not.found"),
     USER_ALREADY_EXISTS(HttpStatus.CONFLICT, "error.user.already.exists"),

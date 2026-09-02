@@ -28,8 +28,8 @@ import java.util.Set;
 public class AdminStatsService {
 
     /** Statuses whose {@code totalCost} counts as realised revenue. */
-    private static final Set<OrderStatus> REVENUE_STATUSES =
-            EnumSet.of(OrderStatus.PAID, OrderStatus.SENDING, OrderStatus.RECEIVED);
+    private static final Set<OrderStatus> REVENUE_STATUSES = EnumSet.of(
+            OrderStatus.PAID, OrderStatus.PROCESSING, OrderStatus.SENDING, OrderStatus.RECEIVED);
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
@@ -62,6 +62,7 @@ public class AdminStatsService {
         dto.setOrdersByStatus(ordersByStatus);
         dto.setTotalRevenue(revenue);
         dto.setAwaitingShipment(ordersByStatus.get(OrderStatus.PAID));
+        dto.setProcessingOrders(ordersByStatus.get(OrderStatus.PROCESSING));
         dto.setReservedOrders(ordersByStatus.get(OrderStatus.RESERVED));
         dto.setRefundableOrders(orderRepository.countRefundableOrders());
         dto.setTotalProducts(productRepository.count());

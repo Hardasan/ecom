@@ -24,8 +24,11 @@ public class AdminStatsResponseDto {
     /** Sum of {@code totalCost} over PAID / SENDING / RECEIVED orders. */
     private BigDecimal totalRevenue;
 
-    /** PAID orders awaiting an admin to mark them SENDING. */
+    /** PAID orders awaiting warehouse approval. */
     private long awaitingShipment;
+
+    /** Approved orders being prepared for dispatch (PROCESSING). */
+    private long processingOrders;
 
     /** Orders still holding stock in RESERVED. */
     private long reservedOrders;

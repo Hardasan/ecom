@@ -55,12 +55,13 @@ export class OrderDetailAdmin implements OnInit {
   }
 
   canSend(): boolean {
-    return this.order()?.status === 'PAID';
+    const s = this.order()?.status;
+    return s === 'PAID' || s === 'PROCESSING';
   }
 
   canCancel(): boolean {
     const s = this.order()?.status;
-    return s === 'RESERVED' || s === 'PAID';
+    return s === 'RESERVED' || s === 'PAID' || s === 'PROCESSING';
   }
 
   canRefund(): boolean {

@@ -83,6 +83,29 @@ public class Order {
     @Column(name = "reserved_until")
     private Date reservedUntil;
 
+    // -----------------------------------------------------------------------------------------
+    // Fulfillment: set by warehouse staff as the order moves PAID/COD -> PROCESSING -> SENDING.
+    // All nullable: they stay empty until the matching step happens.
+    // -----------------------------------------------------------------------------------------
+    @Column(name = "carrier", length = 64)
+    private String carrier;
+
+    @Column(name = "tracking_number", length = 128)
+    private String trackingNumber;
+
+    @Column(name = "approved_at")
+    private Date approvedAt;
+
+    @Column(name = "shipped_at")
+    private Date shippedAt;
+
+    @Column(name = "delivered_at")
+    private Date deliveredAt;
+
+    /** The staff user (warehouse operator or admin) who last drove this order's fulfillment. */
+    @Column(name = "fulfilled_by_user_id")
+    private Long fulfilledByUserId;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     @CreationTimestamp
     private Date createdAt;

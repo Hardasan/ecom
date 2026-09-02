@@ -22,10 +22,8 @@ export class AdminLogin {
   password = '';
 
   constructor() {
-    // An already-signed-in admin skips the login page.
-    if (this.auth.role() === 'ROLE_ADMIN') {
-      void this.router.navigateByUrl('/admin');
-    }
+    // An already-signed-in staff member skips the login page, straight to their own area.
+    this.routeByRole(this.auth.role());
   }
 
   submit(): void {
@@ -39,12 +37,10 @@ export class AdminLogin {
     this.auth.login(mobile, this.password).subscribe({
       next: (res) => {
         this.busy.set(false);
-        if (res.role === 'ROLE_ADMIN') {
-          void this.router.navigateByUrl('/admin');
-        } else {
-          // A valid but non-admin account must not hold a session on the dashboard.
+        if (!this.routeByRole(res.role)) {
+          // A valid shopper account must not hold a session on the dashboard.
           this.auth.logout();
-          this.error.set('این حساب دسترسی مدیریت ندارد');
+          this.error.set('این حساب به پنل دسترسی ندارد');
         }
       },
       error: (e) => {
@@ -52,5 +48,18 @@ export class AdminLogin {
         this.error.set(e?.error?.message ?? 'ورود ناموفق بود');
       }
     });
+  }
+
+  /** Sends a staff role to its area. Returns false for a role with no dashboard access. */
+  private routeByRole(role: string | null): boolean {
+    if (role === 'ROLE_ADMIN') {
+      void this.router.navigateByUrl('/admin');
+      return true;
+    }
+    if (role === 'ROLE_WAREHOUSE') {
+      void this.router.navigateByUrl('/warehouse');
+      return true;
+    }
+    return false;
   }
 }

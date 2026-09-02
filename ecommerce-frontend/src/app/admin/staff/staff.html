@@ -1,0 +1,86 @@
+<div class="admin-page">
+  <div class="admin-page__head">
+    <h1>کارکنان انبار</h1>
+    <button type="button" class="admin-btn admin-btn--sm" (click)="openCreate()">+ کارمند جدید</button>
+  </div>
+
+  <p class="admin-muted intro">
+    حساب‌های کارکنان انبار که سفارش‌ها را تأیید، ارسال و مدیریت می‌کنند. ورود از همین پنل با شماره موبایل و رمز عبور.
+  </p>
+
+  @if (error()) {
+    <p class="admin-error">{{ error() }}</p>
+  }
+
+  @if (loading()) {
+    <p class="admin-empty">در حال بارگذاری…</p>
+  } @else if (!staff().length) {
+    <p class="admin-empty">هنوز کارمندی ثبت نشده است</p>
+  } @else {
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>نام</th>
+            <th>موبایل</th>
+            <th>تاریخ ایجاد</th>
+            <th>وضعیت</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (m of staff(); track m.id) {
+            <tr>
+              <td>{{ m.id }}</td>
+              <td>{{ m.firstName }} {{ m.lastName }}</td>
+              <td class="admin-muted">{{ m.mobile }}</td>
+              <td class="admin-muted">{{ date(m.createdAt) }}</td>
+              <td>
+                <span [class]="'badge ' + (m.enabled ? 'badge--green' : 'badge--gray')">
+                  {{ m.enabled ? 'فعال' : 'غیرفعال' }}
+                </span>
+              </td>
+              <td class="cell-actions">
+                <button type="button" class="admin-btn admin-btn--ghost admin-btn--sm" [disabled]="busy()" (click)="resetPassword(m)">
+                  تغییر رمز
+                </button>
+                <button
+                  type="button"
+                  class="admin-btn admin-btn--sm"
+                  [class.admin-btn--danger]="m.enabled"
+                  [disabled]="busy()"
+                  (click)="toggle(m)"
+                >
+                  {{ m.enabled ? 'غیرفعال کردن' : 'فعال کردن' }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (showCreate()) {
+    <div class="modal-backdrop" (click)="showCreate.set(false)"></div>
+    <div class="modal" role="dialog" aria-label="کارمند جدید">
+      <h2>کارمند جدید انبار</h2>
+      @if (error()) {
+        <p class="admin-error">{{ error() }}</p>
+      }
+      <label><span>نام</span><input class="field" [(ngModel)]="firstName" /></label>
+      <label><span>نام خانوادگی</span><input class="field" [(ngModel)]="lastName" /></label>
+      <label><span>شماره موبایل</span><input class="field" type="tel" inputmode="numeric" [(ngModel)]="mobile" placeholder="09123456789" /></label>
+      <label><span>رمز عبور</span><input class="field" type="password" [(ngModel)]="password" placeholder="حداقل ۶ نویسه" /></label>
+      <div class="modal__actions">
+        <button type="button" class="admin-btn admin-btn--ghost" (click)="showCreate.set(false)">انصراف</button>
+        <button type="button" class="admin-btn" [disabled]="busy()" (click)="create()">ایجاد کارمند</button>
+      </div>
+    </div>
+  }
+
+  @if (toast()) {
+    <div class="admin-toast">{{ toast() }}</div>
+  }
+</div>

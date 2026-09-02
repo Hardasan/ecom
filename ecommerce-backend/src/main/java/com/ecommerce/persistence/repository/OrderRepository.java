@@ -51,7 +51,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      */
     @Query("SELECT COUNT(o) > 0 FROM Order o JOIN o.items i "
             + "WHERE o.userId = :userId AND i.product.productId = :productId "
-            + "AND o.status IN ('PAID', 'SENDING', 'RECEIVED')")
+            + "AND o.status IN ('PAID', 'PROCESSING', 'SENDING', 'RECEIVED')")
     boolean existsPaidOrderForProduct(@Param("userId") Long userId, @Param("productId") Long productId);
 
     /**
@@ -60,7 +60,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      * per-user usage limit at apply time.
      */
     @Query("SELECT COUNT(o) FROM Order o WHERE o.discountId = :discountId AND o.userId = :userId "
-            + "AND o.status IN ('RESERVED', 'PAID', 'SENDING', 'RECEIVED')")
+            + "AND o.status IN ('RESERVED', 'PAID', 'PROCESSING', 'SENDING', 'RECEIVED')")
     long countActiveByDiscountAndUser(@Param("discountId") Long discountId, @Param("userId") Long userId);
 
     /**

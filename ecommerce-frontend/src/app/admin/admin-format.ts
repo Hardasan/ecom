@@ -34,6 +34,8 @@ export function orderStatusTone(status?: string | null): string {
   switch (status) {
     case 'PAID':
       return 'badge--green';
+    case 'PROCESSING':
+      return 'badge--blue';
     case 'SENDING':
       return 'badge--blue';
     case 'RECEIVED':
@@ -63,5 +65,5 @@ export function reviewStatusTone(status?: ReviewStatus | string | null): string 
 }
 
 export const ORDER_STATUSES = [
-  'RESERVED', 'PAID', 'SENDING', 'RECEIVED', 'FAILED', 'CANCEL_BY_USER', 'CANCEL_BY_ADMIN'
+  'RESERVED', 'PAID', 'PROCESSING', 'SENDING', 'RECEIVED', 'FAILED', 'CANCEL_BY_USER', 'CANCEL_BY_ADMIN'
 ] as const;

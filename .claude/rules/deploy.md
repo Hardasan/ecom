@@ -49,10 +49,12 @@ git tag v0.1.0 && git push origin v0.1.0
 
 ## Admin dashboard subdomain
 
-The admin panel is served on **`dashboard.rivany.ir`**, the storefront on `rivany.ir` — one host-aware
-Angular build, one backend. The browser hostname selects the mode (`core/host.ts`): `dashboard.*` →
-admin route table (login + `/admin`); anything else → storefront. Admins sign in with **mobile +
-password** (`POST /user/login`, must be `ROLE_ADMIN`); the shop's `/admin` path is gone.
+The staff dashboard is served on **`dashboard.rivany.ir`**, the storefront on `rivany.ir` — one
+host-aware Angular build, one backend. The browser hostname selects the mode (`core/host.ts`):
+`dashboard.*` → dashboard route table (`admin.routes.ts`: shared login + `/admin` + `/warehouse`);
+anything else → storefront. Staff sign in with **mobile + password** (`POST /user/login`); the shared
+login then routes by role — `ROLE_ADMIN` → `/admin`, `ROLE_WAREHOUSE` → `/warehouse` (fulfillment
+console), any other role is rejected. The shop's `/admin` path is gone.
 
 One-time VPS setup (no image rebuild needed — it's front-end + Nginx only, already in the image):
 1. **DNS**: `dashboard.rivany.ir` A record → `45.94.215.219`.

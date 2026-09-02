@@ -61,10 +61,10 @@ export class OrderDetail implements OnInit {
     return orderStatusLabel(this.order()?.status, this.order()?.paymentMethod);
   }
 
-  /** The buyer may cancel while the order is still RESERVED or PAID (not yet shipped). */
+  /** The buyer may cancel while the order is not yet shipped (RESERVED, PAID or being prepared). */
   canCancel(): boolean {
     const s = this.order()?.status;
-    return s === 'RESERVED' || s === 'PAID';
+    return s === 'RESERVED' || s === 'PAID' || s === 'PROCESSING';
   }
 
   /** The buyer confirms receipt once the order is on its way (SENDING). */

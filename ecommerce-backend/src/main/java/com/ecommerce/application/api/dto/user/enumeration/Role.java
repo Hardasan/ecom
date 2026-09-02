@@ -6,5 +6,6 @@ package com.ecommerce.application.api.dto.user.enumeration;
  */
 public enum Role {
     ROLE_ADMIN,
+    ROLE_WAREHOUSE,
     ROLE_APP_USER
 }

@@ -65,6 +65,19 @@ public class OrderResponseDto {
 
     private Date reservedUntil;
 
+    // Fulfillment snapshot (null until the matching warehouse step happens).
+    private String carrier;
+
+    private String trackingNumber;
+
+    private Date approvedAt;
+
+    private Date shippedAt;
+
+    private Date deliveredAt;
+
+    private Long fulfilledByUserId;
+
     private Date createdAt;
 
     private Date updatedAt;

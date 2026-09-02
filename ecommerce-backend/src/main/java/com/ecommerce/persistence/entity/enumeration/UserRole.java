@@ -8,5 +8,8 @@ public enum UserRole {
 
     ROLE_ADMIN,
 
+    // Warehouse staff: approve paid orders, hand them to the courier, and drive fulfillment statuses.
+    ROLE_WAREHOUSE,
+
     ROLE_APP_USER
 }

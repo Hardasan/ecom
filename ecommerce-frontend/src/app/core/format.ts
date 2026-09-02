@@ -129,6 +129,7 @@ export function orderItemCount(items?: { quantity: number }[] | null): number {
 const ORDER_STATUS_FA: Record<string, string> = {
   RESERVED: 'رزرو شده',
   PAID: 'پرداخت شده',
+  PROCESSING: 'در حال آماده‌سازی',
   FAILED: 'ناموفق',
   SENDING: 'در حال ارسال',
   RECEIVED: 'تحویل شده',

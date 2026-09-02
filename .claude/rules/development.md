@@ -43,6 +43,7 @@ Processor order: `lombok` → `lombok-mapstruct-binding` → `mapstruct-processo
 
 ## Gotchas
 
+- **Bean validation is done by `ValidationAspect`, not `@Valid`.** The aspect validates every controller-method arg and throws `VALIDATION_ERROR` (with `errorParams`). Do **not** put `@Valid` on `@RequestBody` params — it fires first during arg resolution and returns Spring's default 400 body (no `errorCode`), breaking the error contract + any `$.errorCode` ITest. Just annotate the DTO fields; the aspect handles the rest.
 - Redisson not auto-config; beans only if `app.cache.type=redis`. Both Redisson auto-configs excluded.
 - `@Enumerated(STRING)` on enums inside `@Embeddable` / `@ElementCollection`.
 - Spec map JSONB needs `@JdbcTypeCode(SqlTypes.JSON)`; ObjectMapper accepts case-insensitive enum keys.

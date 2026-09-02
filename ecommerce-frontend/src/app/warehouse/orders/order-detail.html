@@ -1,0 +1,122 @@
+<div class="admin-page">
+  <div class="admin-page__head">
+    <h1>سفارش #{{ id }}</h1>
+    <a class="admin-btn admin-btn--ghost admin-btn--sm" routerLink="/warehouse">← بازگشت به صف</a>
+  </div>
+
+  @if (error()) {
+    <p class="admin-error">{{ error() }}</p>
+  }
+
+  @if (loading()) {
+    <p class="admin-empty">در حال بارگذاری…</p>
+  } @else if (order(); as o) {
+    <div class="grid">
+      <!-- Fulfillment / actions -->
+      <div class="admin-card">
+        <div class="head-row">
+          <span [class]="'badge ' + tone(o.status)">{{ statusLabel(o.status, o.paymentMethod) }}</span>
+          <span class="admin-muted">{{ date(o.createdAt) }}</span>
+        </div>
+
+        <ol class="timeline">
+          <li [class.done]="o.approvedAt"><span>تأیید</span><small>{{ o.approvedAt ? date(o.approvedAt) : '—' }}</small></li>
+          <li [class.done]="o.shippedAt"><span>ارسال</span><small>{{ o.shippedAt ? date(o.shippedAt) : '—' }}</small></li>
+          <li [class.done]="o.deliveredAt"><span>تحویل</span><small>{{ o.deliveredAt ? date(o.deliveredAt) : '—' }}</small></li>
+        </ol>
+
+        @if (o.carrier || o.trackingNumber) {
+          <p class="ship-info">
+            <span>شرکت پستی: <strong>{{ o.carrier || '—' }}</strong></span>
+            <span>کد رهگیری: <strong>{{ o.trackingNumber || '—' }}</strong></span>
+          </p>
+        }
+
+        <div class="actions">
+          @if (canApprove()) {
+            <button type="button" class="admin-btn" [disabled]="busy()" (click)="approve()">تأیید سفارش</button>
+          }
+          @if (canDeliver()) {
+            <button type="button" class="admin-btn" [disabled]="busy()" (click)="deliver()">ثبت تحویل</button>
+          }
+          @if (canCancel()) {
+            <button type="button" class="admin-btn admin-btn--danger" [disabled]="busy()" (click)="cancel()">
+              لغو سفارش
+            </button>
+          }
+          @if (!canApprove() && !canShip() && !canDeliver() && !canCancel()) {
+            <span class="admin-muted">این سفارش به پایان چرخه رسیده است</span>
+          }
+        </div>
+
+        @if (canShip()) {
+          <div class="ship-form">
+            <h2>ثبت ارسال</h2>
+            <label>
+              <span>شرکت پستی</span>
+              <input class="field" [(ngModel)]="carrier" list="carriers" placeholder="مثلاً تیپاکس" />
+              <datalist id="carriers">
+                @for (c of carriers; track c) { <option [value]="c"></option> }
+              </datalist>
+            </label>
+            <label>
+              <span>کد رهگیری مرسوله</span>
+              <input class="field" [(ngModel)]="trackingNumber" placeholder="کد رهگیری پستی" />
+            </label>
+            <button type="button" class="admin-btn" [disabled]="busy()" (click)="ship()">ثبت ارسال و تحویل به پست</button>
+          </div>
+        }
+      </div>
+
+      <!-- Recipient -->
+      <div class="admin-card">
+        <h2>گیرنده</h2>
+        <p>{{ o.recipientFirstName }} {{ o.recipientLastName }} — {{ o.recipientMobile }}</p>
+        <p class="admin-muted">
+          {{ o.province }}، {{ o.city }} — {{ o.addressLine }}
+          @if (o.plaque) { — پلاک {{ o.plaque }} }
+          @if (o.unit) { — واحد {{ o.unit }} }
+          @if (o.postalCode) { — کدپستی {{ o.postalCode }} }
+        </p>
+        <p class="admin-muted">شیوه پرداخت: {{ o.paymentMethod === 'CASH_ON_DELIVERY' ? 'پرداخت در محل' : 'آنلاین' }}</p>
+      </div>
+    </div>
+
+    <!-- Items -->
+    <div class="admin-card">
+      <h2>اقلام</h2>
+      <div class="items">
+        @for (it of o.items; track it.id) {
+          <div class="item">
+            @if (img(it.mainImage)) {
+              <img [src]="img(it.mainImage)" alt="" />
+            } @else {
+              <span class="ph"></span>
+            }
+            <div class="item__info">
+              <strong>{{ it.productName }}</strong>
+              <span class="admin-muted">
+                @if (variant(it.variantType, it.variantValue)) { {{ variant(it.variantType, it.variantValue) }} × }
+                {{ it.quantity }}
+              </span>
+            </div>
+            <span class="item__price">{{ money(it.lineTotal) }}</span>
+          </div>
+        }
+      </div>
+
+      <div class="totals">
+        <div><span>جمع اقلام</span><span>{{ money(o.itemsCost) }}</span></div>
+        @if (o.discountAmount && +o.discountAmount > 0) {
+          <div><span>تخفیف @if (o.discountCode) { ({{ o.discountCode }}) }</span><span>- {{ money(o.discountAmount) }}</span></div>
+        }
+        <div><span>هزینه ارسال</span><span>{{ money(o.shippingCost) }}</span></div>
+        <div class="grand"><span>مبلغ کل</span><span>{{ money(o.totalCost) }}</span></div>
+      </div>
+    </div>
+  }
+
+  @if (toast()) {
+    <div class="admin-toast">{{ toast() }}</div>
+  }
+</div>

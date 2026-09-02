@@ -15,6 +15,7 @@ import com.ecommerce.persistence.entity.OrderItem;
 import com.ecommerce.persistence.entity.Transaction;
 import com.ecommerce.persistence.entity.embeddable.ProductSnapshot;
 import com.ecommerce.persistence.entity.enumeration.OrderStatus;
+import com.ecommerce.persistence.entity.enumeration.PaymentMethod;
 import com.ecommerce.persistence.entity.enumeration.TransactionType;
 import com.ecommerce.persistence.repository.OrderRepository;
 import com.ecommerce.persistence.repository.ProductRepository;
@@ -37,6 +38,7 @@ import static org.mockito.Mockito.*;
 class OrderService_UTest {
 
     private static final Long USER_ID = 7L;
+    private static final Long OPERATOR_ID = 9L;
     private static final Long ORDER_ID = 42L;
     private static final Long PRODUCT_ID = 100L;
     private static final String IBAN = "IR062960000000100324200001";
@@ -308,6 +310,18 @@ class OrderService_UTest {
         OrderResponseDto response = orderService.markSending(ORDER_ID);
 
         assertEquals(OrderStatus.SENDING, response.getStatus());
+        assertNotNull(order.getShippedAt());
+    }
+
+    @Test
+    void markSending_from_processing() {
+        Order order = reservedOrder();
+        order.setStatus(OrderStatus.PROCESSING);
+        when(orderRepository.findByIdForUpdate(ORDER_ID)).thenReturn(Optional.of(order));
+
+        OrderResponseDto response = orderService.markSending(ORDER_ID);
+
+        assertEquals(OrderStatus.SENDING, response.getStatus());
     }
 
     @Test
@@ -318,6 +332,130 @@ class OrderService_UTest {
         EcommerceException ex = assertThrows(EcommerceException.class,
                 () -> orderService.markSending(ORDER_ID));
         assertEquals(ECOMErrorType.ORDER_INVALID_STATUS, ex.getEcomErrorType());
+    }
+
+    // --- warehouse fulfillment: approve / ship / deliver / cancel ---
+
+    @Test
+    void approve_from_paid_sets_processing_and_stamps_operator() {
+        Order order = reservedOrder();
+        order.setStatus(OrderStatus.PAID);
+        when(orderRepository.findByIdForUpdate(ORDER_ID)).thenReturn(Optional.of(order));
+
+        OrderResponseDto response = orderService.approve(ORDER_ID, OPERATOR_ID);
+
+        assertEquals(OrderStatus.PROCESSING, response.getStatus());
+        assertNotNull(order.getApprovedAt());
+        assertEquals(OPERATOR_ID, order.getFulfilledByUserId());
+    }
+
+    @Test
+    void approve_from_cash_on_delivery_reserved_sets_processing() {
+        Order order = reservedOrder();
+        order.setPaymentMethod(PaymentMethod.CASH_ON_DELIVERY);
+        order.setReservedUntil(null);
+        when(orderRepository.findByIdForUpdate(ORDER_ID)).thenReturn(Optional.of(order));
+
+        OrderResponseDto response = orderService.approve(ORDER_ID, OPERATOR_ID);
+
+        assertEquals(OrderStatus.PROCESSING, response.getStatus());
+    }
+
+    @Test
+    void approve_rejects_online_reserved() {
+        Order order = reservedOrder(); // ONLINE + RESERVED (not yet paid)
+        when(orderRepository.findByIdForUpdate(ORDER_ID)).thenReturn(Optional.of(order));
+
+        EcommerceException ex = assertThrows(EcommerceException.class,
+                () -> orderService.approve(ORDER_ID, OPERATOR_ID));
+        assertEquals(ECOMErrorType.ORDER_INVALID_STATUS, ex.getEcomErrorType());
+        assertEquals(OrderStatus.RESERVED, order.getStatus());
+    }
+
+    @Test
+    void approve_rejects_sending() {
+        Order order = reservedOrder();
+        order.setStatus(OrderStatus.SENDING);
+        when(orderRepository.findByIdForUpdate(ORDER_ID)).thenReturn(Optional.of(order));
+
+        EcommerceException ex = assertThrows(EcommerceException.class,
+                () -> orderService.approve(ORDER_ID, OPERATOR_ID));
+        assertEquals(ECOMErrorType.ORDER_INVALID_STATUS, ex.getEcomErrorType());
+    }
+
+    @Test
+    void ship_from_processing_sets_sending_with_shipment_details() {
+        Order order = reservedOrder();
+        order.setStatus(OrderStatus.PROCESSING);
+        when(orderRepository.findByIdForUpdate(ORDER_ID)).thenReturn(Optional.of(order));
+
+        OrderResponseDto response = orderService.ship(ORDER_ID, OPERATOR_ID, "Post", "TRK-123");
+
+        assertEquals(OrderStatus.SENDING, response.getStatus());
+        assertEquals("Post", order.getCarrier());
+        assertEquals("TRK-123", order.getTrackingNumber());
+        assertNotNull(order.getShippedAt());
+        assertEquals(OPERATOR_ID, order.getFulfilledByUserId());
+    }
+
+    @Test
+    void ship_rejects_not_yet_approved_order() {
+        Order order = reservedOrder();
+        order.setStatus(OrderStatus.PAID); // must be approved (PROCESSING) first
+        when(orderRepository.findByIdForUpdate(ORDER_ID)).thenReturn(Optional.of(order));
+
+        EcommerceException ex = assertThrows(EcommerceException.class,
+                () -> orderService.ship(ORDER_ID, OPERATOR_ID, "Post", "TRK-123"));
+        assertEquals(ECOMErrorType.ORDER_INVALID_STATUS, ex.getEcomErrorType());
+        assertNull(order.getTrackingNumber());
+        assertEquals(OrderStatus.PAID, order.getStatus());
+    }
+
+    @Test
+    void markDelivered_from_sending_sets_received() {
+        Order order = reservedOrder();
+        order.setStatus(OrderStatus.SENDING);
+        when(orderRepository.findByIdForUpdate(ORDER_ID)).thenReturn(Optional.of(order));
+
+        OrderResponseDto response = orderService.markDelivered(ORDER_ID, OPERATOR_ID);
+
+        assertEquals(OrderStatus.RECEIVED, response.getStatus());
+        assertNotNull(order.getDeliveredAt());
+    }
+
+    @Test
+    void markDelivered_rejects_processing() {
+        Order order = reservedOrder();
+        order.setStatus(OrderStatus.PROCESSING);
+        when(orderRepository.findByIdForUpdate(ORDER_ID)).thenReturn(Optional.of(order));
+
+        EcommerceException ex = assertThrows(EcommerceException.class,
+                () -> orderService.markDelivered(ORDER_ID, OPERATOR_ID));
+        assertEquals(ECOMErrorType.ORDER_INVALID_STATUS, ex.getEcomErrorType());
+    }
+
+    @Test
+    void cancelByWarehouse_from_processing_restores_inventory() {
+        Order order = reservedOrder();
+        order.setStatus(OrderStatus.PROCESSING);
+        when(orderRepository.findByIdForUpdate(ORDER_ID)).thenReturn(Optional.of(order));
+
+        OrderResponseDto response = orderService.cancelByWarehouse(ORDER_ID);
+
+        assertEquals(OrderStatus.CANCEL_BY_ADMIN, response.getStatus());
+        verify(productRepository).incrementInventory(PRODUCT_ID, 2);
+    }
+
+    @Test
+    void cancelByWarehouse_rejects_sending() {
+        Order order = reservedOrder();
+        order.setStatus(OrderStatus.SENDING);
+        when(orderRepository.findByIdForUpdate(ORDER_ID)).thenReturn(Optional.of(order));
+
+        EcommerceException ex = assertThrows(EcommerceException.class,
+                () -> orderService.cancelByWarehouse(ORDER_ID));
+        assertEquals(ECOMErrorType.ORDER_INVALID_STATUS, ex.getEcomErrorType());
+        verify(productRepository, never()).incrementInventory(anyLong(), anyInt());
     }
 
     @Test

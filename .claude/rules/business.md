@@ -73,18 +73,29 @@ POST /orders/{id}/payment/confirm    → public → PAID + PAYMENT tx
 POST /orders/{id}/cancel|receive
 POST /admin/orders/{id}/send|cancel|refund
 GET  /admin/orders/refundable        → cancelled + PAYMENT + no REFUND
+POST /warehouse/orders/{id}/approve|ship|deliver|cancel   → WAREHOUSE|ADMIN (fulfillment)
+GET  /warehouse/orders[/{id}]        → WAREHOUSE|ADMIN (same projection as /admin/orders)
 ```
 
 ```
-RESERVED → PAID → SENDING → RECEIVED
-   ├─ timeout → FAILED (+ stock)
-   └─ cancel  → CANCEL_BY_*   (also from PAID)
+RESERVED → PAID → PROCESSING → SENDING → RECEIVED
+   ├─ timeout → FAILED (+ stock)          (only from RESERVED)
+   └─ cancel  → CANCEL_BY_*   (from RESERVED / PAID / PROCESSING, never after SENDING)
+   COD: RESERVED → PROCESSING (COD never times out; reservedUntil stays null)
 ```
 
-- Snapshots at checkout. Cancel restores stock; no cancel after `SENDING`.
+- Snapshots at checkout. Cancel restores stock; no cancel after `SENDING` (`PROCESSING` is still cancellable).
 - **Guest:** `/checkout/guest` creates unregistered user + order, **no JWT**. Pay after signup/login with the same mobile.
 - **Refund:** cancel never auto-refunds. Admin: list refundable → bank transfer outside → `POST …/refund` `{reference,iban}` → `REFUND` tx. Amount = order total.
 - IPG: `PaymentGateway` / `NoOpPaymentGateway`. Expiry: `ReservationReleaseJob` → service (`app.checkout.scheduling.enabled`).
+- **Warehouse fulfillment (`ROLE_WAREHOUSE`, admins allowed too):** `approve` PAID/COD-RESERVED → `PROCESSING` (stamps `approvedAt` + `fulfilledByUserId`); `ship` `PROCESSING` → `SENDING` (**requires** `carrier` + `trackingNumber`, stamps `shippedAt`); `deliver` `SENDING` → `RECEIVED` (staff-side twin of the buyer's `receive`); `cancel` = admin-cancel (restock, becomes refundable). Admin `POST /admin/orders/{id}/send` still short-circuits PAID/PROCESSING → `SENDING` without capturing tracking. Fulfillment columns are all nullable and fill in per step (`V1.27`). A paid order in `PROCESSING` counts as realised revenue and as a verified-purchase / active-discount state, exactly like `PAID`.
+
+---
+
+## Staff & Roles
+
+- Single role per user (`AppUser.role`): `ROLE_APP_USER` (shopper), `ROLE_ADMIN`, `ROLE_WAREHOUSE` (fulfillment operator). Login (`POST /user/login`) returns the role; the dashboard host routes admins to `/admin`, warehouse staff to `/warehouse`.
+- **Warehouse accounts are created by an admin**, not by signup: `POST /api/admin/staff` `{firstName,lastName,mobile,password}` → enabled + registered `ROLE_WAREHOUSE` user (mobile is the username). `GET /api/admin/staff` lists them; `PATCH …/{id}/status {enabled}` disables/enables a login (a disabled account fails `loadUserByUsername`, so both new logins **and** existing JWTs are rejected immediately); `POST …/{id}/reset-password {password}`. All admin-only; every mutation is scoped to `ROLE_WAREHOUSE` rows (an unknown-or-non-warehouse id → `USER_NOT_FOUND`), so it can never touch an admin or shopper account. Duplicate mobile → `USER_ALREADY_EXISTS`.
 
 ---
 

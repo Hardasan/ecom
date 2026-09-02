@@ -5,28 +5,24 @@ import { storefrontUrl } from '../../core/host';
 
 type NavItem = { path: string; label: string; exact: boolean };
 
+/**
+ * Shell for the warehouse operator console on the dashboard host. Mirrors the admin shell layout,
+ * but its own nav (the fulfillment queue) and branding.
+ */
 @Component({
-  selector: 'app-admin-shell',
+  selector: 'app-warehouse-shell',
   imports: [RouterOutlet, RouterLink, RouterLinkActive],
-  templateUrl: './admin-shell.html',
-  styleUrl: './admin-shell.scss'
+  templateUrl: './warehouse-shell.html',
+  styleUrl: './warehouse-shell.scss'
 })
-export class AdminShell {
+export class WarehouseShell {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
   readonly menuOpen = signal(false);
   readonly shopUrl = storefrontUrl();
 
-  readonly nav: NavItem[] = [
-    { path: '/admin', label: 'داشبورد', exact: true },
-    { path: '/admin/products', label: 'محصولات', exact: false },
-    { path: '/admin/categories', label: 'دسته‌بندی‌ها', exact: false },
-    { path: '/admin/discounts', label: 'کدهای تخفیف', exact: false },
-    { path: '/admin/orders', label: 'سفارش‌ها', exact: false },
-    { path: '/admin/reviews', label: 'نظرات', exact: false },
-    { path: '/admin/staff', label: 'کارکنان انبار', exact: false }
-  ];
+  readonly nav: NavItem[] = [{ path: '/warehouse', label: 'صف سفارش‌ها', exact: true }];
 
   toggleMenu(): void {
     this.menuOpen.update((v) => !v);

@@ -19,7 +19,11 @@
       </a>
       <a class="admin-stat" routerLink="/admin/orders">
         <span class="admin-stat__value">{{ s.awaitingShipment }}</span>
-        <span class="admin-stat__label">در انتظار ارسال</span>
+        <span class="admin-stat__label">در انتظار تأیید انبار</span>
+      </a>
+      <a class="admin-stat" routerLink="/admin/orders">
+        <span class="admin-stat__value">{{ s.processingOrders }}</span>
+        <span class="admin-stat__label">در حال آماده‌سازی</span>
       </a>
       <a class="admin-stat" routerLink="/admin/orders">
         <span class="admin-stat__value">{{ s.refundableOrders }}</span>

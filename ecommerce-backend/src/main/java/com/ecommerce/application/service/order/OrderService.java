@@ -36,7 +36,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class OrderService {
 
-    private static final Set<OrderStatus> CANCELLABLE = EnumSet.of(OrderStatus.RESERVED, OrderStatus.PAID);
+    // Cancellable up to (but not including) dispatch: an order that has only been approved/prepared
+    // (PROCESSING) can still be cancelled and its stock restored; once SENDING it cannot.
+    private static final Set<OrderStatus> CANCELLABLE =
+            EnumSet.of(OrderStatus.RESERVED, OrderStatus.PAID, OrderStatus.PROCESSING);
     private static final Set<OrderStatus> CANCELLED = EnumSet.of(
             OrderStatus.CANCEL_BY_USER, OrderStatus.CANCEL_BY_ADMIN);
 
@@ -148,6 +151,7 @@ public class OrderService {
         Order order = findOrThrowForUpdate(orderId);
         requireShippable(order);
         order.setStatus(OrderStatus.SENDING);
+        order.setShippedAt(new Date());
         return toDto(orderRepository.save(order));
     }
 
@@ -156,7 +160,68 @@ public class OrderService {
         Order order = findOwnedOrThrowForUpdate(userId, orderId);
         requireStatus(order, OrderStatus.SENDING);
         order.setStatus(OrderStatus.RECEIVED);
+        order.setDeliveredAt(new Date());
         return toDto(orderRepository.save(order));
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Warehouse fulfillment (ROLE_WAREHOUSE / admin). The operator id is snapshotted onto the order
+    // for audit; every transition is guarded so the lifecycle can only move forward.
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * Warehouse staff accept a paid order (or a cash-on-delivery order still RESERVED) for
+     * fulfillment: PAID / COD-RESERVED -> PROCESSING.
+     */
+    @Transactional
+    public OrderResponseDto approve(Long orderId, Long operatorId) {
+        Order order = findOrThrowForUpdate(orderId);
+        requireApprovable(order);
+        order.setStatus(OrderStatus.PROCESSING);
+        order.setApprovedAt(new Date());
+        order.setFulfilledByUserId(operatorId);
+        return toDto(orderRepository.save(order));
+    }
+
+    /**
+     * Warehouse staff hand an approved order to the courier, recording the carrier + tracking
+     * number: PROCESSING -> SENDING. Approval is required first, so shipment details are never
+     * captured on an order that has not been prepared.
+     */
+    @Transactional
+    public OrderResponseDto ship(Long orderId, Long operatorId, String carrier, String trackingNumber) {
+        Order order = findOrThrowForUpdate(orderId);
+        requireStatus(order, OrderStatus.PROCESSING);
+        order.setCarrier(carrier);
+        order.setTrackingNumber(trackingNumber);
+        order.setShippedAt(new Date());
+        order.setStatus(OrderStatus.SENDING);
+        order.setFulfilledByUserId(operatorId);
+        return toDto(orderRepository.save(order));
+    }
+
+    /**
+     * Warehouse staff record that a shipped order reached the buyer: SENDING -> RECEIVED. Mirrors
+     * the buyer's own {@link #confirmReceived}, but is staff-initiated (no ownership check).
+     */
+    @Transactional
+    public OrderResponseDto markDelivered(Long orderId, Long operatorId) {
+        Order order = findOrThrowForUpdate(orderId);
+        requireStatus(order, OrderStatus.SENDING);
+        order.setStatus(OrderStatus.RECEIVED);
+        order.setDeliveredAt(new Date());
+        order.setFulfilledByUserId(operatorId);
+        return toDto(orderRepository.save(order));
+    }
+
+    /**
+     * Warehouse staff cancel a not-yet-dispatched order. Restores stock / releases the discount
+     * exactly like an admin cancel and leaves the order in a refundable state if it was paid.
+     */
+    @Transactional
+    public OrderResponseDto cancelByWarehouse(Long orderId) {
+        Order order = findOrThrowForUpdate(orderId);
+        return cancel(order, OrderStatus.CANCEL_BY_ADMIN);
     }
 
     private OrderResponseDto cancel(Order order, OrderStatus cancelStatus) {
@@ -229,14 +294,30 @@ public class OrderService {
     }
 
     /**
-     * An order is ready to ship when it is a paid online order, or a cash-on-delivery order still
-     * RESERVED (COD is settled in cash on delivery, so it ships without an online payment first).
+     * An order is ready to ship when it is a paid online order, an already-approved order
+     * (PROCESSING), or a cash-on-delivery order still RESERVED (COD is settled in cash on delivery,
+     * so it ships without an online payment first). Admin "send" may skip the PROCESSING step;
+     * warehouse "ship" always goes through it.
      */
     private void requireShippable(Order order) {
         boolean shippable = order.getStatus() == OrderStatus.PAID
+                || order.getStatus() == OrderStatus.PROCESSING
                 || (order.getStatus() == OrderStatus.RESERVED
                         && order.getPaymentMethod() == PaymentMethod.CASH_ON_DELIVERY);
         if (!shippable) {
+            throw new EcommerceException(ECOMErrorType.ORDER_INVALID_STATUS);
+        }
+    }
+
+    /**
+     * An order can be accepted for fulfillment when it is a paid online order, or a cash-on-delivery
+     * order still RESERVED (placed for good, settled on delivery).
+     */
+    private void requireApprovable(Order order) {
+        boolean approvable = order.getStatus() == OrderStatus.PAID
+                || (order.getStatus() == OrderStatus.RESERVED
+                        && order.getPaymentMethod() == PaymentMethod.CASH_ON_DELIVERY);
+        if (!approvable) {
             throw new EcommerceException(ECOMErrorType.ORDER_INVALID_STATUS);
         }
     }

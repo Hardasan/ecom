@@ -10,6 +10,7 @@ const FILTERS = [
   { key: 'ALL', label: 'همه' },
   { key: 'RESERVED', label: 'رزرو شده' },
   { key: 'PAID', label: 'پرداخت شده' },
+  { key: 'PROCESSING', label: 'در حال آماده‌سازی' },
   { key: 'SENDING', label: 'در حال ارسال' },
   { key: 'RECEIVED', label: 'تحویل شده' },
   { key: 'CANCELLED', label: 'لغو/ناموفق' },

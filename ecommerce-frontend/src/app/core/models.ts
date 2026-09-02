@@ -145,6 +145,13 @@ export type OrderDto = {
   shippingZone?: string | null;
   reservedUntil?: string | null;
   recipientNationalId?: string | null;
+  // Fulfillment snapshot (populated by warehouse staff as the order advances).
+  carrier?: string | null;
+  trackingNumber?: string | null;
+  approvedAt?: string | null;
+  shippedAt?: string | null;
+  deliveredAt?: string | null;
+  fulfilledByUserId?: number | null;
   createdAt?: string;
   updatedAt?: string;
   transactions?: TransactionDto[];
@@ -279,6 +286,7 @@ export type AdminStatsDto = {
   ordersByStatus: Record<string, number>;
   totalRevenue: number | string;
   awaitingShipment: number;
+  processingOrders: number;
   reservedOrders: number;
   refundableOrders: number;
   totalProducts: number;
@@ -287,4 +295,21 @@ export type AdminStatsDto = {
   totalCategories: number;
   totalDiscounts: number;
   pendingReviews: number;
+};
+
+/** A warehouse-staff account as returned by the admin staff-management API. */
+export type StaffDto = {
+  id: number;
+  firstName: string;
+  lastName: string;
+  mobile: string;
+  enabled: boolean;
+  createdAt?: string;
+};
+
+export type CreateStaffPayload = {
+  firstName: string;
+  lastName: string;
+  mobile: string;
+  password: string;
 };

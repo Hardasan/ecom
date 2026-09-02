@@ -51,4 +51,4 @@ src/main/java/com/ecommerce/
 
 ## Security
 
-Public routes in `PublicEndPoint` (guest checkout, payment confirm — guest must signup/login before `/pay`). Else `Authorization: Bearer <JWT>`. Product writes / admin order ops → `ROLE_ADMIN`. `GET /products/**` public. JWT TTL `security.jwt.expiration-time` (default `1h`) — **rotate secret before prod**.
+Public routes in `PublicEndPoint` (guest checkout, payment confirm — guest must signup/login before `/pay`). Else `Authorization: Bearer <JWT>`. Product writes / admin order ops / `/admin/**` → `ROLE_ADMIN`; `/warehouse/**` fulfillment → `ROLE_WAREHOUSE` (admins allowed too). `GET /products/**` public. Roles: `ROLE_APP_USER`, `ROLE_ADMIN`, `ROLE_WAREHOUSE` (one per user) — see [business.md](.claude/rules/business.md) “Staff & Roles”. JWT TTL `security.jwt.expiration-time` (default `1h`) — **rotate secret before prod**.

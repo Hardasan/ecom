@@ -1,0 +1,28 @@
+:host {
+  display: block;
+}
+
+.cell-actions {
+  text-align: left;
+  white-space: nowrap;
+}
+
+/* Count badge inside a stage tab. */
+.tab-count {
+  display: inline-block;
+  min-width: 20px;
+  padding: 0 6px;
+  margin-inline-start: 6px;
+  border-radius: 999px;
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 18px;
+  text-align: center;
+}
+
+.search {
+  width: 100%;
+  max-width: 420px;
+}

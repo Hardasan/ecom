@@ -1,10 +1,12 @@
 import { Routes } from '@angular/router';
 import { adminGuard } from './core/admin.guard';
+import { warehouseGuard } from './core/warehouse.guard';
 
 /**
- * Route table used ONLY on the admin dashboard host (dashboard.rivany.ir). The storefront routes are
- * not registered here, so the shop is unreachable on that domain. Landing on `/` sends the visitor to
- * the guarded dashboard, which bounces to the admin login when they are not signed in as an admin.
+ * Route table used ONLY on the dashboard host (dashboard.rivany.ir). The storefront routes are not
+ * registered here, so the shop is unreachable on that domain. One shared login serves both staff
+ * kinds; landing on `/` routes each signed-in user to their own area (admin panel or warehouse
+ * console) by role, and everyone else to login.
  */
 export const adminRoutes: Routes = [
   {
@@ -61,9 +63,29 @@ export const adminRoutes: Routes = [
       {
         path: 'reviews',
         loadComponent: () => import('./admin/reviews/reviews').then((m) => m.ReviewsAdmin)
+      },
+      {
+        path: 'staff',
+        loadComponent: () => import('./admin/staff/staff').then((m) => m.StaffAdmin)
       }
     ]
   },
-  { path: '', pathMatch: 'full', redirectTo: 'admin' },
-  { path: '**', redirectTo: 'admin' }
+  {
+    path: 'warehouse',
+    canMatch: [warehouseGuard],
+    loadComponent: () => import('./warehouse/shell/warehouse-shell').then((m) => m.WarehouseShell),
+    children: [
+      {
+        path: '',
+        loadComponent: () => import('./warehouse/orders/order-list').then((m) => m.WarehouseOrderList)
+      },
+      {
+        path: 'orders/:id',
+        loadComponent: () =>
+          import('./warehouse/orders/order-detail').then((m) => m.WarehouseOrderDetail)
+      }
+    ]
+  },
+  { path: '', pathMatch: 'full', loadComponent: () => import('./dashboard-home').then((m) => m.DashboardHome) },
+  { path: '**', redirectTo: '' }
 ];

@@ -8,7 +8,7 @@
 
     @if (step() === 'phone') {
       <div class="login-block">
-        <h1>ورود/ثبت نام در فروشگاه</h1>
+        <h1>ورود/ثبت‌نام در فروشگاه</h1>
         <p class="hint">شماره موبایل خود را وارد کنید</p>
         <input class="field" type="tel" inputmode="numeric" placeholder="شماره موبایل" [(ngModel)]="phone" />
         <button type="button" class="btn-brand" [disabled]="busy()" (click)="sendCode()">
@@ -17,8 +17,8 @@
       </div>
     } @else if (step() === 'otp') {
       <div class="login-block">
-        <h1>ورود/ثبت نام در فروشگاه</h1>
-        <p class="hint">کد ارسال شده به شماره {{ phone }} را وارد کنید</p>
+        <h1>ورود/ثبت‌نام در فروشگاه</h1>
+        <p class="hint">کد ارسال‌شده به شماره {{ phone }} را وارد کنید</p>
         <div class="otp-wrap">
           <div class="otp-row" dir="ltr">
             @for (i of [0, 1, 2, 3, 4, 5]; track i) {
@@ -37,7 +37,7 @@
           />
         </div>
         @if (ttl() > 0) {
-          <p class="timer">{{ ttl() }} ثانیه</p>
+          <p class="timer">{{ ttl() | faNum }} ثانیه</p>
         } @else {
           <button type="button" class="resend" [disabled]="busy()" (click)="resendCode()">
             ارسال مجدد کد

@@ -30,6 +30,7 @@ import java.util.Set;
 public class DiscountCalculator {
 
     private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
+    private static final BigDecimal RIAL_PER_TOMAN = BigDecimal.TEN;
     private static final int MONEY_SCALE = 2;
 
     public DiscountComputation compute(Discount discount, List<DiscountableLine> lines) {
@@ -40,7 +41,7 @@ public class DiscountCalculator {
 
         BigDecimal minimum = discount.getMinimumCartAmount();
         if (minimum != null && eligibleSubtotal.compareTo(minimum) < 0) {
-            throw new EcommerceException(ECOMErrorType.DISCOUNT_MINIMUM_NOT_MET, minimum);
+            throw new EcommerceException(ECOMErrorType.DISCOUNT_MINIMUM_NOT_MET, toToman(minimum));
         }
 
         BigDecimal raw = switch (discount.getType()) {
@@ -76,5 +77,10 @@ public class DiscountCalculator {
 
     private BigDecimal capPercentage(BigDecimal computed, BigDecimal max) {
         return max == null ? computed : computed.min(max);
+    }
+
+    /** Money is stored in Rial; the shopper-facing minimum-purchase message is shown in Toman. */
+    private static BigDecimal toToman(BigDecimal rial) {
+        return rial.divide(RIAL_PER_TOMAN, 0, RoundingMode.HALF_UP);
     }
 }

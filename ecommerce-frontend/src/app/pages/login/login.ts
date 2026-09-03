@@ -1,5 +1,6 @@
 import { Component, DestroyRef, ElementRef, OnInit, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { FaNumPipe } from '../../core/fa-num.pipe';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { CartService } from '../../core/cart.service';
@@ -9,7 +10,7 @@ type Step = 'phone' | 'otp' | 'signup';
 
 @Component({
   selector: 'app-login',
-  imports: [FormsModule],
+  imports: [FormsModule, FaNumPipe],
   templateUrl: './login.html',
   styleUrl: './login.scss'
 })
@@ -52,7 +53,7 @@ export class Login implements OnInit {
   sendCode() {
     const mobileNumber = this.normalizePhone(this.phone);
     if (!/^09\d{9}$/.test(mobileNumber)) {
-      this.error.set('شماره موبایل معتبر نیست (مثال: 09123456789)');
+      this.error.set('شماره موبایل معتبر نیست (مثال: ۰۹۱۲۳۴۵۶۷۸۹)');
       return;
     }
     this.phone = mobileNumber;

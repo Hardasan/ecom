@@ -43,11 +43,11 @@
               <a class="order-card" [routerLink]="['/orders', order.id]">
                 <div class="order-card__row">
                   <span>{{ dateLabel(order) }}</span>
-                  <strong>{{ tracking(order) }}</strong>
+                  <strong>{{ tracking(order) | faNum }}</strong>
                 </div>
                 <div class="order-card__row">
                   <span>{{ total(order) }}</span>
-                  <span>{{ qty(order) }}</span>
+                  <span>{{ qty(order) | faNum }}</span>
                 </div>
                 <div class="thumbs">
                   @for (src of thumbs(order); track $index) {
@@ -91,7 +91,7 @@
               افزودن آدرس
               <img [src]="a.iconMapPin" alt="" width="16" height="16" />
             </span>
-            <span class="address-empty__sub">هنوز آدرسی اضافه نکردید</span>
+            <span class="address-empty__sub">هنوز آدرسی اضافه نکرده‌اید</span>
           </button>
         }
       </section>
@@ -204,7 +204,7 @@
             [class.invalid]="fieldErrors()['recipientMobile']"
             [(ngModel)]="recipientMobile"
             (ngModelChange)="clearFieldError('recipientMobile')"
-            placeholder="0912…"
+            placeholder="۰۹۱۲…"
           />
           @if (fieldErrors()['recipientMobile']; as msg) {
             <span class="field-error">{{ msg }}</span>

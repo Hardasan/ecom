@@ -99,8 +99,8 @@
       @for (row of prices(); track $index) {
         <div class="row-editor">
           <input class="field" [(ngModel)]="row.variantValue" placeholder="مقدار تنوع (اختیاری)" />
-          <input class="field" type="number" [(ngModel)]="row.price" placeholder="قیمت (ریال)" />
-          <input class="field" type="number" [(ngModel)]="row.discountPrice" placeholder="قیمت با تخفیف" />
+          <input class="field" type="number" [(ngModel)]="row.price" placeholder="قیمت (تومان)" />
+          <input class="field" type="number" [(ngModel)]="row.discountPrice" placeholder="قیمت با تخفیف (تومان)" />
           <button type="button" class="admin-btn admin-btn--danger admin-btn--sm" (click)="removePrice($index)">حذف</button>
         </div>
       }

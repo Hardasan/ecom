@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { FaNumPipe } from '../../core/fa-num.pipe';
 import { ASSETS } from '../../assets';
 import { AddressService } from '../../core/address.service';
 import { AuthService } from '../../core/auth.service';
@@ -12,7 +13,7 @@ import { validateAddressFields } from '../../core/address-form';
 
 @Component({
   selector: 'app-profile',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, FaNumPipe],
   templateUrl: './profile.html',
   styleUrl: './profile.scss'
 })

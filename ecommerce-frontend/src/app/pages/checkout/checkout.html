@@ -39,7 +39,7 @@
             افزودن آدرس
             <img [src]="a.iconMapPin" alt="" width="16" height="16" />
           </span>
-          <span class="address-empty__sub">هنوز آدرسی اضافه نکردید</span>
+          <span class="address-empty__sub">هنوز آدرسی اضافه نکرده‌اید</span>
         </button>
       }
 
@@ -47,7 +47,7 @@
       <button type="button" class="summary-card" (click)="openItemsSheet()">
         <div class="summary-card__row">
           <span>{{ totalLabel() }}</span>
-          <span>تعداد کل کالاها: {{ cartQty() }}</span>
+          <span>تعداد کل کالاها: {{ cartQty() | faNum }}</span>
         </div>
         <div class="summary-card__thumbs">
           <img [src]="a.iconBack" alt="" class="summary-card__more" width="20" height="20" />
@@ -57,7 +57,7 @@
                 <img [src]="src" [alt]="item.productName" width="64" height="64" />
               }
             } @empty {
-              <p class="empty-cart">سبد خالی است</p>
+              <p class="empty-cart">سبد خرید شما خالی است</p>
             }
           </div>
         </div>
@@ -210,7 +210,7 @@
             [class.invalid]="fieldErrors()['recipientMobile']"
             [(ngModel)]="recipientMobile"
             (ngModelChange)="clearFieldError('recipientMobile')"
-            placeholder="0912…"
+            placeholder="۰۹۱۲…"
           />
           @if (fieldErrors()['recipientMobile']; as msg) {
             <span class="field-error">{{ msg }}</span>
@@ -245,8 +245,8 @@
 
   @if (showItemsSheet()) {
     <div class="sheet-backdrop" (click)="closeItemsSheet()"></div>
-    <div class="sheet" role="dialog" aria-label="کالاهای انتخاب شده">
-      <div class="sheet-head">کالاهای انتخاب شده</div>
+    <div class="sheet" role="dialog" aria-label="کالاهای انتخاب‌شده">
+      <div class="sheet-head">کالاهای انتخاب‌شده</div>
       <div class="sheet-body items-sheet">
         @for (item of cartItems(); track item.id) {
           <div class="sheet-item">
@@ -265,7 +265,7 @@
               </p>
               <div class="sheet-item__meta">
                 <span>{{ lineMeta(item) }}</span>
-                <span>{{ item.quantity }} عدد</span>
+                <span>{{ item.quantity | faNum }} عدد</span>
               </div>
             </div>
           </div>

@@ -193,8 +193,8 @@ export class ProductForm implements OnInit {
       .filter((r) => r.price != null)
       .map((r) => ({
         variantValue: r.variantValue.trim() || null,
-        price: r.price as number,
-        discountPrice: r.discountPrice ?? null
+        price: Math.round((r.price as number) * 10),
+        discountPrice: r.discountPrice != null ? Math.round(r.discountPrice * 10) : null
       }));
     if (!prices.length) {
       this.error.set('حداقل یک قیمت لازم است');
@@ -239,10 +239,11 @@ export class ProductForm implements OnInit {
     this.weightGram = p.weightGram ?? null;
     this.shortDescription = p.shortDescription ?? '';
     this.fullDescription = p.fullDescription ?? '';
+    // Money is stored in Rial but admins edit in Toman — divide on load, multiply back on save.
     const rows: PriceRow[] = (p.prices ?? []).map((pr) => ({
       variantValue: pr.variantValue ?? '',
-      price: pr.price != null ? Number(pr.price) : null,
-      discountPrice: pr.discountPrice != null ? Number(pr.discountPrice) : null
+      price: pr.price != null ? Number(pr.price) / 10 : null,
+      discountPrice: pr.discountPrice != null ? Number(pr.discountPrice) / 10 : null
     }));
     this.prices.set(rows.length ? rows : [{ variantValue: '', price: null, discountPrice: null }]);
     this.specs.set(

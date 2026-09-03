@@ -11,7 +11,7 @@
       @if (order(); as o) {
         <section class="receipt-card receipt-card--center">
           <p class="muted">کد پیگیری</p>
-          <p class="tracking">{{ trackingCode() }}</p>
+          <p class="tracking">{{ trackingCode() | faNum }}</p>
           @if (orderDate()) {
             <p class="muted">{{ orderDate() }}</p>
           }
@@ -43,7 +43,7 @@
           <p class="section-title section-title--accent">خرید شما</p>
           @for (item of o.items; track item.id) {
             <div class="buy-line">
-              <span class="qty-badge">{{ item.quantity }} عدد</span>
+              <span class="qty-badge">{{ item.quantity | faNum }} عدد</span>
               <p class="buy-title">
                 {{ item.productName }}
                 @if (variantText(item); as label) {

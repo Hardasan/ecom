@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 public class ProductBatchService {
 
     private static final Logger log = LoggerFactory.getLogger(ProductBatchService.class);
+    private static final BigDecimal RIAL_PER_TOMAN = BigDecimal.TEN;
 
     private final ProductExcelParserService parserService;
     private final ProductRepository productRepository;
@@ -297,11 +298,12 @@ public class ProductBatchService {
         product.setFullDescription(row.get("Full Description"));
 
         Price price = new Price();
-        price.setPrice(new BigDecimal(row.get("Price")));
+        // Admins enter prices in Toman (like the product form); money is stored in Rial, so ×10.
+        price.setPrice(tomanToRial(new BigDecimal(row.get("Price"))));
 
         String discountStr = row.get("Discount Price");
         if (discountStr != null) {
-            price.setDiscountPrice(new BigDecimal(discountStr));
+            price.setDiscountPrice(tomanToRial(new BigDecimal(discountStr)));
         }
 
         String variantTypeStr = row.get("Variant Type");
@@ -342,5 +344,9 @@ public class ProductBatchService {
     private String generateCode(Long categoryId) {
         Long seq = jdbcTemplate.queryForObject("SELECT NEXTVAL('product_code_seq')", Long.class);
         return categoryId + "-" + seq;
+    }
+
+    private static BigDecimal tomanToRial(BigDecimal toman) {
+        return toman.multiply(RIAL_PER_TOMAN);
     }
 }

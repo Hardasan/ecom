@@ -1,3 +1,16 @@
+const FA_DIGITS = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+
+/**
+ * Render the Latin digits in a value as Persian digits, leaving every other character untouched.
+ * Idempotent (Persian digits pass through), so it is safe to apply to values that are already localized.
+ */
+export function toFa(value: string | number | null | undefined): string {
+  if (value == null) {
+    return '';
+  }
+  return String(value).replace(/[0-9]/g, (d) => FA_DIGITS[+d]);
+}
+
 export function toNumber(value: number | string | null | undefined): number {
   if (value == null || value === '') {
     return 0;

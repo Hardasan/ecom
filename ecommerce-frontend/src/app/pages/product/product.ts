@@ -1,6 +1,7 @@
 import { Component, ElementRef, OnInit, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { FaNumPipe } from '../../core/fa-num.pipe';
 import { ASSETS } from '../../assets';
 import { AuthService } from '../../core/auth.service';
 import { CartService } from '../../core/cart.service';
@@ -22,7 +23,7 @@ type TabKey = 'desc' | 'spec' | 'reviews';
 
 @Component({
   selector: 'app-product',
-  imports: [RouterLink, FormsModule],
+  imports: [RouterLink, FormsModule, FaNumPipe],
   templateUrl: './product.html',
   styleUrl: './product.scss'
 })

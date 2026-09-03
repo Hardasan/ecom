@@ -88,7 +88,7 @@ class ProductBatchUploadITest extends AbstractProductITest {
         // Verify price in product_price table
         var priceRow = jdbcTemplate.queryForMap(
                 "SELECT * FROM product_price WHERE product_id = ?", row.get("id"));
-        assertEquals(0, new java.math.BigDecimal("199000")
+        assertEquals(0, new java.math.BigDecimal("1990000")
                 .compareTo((java.math.BigDecimal) priceRow.get("price")));
         assertNull(priceRow.get("discount_price"));
         assertEquals("#FF0000", priceRow.get("variant_value"));
@@ -130,9 +130,9 @@ class ProductBatchUploadITest extends AbstractProductITest {
 
         var price2 = jdbcTemplate.queryForMap(
                 "SELECT * FROM product_price WHERE product_id = ?", multi2.get("id"));
-        assertEquals(0, new java.math.BigDecimal("200000")
+        assertEquals(0, new java.math.BigDecimal("2000000")
                 .compareTo((java.math.BigDecimal) price2.get("price")));
-        assertEquals(0, new java.math.BigDecimal("180000")
+        assertEquals(0, new java.math.BigDecimal("1800000")
                 .compareTo((java.math.BigDecimal) price2.get("discount_price")));
         assertEquals("M", price2.get("variant_value"));
 
@@ -255,7 +255,7 @@ class ProductBatchUploadITest extends AbstractProductITest {
 
         var priceRow = jdbcTemplate.queryForMap(
                 "SELECT * FROM product_price WHERE product_id = ?", row.get("id"));
-        assertEquals(0, new java.math.BigDecimal("75000")
+        assertEquals(0, new java.math.BigDecimal("750000")
                 .compareTo((java.math.BigDecimal) priceRow.get("price")));
         assertEquals("#FF0000", priceRow.get("variant_value"));
     }
@@ -287,9 +287,9 @@ class ProductBatchUploadITest extends AbstractProductITest {
 
         var priceRow = jdbcTemplate.queryForMap(
                 "SELECT * FROM product_price WHERE product_id = ?", row.get("id"));
-        assertEquals(0, new java.math.BigDecimal("50000")
+        assertEquals(0, new java.math.BigDecimal("500000")
                 .compareTo((java.math.BigDecimal) priceRow.get("price")));
-        assertEquals(0, new java.math.BigDecimal("45000")
+        assertEquals(0, new java.math.BigDecimal("450000")
                 .compareTo((java.math.BigDecimal) priceRow.get("discount_price")));
     }
 
@@ -420,9 +420,9 @@ class ProductBatchUploadITest extends AbstractProductITest {
         assertEquals(1, (int) jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM product_price WHERE product_id = ?", Integer.class, id));
         var priceRow = jdbcTemplate.queryForMap("SELECT * FROM product_price WHERE product_id = ?", id);
-        assertEquals(0, new java.math.BigDecimal("250000")
+        assertEquals(0, new java.math.BigDecimal("2500000")
                 .compareTo((java.math.BigDecimal) priceRow.get("price")));
-        assertEquals(0, new java.math.BigDecimal("200000")
+        assertEquals(0, new java.math.BigDecimal("2000000")
                 .compareTo((java.math.BigDecimal) priceRow.get("discount_price")));
         assertEquals("L", priceRow.get("variant_value"));
     }

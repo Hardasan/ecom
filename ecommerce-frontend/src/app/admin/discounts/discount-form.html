@@ -25,17 +25,17 @@
           </select>
         </label>
         <label>
-          <span>{{ type === 'PERCENTAGE' ? 'درصد (۱ تا ۱۰۰)' : 'مبلغ (ریال)' }} *</span>
+          <span>{{ type === 'PERCENTAGE' ? 'درصد (۱ تا ۱۰۰)' : 'مبلغ (تومان)' }} *</span>
           <input class="field" type="number" [(ngModel)]="value" />
         </label>
         @if (type === 'PERCENTAGE') {
           <label>
-            <span>سقف تخفیف (ریال)</span>
+            <span>سقف تخفیف (تومان)</span>
             <input class="field" type="number" [(ngModel)]="maxDiscountAmount" />
           </label>
         }
         <label>
-          <span>حداقل مبلغ سبد (ریال)</span>
+          <span>حداقل مبلغ سبد (تومان)</span>
           <input class="field" type="number" [(ngModel)]="minimumCartAmount" />
         </label>
         <label>

@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { FaNumPipe } from '../../core/fa-num.pipe';
 import { ASSETS } from '../../assets';
 import { CartService } from '../../core/cart.service';
 import { CartDto, CartItemDto } from '../../core/models';
@@ -7,7 +8,7 @@ import { colorHex, formatPrice, imageSrc, toNumber, variantLabel } from '../../c
 
 @Component({
   selector: 'app-cart',
-  imports: [RouterLink],
+  imports: [RouterLink, FaNumPipe],
   templateUrl: './cart.html',
   styleUrl: './cart.scss'
 })

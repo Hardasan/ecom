@@ -40,7 +40,7 @@
       <div class="info">
         <div class="rating">
           <span class="rating-count">{{ reviewCount() }}</span>
-          <span class="rating-score">{{ ratingText() }}</span>
+          <span class="rating-score">{{ ratingText() | faNum }}</span>
           <img [src]="a.iconStar" alt="" width="16" height="16" />
         </div>
         <h1>{{ name() }}</h1>
@@ -105,7 +105,7 @@
           <div class="reviews-summary">
             <div class="reviews-score">
               <img [src]="a.iconStar" alt="" width="18" height="18" />
-              <strong>{{ ratingText() }}</strong>
+              <strong>{{ ratingText() | faNum }}</strong>
             </div>
             <span class="reviews-count">{{ reviewCount() }}</span>
           </div>
@@ -175,7 +175,7 @@
               }
             </ul>
           } @else {
-            <p class="reviews-empty">هنوز نظری ثبت نشده است. اولین نفر باشید!</p>
+            <p class="reviews-empty">هنوز نظری ثبت نشده است. اولین نفری باشید که نظر می‌دهد.</p>
           }
         </section>
       </div>
@@ -194,7 +194,7 @@
           <div class="price-old">
             <span class="strike">{{ old }}</span>
             @if (discountPercent(); as pct) {
-              <span class="badge">{{ pct }}</span>
+              <span class="badge">{{ pct | faNum }}</span>
             }
           </div>
         }

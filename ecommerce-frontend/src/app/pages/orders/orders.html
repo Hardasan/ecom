@@ -22,11 +22,11 @@
           <a class="order-card" [routerLink]="['/orders', order.id]">
             <div class="order-card__row">
               <span>{{ dateLabel(order) }}</span>
-              <strong>{{ tracking(order) }}</strong>
+              <strong>{{ tracking(order) | faNum }}</strong>
             </div>
             <div class="order-card__row">
               <span>{{ total(order) }}</span>
-              <span>{{ qty(order) }}</span>
+              <span>{{ qty(order) | faNum }}</span>
             </div>
             <div class="order-card__thumbs">
               <img [src]="a.iconBack" alt="" class="order-card__more" width="20" height="20" />

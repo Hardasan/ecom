@@ -103,9 +103,11 @@ export class DiscountForm implements OnInit {
     const body: DiscountDto = {
       code: this.code.trim(),
       type: this.type,
-      value: this.value,
-      maxDiscountAmount: this.type === 'PERCENTAGE' ? this.maxDiscountAmount ?? null : null,
-      minimumCartAmount: this.minimumCartAmount ?? null,
+      // Admins edit money in Toman; convert back to the Rial the backend stores (a percent value stays as-is).
+      value: this.type === 'FIXED_AMOUNT' ? Math.round(this.value! * 10) : this.value,
+      maxDiscountAmount:
+        this.type === 'PERCENTAGE' && this.maxDiscountAmount != null ? Math.round(this.maxDiscountAmount * 10) : null,
+      minimumCartAmount: this.minimumCartAmount != null ? Math.round(this.minimumCartAmount * 10) : null,
       scope: this.scope,
       productIds: this.scope === 'PRODUCTS' ? this.parseIds(this.productIdsText) : null,
       categoryIds: this.scope === 'CATEGORIES' ? Array.from(this.selectedCategoryIds()) : null,
@@ -131,9 +133,11 @@ export class DiscountForm implements OnInit {
   private fill(d: DiscountDto): void {
     this.code = d.code;
     this.type = d.type;
-    this.value = d.value != null ? Number(d.value) : null;
-    this.maxDiscountAmount = d.maxDiscountAmount != null ? Number(d.maxDiscountAmount) : null;
-    this.minimumCartAmount = d.minimumCartAmount != null ? Number(d.minimumCartAmount) : null;
+    // Money is stored in Rial but admins edit in Toman — divide on load, multiply back on save.
+    // A percentage discount's `value` is a percent (1–100), not money, so it is left untouched.
+    this.value = d.value != null ? (d.type === 'FIXED_AMOUNT' ? Number(d.value) / 10 : Number(d.value)) : null;
+    this.maxDiscountAmount = d.maxDiscountAmount != null ? Number(d.maxDiscountAmount) / 10 : null;
+    this.minimumCartAmount = d.minimumCartAmount != null ? Number(d.minimumCartAmount) / 10 : null;
     this.scope = d.scope;
     this.productIdsText = (d.productIds ?? []).join(', ');
     this.selectedCategoryIds.set(new Set(d.categoryIds ?? []));

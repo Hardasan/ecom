@@ -16,7 +16,7 @@
       @if (order(); as o) {
         <section class="receipt-card receipt-card--center">
           <p class="muted">کد پیگیری</p>
-          <p class="tracking">{{ trackingCode() }}</p>
+          <p class="tracking">{{ trackingCode() | faNum }}</p>
           @if (orderDate()) {
             <p class="muted">{{ orderDate() }}</p>
           }
@@ -65,7 +65,7 @@
                   </p>
                 }
                 <p class="item-card__price">{{ itemPrice(item) }}</p>
-                <span class="qty-badge">{{ item.quantity }} عدد</span>
+                <span class="qty-badge">{{ item.quantity | faNum }} عدد</span>
               </div>
             </div>
           }

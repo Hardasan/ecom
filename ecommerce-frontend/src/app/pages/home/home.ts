@@ -59,7 +59,7 @@ export class Home implements OnInit {
         });
       },
       error: () => {
-        this.error.set('ارتباط با سرور برقرار نشد. بک‌اند را روی پورت ۸۰۸۱ اجرا کنید.');
+        this.error.set('ارتباط با سرور برقرار نشد. لطفاً دوباره تلاش کنید.');
         this.loading.set(false);
       }
     });

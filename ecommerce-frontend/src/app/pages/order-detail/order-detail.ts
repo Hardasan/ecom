@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { FaNumPipe } from '../../core/fa-num.pipe';
 import { ASSETS } from '../../assets';
 import { AuthService } from '../../core/auth.service';
 import { OrderService } from '../../core/order.service';
@@ -16,7 +17,7 @@ import {
 
 @Component({
   selector: 'app-order-detail',
-  imports: [RouterLink],
+  imports: [RouterLink, FaNumPipe],
   templateUrl: './order-detail.html',
   styleUrl: './order-detail.scss'
 })

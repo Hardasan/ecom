@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { FaNumPipe } from '../../core/fa-num.pipe';
 import { ASSETS } from '../../assets';
 import { AuthService } from '../../core/auth.service';
 import { OrderService } from '../../core/order.service';
@@ -8,7 +9,7 @@ import { colorHex, formatPrice, toNumber, variantLabel } from '../../core/format
 
 @Component({
   selector: 'app-success',
-  imports: [RouterLink],
+  imports: [RouterLink, FaNumPipe],
   templateUrl: './success.html',
   styleUrl: './success.scss'
 })

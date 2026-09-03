@@ -13,7 +13,7 @@
     } @else if (error()) {
       <p class="state error">{{ error() }}</p>
     } @else if (!items().length) {
-      <p class="state">سبد خرید خالی است</p>
+      <p class="state">سبد خرید شما خالی است. کالاهای مورد علاقه‌تان را از فروشگاه اضافه کنید.</p>
     } @else {
       <div class="cart-body">
         @for (item of items(); track item.id) {
@@ -35,7 +35,7 @@
                   <button type="button" (click)="dec(item)" aria-label="کاهش">
                     <img [src]="a.iconMinus" alt="" width="14" height="14" />
                   </button>
-                  <span>{{ item.quantity }}</span>
+                  <span>{{ item.quantity | faNum }}</span>
                   <button type="button" (click)="inc(item)" aria-label="افزایش">
                     <img [src]="a.iconPlus" alt="" width="14" height="14" />
                   </button>

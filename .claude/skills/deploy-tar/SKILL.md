@@ -1,6 +1,6 @@
 ---
 name: deploy-tar
-description: Manually deploy a saved Docker image tar (`docker save` output) to the VPS when the automated CD/GHCR pull path is down. Uploads the tar, loads it, re-tags to rivani:latest, recreates only the ecom container, and verifies health. Use when CD fails to reach ghcr.io.
+description: Manually deploy a saved Docker image tar (`docker save` output) to the VPS when a release deploy can't pull the image from GHCR. Uploads the tar, loads it, re-tags to the GHCR ref the compose stack runs (ghcr.io/hardasan/ecom:latest), recreates only the ecom container, and verifies health. Use when the VPS can't reach ghcr.io.
 user-invocable: true
 allowed-tools:
   - Read
@@ -9,12 +9,14 @@ allowed-tools:
 
 # /deploy-tar — Manual image-tar deploy to the VPS
 
-Fallback for [deploy.md](../../rules/deploy.md) when the CD pipeline can't push/pull through
-`ghcr.io` (the VPS `watch-image.timer` logs `TLS handshake timeout`). Ships a local
+Fallback for [deploy.md](../../rules/deploy.md) when a release deploy can't roll out because the VPS
+can't reach `ghcr.io` (e.g. `docker compose pull` fails with `TLS handshake timeout`). Ships a local
 `docker save` tar straight to the server over SSH — no registry involved.
 
-The stack: compose service `ecom` runs image **`rivani:latest`** in `/opt/rivani`; Host Nginx
-proxies `:80 → 127.0.0.1:8080`. Postgres/Redis + their data volumes are **not** touched by this flow.
+The stack: compose service `ecom` runs image **`ghcr.io/hardasan/ecom:${ECOM_TAG:-latest}`** in
+`/opt/rivani`; Host Nginx proxies `:80 → 127.0.0.1:8080`. Postgres/Redis + their data volumes are
+**not** touched by this flow. This fallback loads the tar and re-tags it to that ref locally, so
+`docker compose up` runs it without any registry pull.
 
 ---
 
@@ -45,15 +47,16 @@ import sys, tarfile, json
 t = tarfile.open(sys.argv[1])
 m = json.load(t.extractfile('manifest.json'))[0]
 c = json.load(t.extractfile(m['Config']))
-print('RepoTags:', m.get('RepoTags'))          # often ['rivani-v1:latest'] — NOT rivani:latest
+print('RepoTags:', m.get('RepoTags'))          # often ['rivani-v1:latest'] — NOT the compose ref
 print('arch/os :', c.get('architecture'), c.get('os'))   # must be: amd64 linux
 print('created :', c.get('created'))
 PY
 ```
 
 Abort if arch ≠ `amd64` — rebuild with `docker build --platform linux/amd64 …` first.
-Note the `RepoTags` value; call it `LOADED_TAG` below (the compose stack wants `rivani:latest`,
-but `docker save` usually preserves the build tag like `rivani-v1:latest`).
+Note the `RepoTags` value; call it `LOADED_TAG` below (the compose stack runs
+`ghcr.io/hardasan/ecom:latest`, but `docker save` usually preserves the build tag like
+`rivani-v1:latest`, so step 5 re-tags it).
 
 ---
 
@@ -93,15 +96,18 @@ Note the `Loaded image: <tag>` line — that's `LOADED_TAG` (e.g. `rivani-v1:lat
 
 ## 5. Tag + recreate — reuse the project's own script
 
-`update-app.sh` already does tag → recreate `ecom` → wait-for-health → prune, so feed it the loaded
-tag with `SKIP_PULL=1` (image is already local — no registry pull):
+The compose stack runs `ghcr.io/hardasan/ecom:${ECOM_TAG:-latest}`, so re-tag the loaded image to
+that ref, then hand it to `update-app.sh` with `SKIP_PULL=1` (image is already local — no registry
+pull). `update-app.sh` does recreate `ecom` → wait-for-health → prune:
 
 ```bash
-$SSH $SERVER 'IMAGE=<LOADED_TAG> SKIP_PULL=1 DEPLOY_DIR=/opt/rivani bash /opt/rivani/update-app.sh'
+$SSH $SERVER 'docker tag <LOADED_TAG> ghcr.io/hardasan/ecom:latest && \
+  IMAGE=ghcr.io/hardasan/ecom:latest SKIP_PULL=1 DEPLOY_DIR=/opt/rivani bash /opt/rivani/update-app.sh'
 ```
 
-It re-tags `<LOADED_TAG> → rivani:latest`, force-recreates **only** `ecom` (`--no-deps`), waits up to
-180 s for health, then `docker image prune -f`. Success prints `app is healthy (<LOADED_TAG>)`.
+With `SKIP_PULL=1` it skips the `docker compose pull`, force-recreates **only** `ecom` (`--no-deps`)
+from the local image, waits up to 180 s for health, then `docker image prune -f`. Success prints
+`app is healthy (ghcr.io/hardasan/ecom:latest)`.
 
 ---
 
@@ -129,9 +135,7 @@ $SSH $SERVER 'rm -f /root/rivani.tar'
 ## Notes
 
 - **Data is safe.** Only `ecom` is recreated; `postgres_data` / `redis_data` volumes persist.
-- **watch-image.timer race.** The per-minute timer keeps trying `ghcr.io/hardasan/ecom:main`. While
-  that pull fails it's harmless (exits before touching the container). But if GHCR recovers and an
-  **older** `:main` image exists, the timer can redeploy over your manual image. To hold your build
-  in place: `systemctl stop rivani-update.timer` before the deploy and start it again once CD is fixed.
+- **No auto-redeploy.** Deploys happen only on a version-tag Release, so nothing on the VPS overwrites
+  your manually-loaded image on its own — it stays until the next release (or another manual deploy).
 - **Permanent fix** is the VPS → `ghcr.io` connectivity itself (DNS / MTU / firewall behind the
   `TLS handshake timeout`), not this flow.

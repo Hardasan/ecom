@@ -1,29 +1,34 @@
 #!/bin/bash
-# Recreate the app container from IMAGE, tagged locally as rivani:latest.
-# Expected env: IMAGE (ghcr.io/owner/repo:sha)
+# Roll out a new app image via docker compose: pull it from GHCR, then recreate ecom.
+# This is exactly the manual flow (`docker compose pull ecom && docker compose up -d`),
+# just driven over SSH from CI.
+#
+# Expected env: IMAGE (ghcr.io/owner/repo:TAG) — TAG selects which published image to run.
 # Optional: GHCR_USER + GHCR_TOKEN for private GHCR pulls.
+#           SKIP_PULL=1 to skip the registry pull (image is already present locally,
+#           e.g. the deploy-tar fallback when ghcr.io is unreachable).
 set -euo pipefail
 
 : "${IMAGE:?IMAGE is required}"
 DEPLOY_DIR="${DEPLOY_DIR:-/opt/rivani}"
+# The compose file reads ${ECOM_TAG:-latest}; run the tag this workflow published.
+export ECOM_TAG="${IMAGE##*:}"
 
 if [ -n "${GHCR_TOKEN:-}" ]; then
   : "${GHCR_USER:?GHCR_USER is required when GHCR_TOKEN is set}"
   echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
 fi
 
+cd "$DEPLOY_DIR"
 if [ "${SKIP_PULL:-}" != "1" ]; then
-  docker pull "$IMAGE"
+  docker compose --env-file .env pull ecom
 fi
-docker tag "$IMAGE" rivani:latest
+docker compose --env-file .env up -d --remove-orphans
+docker compose --env-file .env up -d --force-recreate --no-deps ecom
 
 if [ -n "${GHCR_TOKEN:-}" ]; then
   docker logout ghcr.io >/dev/null
 fi
-
-cd "$DEPLOY_DIR"
-docker compose --env-file .env up -d --remove-orphans
-docker compose --env-file .env up -d --force-recreate --no-deps ecom
 
 echo "waiting for health..."
 status=""

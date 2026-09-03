@@ -2,7 +2,8 @@ name: Release
 
 # Cut a release by pushing a version tag, e.g.:
 #   git tag v0.1.0 && git push origin v0.1.0
-# Publishes the jar + versioned GHCR image, then deploys that image to the VPS.
+# Publishes the jar + versioned GHCR image (also tagged :latest), then SSHes to the
+# VPS and rolls it out with `docker compose pull ecom && docker compose up -d`.
 on:
   push:
     tags: ['v*']

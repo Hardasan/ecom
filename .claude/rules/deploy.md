@@ -8,42 +8,31 @@ Non-obvious CI/CD only. Architecture → [CLAUDE.md](../../CLAUDE.md).
 
 | Phase | File | When | What |
 |-------|------|------|------|
-| **CI** | `.github/workflows/ci.yml` | PR to `main`, or push to `main` | Tests only. No image, no deploy. `skip cd` does **not** skip CI. |
-| **CD** | `.github/workflows/cd.yml` | Push/merge to `main`, or **Actions → CD → Run workflow** | Publish image (`:sha`, `:main`) then deploy. Does **not** re-run tests. |
-| **Release** | `.github/workflows/release.yml` | Push tag `v*` | Tests + GitHub Release jar + versioned image (`0.1.0`, `latest`) then deploy that image. |
-| *(helper)* | `.github/workflows/deploy-server.yml` | Called by CD and Release | `docker pull` + recreate `ecom`. Not a phase. |
+| **CI** | `.github/workflows/ci.yml` | PR to `main`, or push to `main` | Tests only. No image, no deploy. |
+| **Release** | `.github/workflows/release.yml` | Push tag `v*` | Tests + GitHub Release jar + versioned GHCR image (`0.1.0`, `0.1`, `latest`), then SSH-deploy that image to the VPS. |
+| *(helper)* | `.github/workflows/deploy-server.yml` | Called by Release | SSH → `docker compose pull ecom` + `up -d`. Not a phase. |
 
-Default branch is **`main`**.
+Default branch is **`main`**. **Deploys happen only on a version tag** — pushes to `main` just run CI.
 
 ---
 
-## Skip CD
-
-A push or merge to `main` deploys unless the **head commit message** contains `skip cd` (or `[skip cd]`):
-
-```bash
-git commit -m "tweak copy skip cd"
-git push origin main
-```
-
-On a GitHub PR merge, put `skip cd` in the merge/squash commit message.
-
-Deploy later: **Actions → CD → Run workflow**, or:
+## Cut a release (the only deploy path)
 
 ```bash
 git tag v0.1.0 && git push origin v0.1.0
 ```
 
-`git tag` alone is local; GitHub only sees the tag after `git push origin v0.1.0`.
+`git tag` alone is local; GitHub only sees the tag — and runs Release — after `git push origin v0.1.0`.
+Release then: builds + tests → publishes the image to GHCR (`0.1.0`, `0.1`, `latest`) → SSHes to the
+VPS → rolls it out with `docker compose pull ecom && docker compose up -d`. Nothing else auto-deploys.
 
 ---
 
 ## Image and host
 
-- Registry: `ghcr.io/<owner>/ecom` (lowercase). CD tags `:main` and `:<sha>`. Release tags semver + `latest`.
-- VPS: `root@45.94.215.219`, stack `/opt/rivani`, compose service `ecom`, local image `rivani:latest`.
+- Registry: `ghcr.io/<owner>/ecom` (lowercase). Release tags semver (`0.1.0`, `0.1`) + `latest`.
+- VPS: `root@45.94.215.219`, stack `/opt/rivani`, compose service `ecom`, image `ghcr.io/hardasan/ecom:${ECOM_TAG:-latest}` pulled straight from GHCR (`docker compose pull ecom && docker compose up -d`); set `ECOM_TAG` in `/opt/rivani/.env` to pin/roll back.
 - Host Nginx proxies to `127.0.0.1:8080` (`deploy/nginx-rivani.conf`).
-- A systemd timer on the VPS also pulls `:main` if the digest changed (`deploy/watch-image.sh`).
 
 ---
 

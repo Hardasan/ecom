@@ -1,5 +1,10 @@
 # Production stack: custom app image + Postgres. Host Nginx proxies to 127.0.0.1:8080.
 # Postgres/Redis stay on the compose network (not published).
+#
+# The app image is pulled straight from GHCR, so on the server you deploy with:
+#   docker compose pull ecom && docker compose up -d
+# ECOM_TAG selects which published tag to run (defaults to the newest release, :latest).
+# Pin/roll back by setting ECOM_TAG in .env, e.g. ECOM_TAG=0.1.0.
 
 name: rivani
 
@@ -29,7 +34,7 @@ services:
       - redis_data:/data
 
   ecom:
-    image: rivani:latest
+    image: ghcr.io/hardasan/ecom:${ECOM_TAG:-latest}
     container_name: rivani
     restart: unless-stopped
     ports:

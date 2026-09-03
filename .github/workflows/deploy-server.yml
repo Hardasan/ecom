@@ -1,6 +1,6 @@
 name: Deploy server
 
-# Shared by CD (main) and Release (version tags). Not run on its own.
+# Called by Release (version tags) to roll the new image out to the VPS. Not run on its own.
 on:
   workflow_call:
     inputs:
@@ -53,7 +53,7 @@ jobs:
             docker-compose.prod.yml \
             "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_DIR}/docker-compose.yml"
           scp -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes \
-            deploy/update-app.sh deploy/watch-image.sh \
+            deploy/update-app.sh \
             "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_DIR}/"
 
       - name: Pull image and recreate app

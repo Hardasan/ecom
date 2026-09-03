@@ -1,7 +1,7 @@
 name: CI
 
 # Tests only. No Docker image, no publish, no deploy.
-# Runs on PRs and on pushes to main (including skip-cd pushes). Shipping is CD / Release.
+# Runs on PRs and on pushes to main. Shipping is the Release workflow (push a v* tag).
 on:
   push:
     branches: [main]

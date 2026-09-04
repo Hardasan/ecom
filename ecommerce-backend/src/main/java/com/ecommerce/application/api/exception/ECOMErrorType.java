@@ -56,7 +56,11 @@ public enum ECOMErrorType {
     DISCOUNT_EXPIRED(HttpStatus.CONFLICT, "error.discount.expired"),
     DISCOUNT_USAGE_LIMIT_REACHED(HttpStatus.CONFLICT, "error.discount.usage.limit.reached"),
     DISCOUNT_MINIMUM_NOT_MET(HttpStatus.CONFLICT, "error.discount.minimum.not.met"),
-    DISCOUNT_NOT_APPLICABLE(HttpStatus.CONFLICT, "error.discount.not.applicable");
+    DISCOUNT_NOT_APPLICABLE(HttpStatus.CONFLICT, "error.discount.not.applicable"),
+    ORDER_NOT_RETURNABLE(HttpStatus.CONFLICT, "error.return.order.not.returnable"),
+    RETURN_ALREADY_REQUESTED(HttpStatus.CONFLICT, "error.return.already.requested"),
+    RETURN_ITEM_INVALID(HttpStatus.BAD_REQUEST, "error.return.item.invalid"),
+    RETURN_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "error.return.not.found");
 
     private final HttpStatus httpStatus;
     private final String messageKey;

@@ -15,6 +15,7 @@ import com.ecommerce.persistence.entity.enumeration.ProductStatus;
 import com.ecommerce.persistence.repository.BrandRepository;
 import com.ecommerce.persistence.repository.CategoryRepository;
 import com.ecommerce.persistence.repository.ProductRepository;
+import com.ecommerce.persistence.repository.ProductReviewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,7 +25,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.ecommerce.application.util.SecurityUtil.isAdmin;
 
@@ -35,6 +41,7 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final BrandRepository brandRepository;
+    private final ProductReviewRepository productReviewRepository;
     private final ProductMapper productMapper;
     private final JdbcTemplate jdbcTemplate;
 
@@ -71,8 +78,11 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public Page<SearchProductResponseDto> search(SearchProductRequestDto searchDto, Pageable pageable) {
-        return productRepository.findAll(ProductSpecifications.build(searchDto, isAdmin()), pageable)
+        Page<SearchProductResponseDto> page = productRepository
+                .findAll(ProductSpecifications.build(searchDto, isAdmin()), pageable)
                 .map(productMapper::toSummaryDto);
+        enrichRatings(page.getContent());
+        return page;
     }
 
     /**
@@ -86,7 +96,31 @@ public class ProductService {
                 .stream()
                 .map(productMapper::toSummaryDto)
                 .toList();
+        enrichRatings(products);
         return new SpecialSaleProductListResponseDto(products);
+    }
+
+    /**
+     * Fill in averageRating + ratingCount on a page/list of product summaries from a single grouped
+     * query over PUBLISHED reviews. Products with no published reviews get ratingCount 0 (no badge).
+     */
+    private void enrichRatings(List<SearchProductResponseDto> items) {
+        if (items == null || items.isEmpty()) {
+            return;
+        }
+        var ids = items.stream().map(SearchProductResponseDto::getId).toList();
+        Map<Long, Double> avg = new HashMap<>();
+        Map<Long, Long> count = new HashMap<>();
+        for (Object[] row : productReviewRepository.aggregatePublishedByProductIds(ids)) {
+            Long productId = (Long) row[0];
+            double average = row[1] == null ? 0d : ((Number) row[1]).doubleValue();
+            avg.put(productId, BigDecimal.valueOf(average).setScale(1, RoundingMode.HALF_UP).doubleValue());
+            count.put(productId, ((Number) row[2]).longValue());
+        }
+        for (SearchProductResponseDto dto : items) {
+            dto.setRatingCount(count.getOrDefault(dto.getId(), 0L));
+            dto.setAverageRating(avg.getOrDefault(dto.getId(), 0d));
+        }
     }
 
     @Transactional

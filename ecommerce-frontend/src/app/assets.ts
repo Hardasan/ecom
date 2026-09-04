@@ -24,5 +24,9 @@ export const ASSETS = {
   iconTick: `${BASE}/icon-tick.svg`,
   iconDownload: `${BASE}/icon-download.svg`,
   iconMapPin: `${BASE}/icon-map-pin.svg`,
-  iconRadio: `${BASE}/icon-radio.svg`
+  iconRadio: `${BASE}/icon-radio.svg`,
+  iconNotif: `${BASE}/icon-notif.svg`,
+  iconClock: `${BASE}/icon-clock.svg`,
+  iconReturn: `${BASE}/icon-return.svg`,
+  iconLogout: `${BASE}/icon-logout.svg`
 } as const;

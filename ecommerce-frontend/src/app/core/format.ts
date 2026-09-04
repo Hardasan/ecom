@@ -20,9 +20,36 @@ export function toNumber(value: number | string | null | undefined): number {
 
 // Monetary values are stored in Rial (shipping tariff + order totals are computed in Rial);
 // shoppers see Toman, so divide by 10 and label تومان everywhere.
+export function toToman(value: number | string | null | undefined): number {
+  return Math.round(toNumber(value) / 10);
+}
+
+/** Toman amount as localized Persian digits WITHOUT the تومان unit (for split amount/unit layouts). */
+export function tomanText(value: number | string | null | undefined): string {
+  return new Intl.NumberFormat('fa-IR').format(toToman(value));
+}
+
 export function formatPrice(value: number | string | null | undefined): string {
-  const toman = Math.round(toNumber(value) / 10);
-  return `${new Intl.NumberFormat('fa-IR').format(toman)} تومان`;
+  return `${tomanText(value)} تومان`;
+}
+
+/**
+ * The two prices for a single product line: the amount the shopper pays (`now`) and, when a
+ * discount is active, the struck-through original (`was`) plus the rounded percent off. All in Rial.
+ */
+export function priceParts(prices?: { price: number | string; discountPrice?: number | string | null }[]): {
+  now: number;
+  was: number | null;
+  percentOff: number;
+} {
+  const first = prices?.[0];
+  if (!first) return { now: 0, was: null, percentOff: 0 };
+  const price = toNumber(first.price);
+  const discount = first.discountPrice != null ? toNumber(first.discountPrice) : 0;
+  if (discount > 0 && discount < price) {
+    return { now: discount, was: price, percentOff: Math.round(((price - discount) / price) * 100) };
+  }
+  return { now: price, was: null, percentOff: 0 };
 }
 
 export function imageSrc(image?: { imageData?: string | null } | string | null): string {

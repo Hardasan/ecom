@@ -2,7 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_BASE_URL } from '../api.config';
-import { CheckoutQuoteDto, OrderDto, PaymentInitiationDto, PaymentMethod } from './models';
+import {
+  CheckoutQuoteDto,
+  DiscountPreviewDto,
+  OrderDto,
+  PaymentInitiationDto,
+  PaymentMethod
+} from './models';
 
 @Injectable({ providedIn: 'root' })
 export class OrderService {
@@ -13,8 +19,21 @@ export class OrderService {
     return this.http.post<CheckoutQuoteDto>(`${API_BASE_URL}/checkout/quote`, { addressId });
   }
 
-  checkout(addressId: number, paymentMethod: PaymentMethod = 'ONLINE'): Observable<OrderDto> {
-    return this.http.post<OrderDto>(`${API_BASE_URL}/checkout`, { addressId, paymentMethod });
+  /** Validate a discount code against the current cart and preview the amount off (no order). */
+  previewDiscount(code: string): Observable<DiscountPreviewDto> {
+    return this.http.post<DiscountPreviewDto>(`${API_BASE_URL}/discounts/preview`, { code });
+  }
+
+  checkout(
+    addressId: number,
+    paymentMethod: PaymentMethod = 'ONLINE',
+    discountCode?: string | null
+  ): Observable<OrderDto> {
+    return this.http.post<OrderDto>(`${API_BASE_URL}/checkout`, {
+      addressId,
+      paymentMethod,
+      discountCode: discountCode || null
+    });
   }
 
   cancel(orderId: number): Observable<OrderDto> {

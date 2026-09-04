@@ -24,27 +24,4 @@
       <p class="hint">{{ hint() }}</p>
     </form>
   </div>
-
-  <nav class="bottom-nav" aria-label="منوی اصلی">
-    <a routerLink="/" class="bottom-nav__item">
-      <img [src]="a.iconHome" alt="" width="24" height="24" />
-      <span>خانه</span>
-    </a>
-    <a routerLink="/search" class="bottom-nav__item is-active">
-      <img [src]="a.iconSearchNav" alt="" width="24" height="24" />
-      <span>جستجو</span>
-    </a>
-    <a routerLink="/categories" class="bottom-nav__item">
-      <img [src]="a.iconGrid" alt="" width="24" height="24" />
-      <span>دسته‌بندی</span>
-    </a>
-    <a
-      [routerLink]="auth.isLoggedIn() ? '/profile' : '/login'"
-      [queryParams]="auth.isLoggedIn() ? null : { returnUrl: '/profile' }"
-      class="bottom-nav__item"
-    >
-      <img [src]="a.iconUser" alt="" width="24" height="24" />
-      <span>پروفایل</span>
-    </a>
-  </nav>
 </div>

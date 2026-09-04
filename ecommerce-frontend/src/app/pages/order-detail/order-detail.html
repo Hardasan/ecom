@@ -88,6 +88,12 @@
             }
           </section>
         }
+
+        @if (o.status === 'RECEIVED') {
+          <section class="order-actions">
+            <a [routerLink]="['/returns/new', o.id]" class="btn-outline">درخواست مرجوعی</a>
+          </section>
+        }
       } @else if (!error()) {
         <p class="muted center">در حال بارگذاری…</p>
       }

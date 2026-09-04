@@ -2,7 +2,6 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ASSETS } from '../../assets';
-import { AuthService } from '../../core/auth.service';
 
 @Component({
   selector: 'app-search',
@@ -12,7 +11,6 @@ import { AuthService } from '../../core/auth.service';
 })
 export class SearchPage {
   readonly a = ASSETS;
-  readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   query = '';
   readonly hint = signal('نام محصول را جستجو کنید');

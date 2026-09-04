@@ -1,0 +1,72 @@
+// Bottom tab-bar — 56px, white, hairline top border in the green-tinted neutral (design: #eff2ee).
+.bottom-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 6px 24px;
+  background: #fff;
+  border-top: 1px solid var(--surface-2);
+  flex-shrink: 0;
+
+  &__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 56px;
+    border: none;
+    background: none;
+    padding: 0;
+    color: var(--ink-muted);
+    font-size: 10px;
+    font-weight: 500;
+    cursor: pointer;
+
+    &.is-active {
+      color: var(--brand);
+      font-weight: 700;
+    }
+  }
+}
+
+// Cart icon needs a positioning context for its badge.
+.ic-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+// Mask-based icons: the SVG is the alpha mask, `currentColor` paints it — so the active tab's
+// brand-green `color` tints the glyph as well as the label.
+.ic {
+  width: 24px;
+  height: 24px;
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+
+  &--home {
+    -webkit-mask-image: url('/assets/rivani/icon-home.svg');
+    mask-image: url('/assets/rivani/icon-home.svg');
+  }
+
+  &--cart {
+    -webkit-mask-image: url('/assets/rivani/icon-cart.svg');
+    mask-image: url('/assets/rivani/icon-cart.svg');
+  }
+
+  &--cats {
+    -webkit-mask-image: url('/assets/rivani/icon-grid.svg');
+    mask-image: url('/assets/rivani/icon-grid.svg');
+  }
+
+  &--user {
+    -webkit-mask-image: url('/assets/rivani/icon-user.svg');
+    mask-image: url('/assets/rivani/icon-user.svg');
+  }
+}

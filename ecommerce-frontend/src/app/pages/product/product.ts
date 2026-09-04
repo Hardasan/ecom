@@ -173,6 +173,17 @@ export class Product implements OnInit {
     return s ? `(${new Intl.NumberFormat('fa-IR').format(s.totalCount)} نظر)` : '';
   }
 
+  /** Reviews-tab histogram: one row per star 5→1 with its count and bar fill percentage. */
+  histogram(): { star: number; count: number; pct: number }[] {
+    const s = this.summary();
+    const counts = s?.ratingCounts ?? {};
+    const total = s?.totalCount ?? 0;
+    return [5, 4, 3, 2, 1].map((star) => {
+      const count = Number(counts[star] ?? 0);
+      return { star, count, pct: total > 0 ? Math.round((count / total) * 100) : 0 };
+    });
+  }
+
   specEntries(): { key: string; value: string }[] {
     const spec = this.product()?.specification;
     if (!spec) {
@@ -278,6 +289,11 @@ export class Product implements OnInit {
 
   stars(rating: number): number[] {
     return [1, 2, 3, 4, 5].map((n) => (n <= rating ? 1 : 0));
+  }
+
+  /** Filled/empty stars for the average score shown atop the reviews histogram. */
+  summaryStars(): number[] {
+    return this.stars(Math.round(toNumber(this.summary()?.averageRating ?? 0)));
   }
 
   toggleWishlist() {
@@ -388,11 +404,11 @@ export class Product implements OnInit {
       .subscribe({
         next: () => {
           this.buying.set(false);
-          this.flash('به سبد اضافه شد');
+          this.flash('به سبد خرید اضافه شد');
         },
         error: (err) => {
           this.buying.set(false);
-          this.error.set(err?.error?.message ?? 'افزودن به سبد ناموفق بود');
+          this.error.set(err?.error?.message ?? 'افزودن به سبد خرید انجام نشد. لطفاً دوباره تلاش کنید.');
         }
       });
   }

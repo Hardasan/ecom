@@ -246,6 +246,97 @@
   border-radius: 50%;
 }
 
+// Radio indicator for the payment options (filled dot when selected).
+.pay-radio {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  flex-shrink: 0;
+
+  &.on {
+    border-color: var(--brand);
+    background: radial-gradient(circle, var(--brand) 0 5px, #fff 6px 100%);
+  }
+}
+
+.pay-option.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.pay-soon {
+  margin-inline-start: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-subtle);
+}
+
+.saving {
+  color: var(--brand);
+  font-weight: 700;
+}
+
+/* Discount code (کد تخفیف) */
+.discount-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.discount-input {
+  flex: 1;
+}
+
+.discount-apply {
+  border: none;
+  background: none;
+  color: var(--brand);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 0 4px;
+
+  &:disabled {
+    color: var(--ink-subtle);
+    cursor: not-allowed;
+  }
+}
+
+.discount-applied {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: #fff;
+  border: 1px solid var(--brand);
+  border-radius: var(--radius-md);
+}
+
+.discount-code {
+  font-weight: 700;
+  color: var(--ink);
+  direction: ltr;
+}
+
+.discount-remove {
+  border: none;
+  background: none;
+  color: var(--danger);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.discount-note {
+  margin: 8px 0 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--brand);
+}
+
 .sheet-backdrop {
   position: absolute;
   inset: 0;

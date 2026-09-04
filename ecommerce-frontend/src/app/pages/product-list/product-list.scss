@@ -1,47 +1,10 @@
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px 20px 24px;
-}
-
-.list-card {
-  display: flex;
+// Catalog / search results — a responsive grid of the shared product card. 2-up on the phone,
+// auto-fill on desktop.
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
-  align-items: center;
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 12px;
-  color: inherit;
-
-  &__body {
-    flex: 1;
-    text-align: right;
-    min-width: 0;
-
-    h2 {
-      margin: 0 0 8px;
-      font-size: 14px;
-      font-weight: 700;
-      line-height: 1.6;
-    }
-  }
-
-  &__img {
-    width: 96px;
-    height: 96px;
-    border-radius: var(--radius-md);
-    object-fit: cover;
-    flex-shrink: 0;
-    background: #eef2f0;
-  }
-}
-
-.price {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 800;
+  padding: 16px 16px 32px;
 }
 
 .state {
@@ -54,13 +17,27 @@
   }
 }
 
+.toast {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 24px;
+  z-index: 20;
+  background: #1f2937;
+  color: #fff;
+  text-align: center;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
 // Desktop-only page heading (the phone top-bar is hidden at ≥1024px).
 .list-heading {
   display: none;
 }
 
-/* Desktop (≥1024px) — the vertical row of horizontal cards becomes a product grid of
-   image-on-top cards. */
+/* Desktop (≥1024px) — wider auto-fill grid + a restated page heading. */
 @media (min-width: 1024px) {
   .list-heading {
     display: block;
@@ -70,44 +47,10 @@
     color: var(--ink);
   }
 
-  .list {
-    display: grid;
+  .grid {
     grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
     gap: 20px;
     padding: 0 0 40px;
-  }
-
-  .list-card {
-    flex-direction: column-reverse; // DOM order is body → img; reverse puts the image on top
-    align-items: stretch;
-    gap: 0;
-    padding: 0;
-    overflow: hidden;
-    transition: box-shadow 0.15s ease, transform 0.15s ease;
-
-    &:hover {
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
-      transform: translateY(-2px);
-    }
-
-    &__img {
-      width: 100%;
-      height: 230px;
-      border-radius: 0;
-    }
-
-    &__body {
-      padding: 14px 16px 18px;
-
-      h2 {
-        font-size: 15px;
-        margin-bottom: 10px;
-      }
-    }
-  }
-
-  .price {
-    font-size: 15px;
   }
 
   .state {

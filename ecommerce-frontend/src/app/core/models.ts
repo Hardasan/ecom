@@ -39,6 +39,10 @@ export type ProductDto = {
   status?: string;
   inventoryCount?: number;
   weightGram?: number;
+  // Review aggregate for card/list display (added to the product-list projection in the redesign).
+  // Optional so existing callers/endpoints that don't populate it still type-check.
+  averageRating?: number | string | null;
+  ratingCount?: number | null;
 };
 
 export type Page<T> = {
@@ -115,10 +119,58 @@ export type OrderItemDto = {
 
 export type PaymentMethod = 'ONLINE' | 'CASH_ON_DELIVERY';
 
+// ---- Returns (مرجوعی) ---------------------------------------------------------------------------
+export type ReturnReason =
+  | 'SIZE_OR_COLOR_MISMATCH'
+  | 'DEFECTIVE'
+  | 'NOT_AS_DESCRIBED'
+  | 'CHANGED_MIND'
+  | 'OTHER';
+
+export type ReturnStatus = 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'REFUNDED';
+
+export type ReturnItemDto = {
+  orderItemId: number;
+  productName: string;
+  variantValue?: string | null;
+  quantity: number;
+  unitPrice: number | string;
+  lineRefund: number | string;
+  reason: ReturnReason;
+};
+
+export type ReturnRequestDto = {
+  id: number;
+  orderId: number;
+  status: ReturnStatus;
+  refundAmount: number | string;
+  iban?: string | null;
+  note?: string | null;
+  items: ReturnItemDto[];
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type CreateReturnBody = {
+  orderId: number;
+  note?: string | null;
+  iban?: string | null;
+  items: { orderItemId: number; quantity: number; reason: ReturnReason }[];
+};
+
 export type CheckoutQuoteDto = {
   itemsCost: number | string;
   shippingCost: number | string;
   totalCost: number | string;
+};
+
+export type DiscountPreviewDto = {
+  code: string;
+  type: string;
+  itemsCost: number | string;
+  eligibleSubtotal: number | string;
+  discountAmount: number | string;
+  newItemsCost: number | string;
 };
 
 export type OrderDto = {
@@ -170,6 +222,8 @@ export type ReviewSummaryDto = {
   productId: number;
   averageRating: number | string;
   totalCount: number;
+  // Zero-filled 1..5 histogram from the backend, for the reviews-tab bar chart.
+  ratingCounts?: Record<number, number>;
 };
 
 export type ReviewDto = {

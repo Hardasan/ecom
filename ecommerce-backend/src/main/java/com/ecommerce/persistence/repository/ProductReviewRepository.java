@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,6 +33,15 @@ public interface ProductReviewRepository
     @Query("SELECT r.rating, COUNT(r) FROM ProductReview r "
             + "WHERE r.productId = :productId AND r.status = 'PUBLISHED' GROUP BY r.rating")
     List<Object[]> countPublishedGroupedByRating(@Param("productId") Long productId);
+
+    /**
+     * Batch rating aggregate for product cards/lists: one {@code [productId, avgRating, count]} row
+     * per product that has PUBLISHED reviews. Absent products simply have no row (count 0). One
+     * query enriches a whole page of products, so the card can show «۴٫۸ (۲۱۴)» without N+1 lookups.
+     */
+    @Query("SELECT r.productId, AVG(r.rating), COUNT(r) FROM ProductReview r "
+            + "WHERE r.productId IN :productIds AND r.status = 'PUBLISHED' GROUP BY r.productId")
+    List<Object[]> aggregatePublishedByProductIds(@Param("productIds") Collection<Long> productIds);
 
     long countByStatus(ReviewStatus status);
 

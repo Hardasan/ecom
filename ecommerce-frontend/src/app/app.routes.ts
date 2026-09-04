@@ -54,5 +54,13 @@ export const routes: Routes = [
     path: 'success',
     loadComponent: () => import('./pages/success/success').then((m) => m.Success)
   },
+  {
+    path: 'returns',
+    loadComponent: () => import('./pages/returns/returns-list').then((m) => m.ReturnsList)
+  },
+  {
+    path: 'returns/new/:orderId',
+    loadComponent: () => import('./pages/returns/return-flow').then((m) => m.ReturnFlow)
+  },
   { path: '**', redirectTo: '' }
 ];

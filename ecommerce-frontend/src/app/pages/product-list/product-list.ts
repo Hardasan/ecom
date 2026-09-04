@@ -1,14 +1,13 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { FormsModule } from '@angular/forms';
 import { ASSETS } from '../../assets';
 import { ProductService } from '../../core/product.service';
 import { ProductDto } from '../../core/models';
-import { displayName, effectiveUnitPrice, formatPrice, productImageSrc } from '../../core/format';
+import { ProductCard } from '../../shared/product-card/product-card';
 
 @Component({
   selector: 'app-product-list',
-  imports: [RouterLink, FormsModule],
+  imports: [RouterLink, ProductCard],
   templateUrl: './product-list.html',
   styleUrl: './product-list.scss'
 })
@@ -21,6 +20,7 @@ export class ProductList implements OnInit {
   readonly loading = signal(true);
   readonly error = signal('');
   readonly title = signal('محصولات');
+  readonly toast = signal('');
   query = '';
 
   ngOnInit(): void {
@@ -55,15 +55,8 @@ export class ProductList implements OnInit {
       });
   }
 
-  nameOf(p: ProductDto): string {
-    return displayName(p);
-  }
-
-  priceOf(p: ProductDto): string {
-    return formatPrice(effectiveUnitPrice(p.prices));
-  }
-
-  imgOf(p: ProductDto): string {
-    return productImageSrc(p);
+  showToast(msg: string): void {
+    this.toast.set(msg);
+    setTimeout(() => this.toast.set(''), 2500);
   }
 }

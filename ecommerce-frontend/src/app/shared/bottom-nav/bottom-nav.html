@@ -1,0 +1,31 @@
+<nav class="bottom-nav" aria-label="منوی اصلی">
+  <a routerLink="/" class="bottom-nav__item" [class.is-active]="active() === 'home'">
+    <span class="ic ic--home"></span>
+    <span>خانه</span>
+  </a>
+
+  <a routerLink="/cart" class="bottom-nav__item" [class.is-active]="active() === 'cart'">
+    <span class="ic-wrap">
+      <span class="ic ic--cart"></span>
+      @if (cart.totalQuantity() > 0) {
+        <span class="cart-badge">{{ cart.badge() }}</span>
+      }
+    </span>
+    <span>سبد خرید</span>
+  </a>
+
+  <a routerLink="/categories" class="bottom-nav__item" [class.is-active]="active() === 'categories'">
+    <span class="ic ic--cats"></span>
+    <span>دسته‌بندی</span>
+  </a>
+
+  <a
+    [routerLink]="auth.isLoggedIn() ? '/profile' : '/login'"
+    [queryParams]="auth.isLoggedIn() ? null : { returnUrl: '/profile' }"
+    class="bottom-nav__item"
+    [class.is-active]="active() === 'profile'"
+  >
+    <span class="ic ic--user"></span>
+    <span>پروفایل</span>
+  </a>
+</nav>

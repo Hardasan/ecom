@@ -1,0 +1,161 @@
+:host {
+  display: block;
+}
+
+.pcard {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl); // 20px
+  overflow: hidden;
+  color: inherit;
+
+  &__img {
+    position: relative;
+    aspect-ratio: 170 / 150;
+    background: #f9fafb;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  // Wishlist heart — white circle, top-start corner.
+  &__fav {
+    position: absolute;
+    top: 8px;
+    inset-inline-start: 8px;
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: var(--radius-full);
+    background: #fff;
+    box-shadow: var(--shadow-btn);
+    cursor: pointer;
+    padding: 0;
+
+    img {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  // Discount tag — top-end corner (uses the shared .tag-sale look).
+  &__tag {
+    position: absolute;
+    top: 10px;
+    inset-inline-end: 10px;
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px 12px;
+    flex: 1;
+  }
+
+  &__name {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    text-align: right;
+    line-height: 1.5;
+    // clamp to two lines so cards keep a consistent height
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  &__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 6px;
+  }
+
+  // Green circular add-to-cart button; the plus is masked white so it reads on the brand fill.
+  &__add {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border: none;
+    padding: 0;
+    border-radius: var(--radius-sm);
+    background: var(--brand);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    img {
+      width: 12px;
+      height: 12px;
+      // recolour the (dark) plus glyph to white via mask
+      filter: brightness(0) invert(1);
+    }
+  }
+}
+
+// Compact qty stepper (mirrors the home stepper) when the line is already in the cart.
+.qty-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 2px;
+  border: 1px solid var(--brand-soft);
+  border-radius: var(--radius-full);
+  background: #fff;
+}
+
+.qty-btn {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border: none;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--brand-soft);
+  color: var(--brand);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.qty-value {
+  min-width: 18px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+// Desktop: slightly taller image well + hover lift, matching the home desktop treatment.
+@media (min-width: 1024px) {
+  .pcard {
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+
+    &:hover {
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+      transform: translateY(-2px);
+    }
+  }
+}

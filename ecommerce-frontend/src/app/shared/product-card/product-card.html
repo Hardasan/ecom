@@ -1,0 +1,64 @@
+<a class="pcard" [routerLink]="['/product', product().id]">
+  <div class="pcard__img">
+    @if (image(); as src) {
+      <img [src]="src" [alt]="name()" width="170" height="150" loading="lazy" decoding="async" />
+    }
+
+    @if (showFav()) {
+      <button
+        type="button"
+        class="pcard__fav"
+        [class.is-on]="inWishlist()"
+        (click)="toggleFav($event)"
+        [attr.aria-label]="inWishlist() ? 'حذف از علاقه‌مندی‌ها' : 'افزودن به علاقه‌مندی‌ها'"
+        [attr.aria-pressed]="inWishlist()"
+      >
+        <img [src]="inWishlist() ? a.iconHeartFill : a.iconHeart" alt="" width="20" height="20" />
+      </button>
+    }
+
+    @if (price().percentOff > 0) {
+      <span class="tag-sale pcard__tag">٪{{ price().percentOff | faNum }}</span>
+    }
+  </div>
+
+  <div class="pcard__body">
+    <p class="pcard__name">{{ name() }}</p>
+
+    @if (ratingCount() > 0) {
+      <span class="rating">
+        <img [src]="a.iconStar" alt="" width="16" height="16" />
+        <span class="rating__value">{{ ratingValue() }}</span>
+        <span class="rating__count">({{ ratingCount() | faNum }})</span>
+      </span>
+    }
+
+    <div class="pcard__foot">
+      @if (line(); as l) {
+        <div class="qty-stepper">
+          <button type="button" class="qty-btn" aria-label="افزودن یکی" (click)="inc($event, l)">
+            <img [src]="a.iconPlus" alt="" width="14" height="14" />
+          </button>
+          <span class="qty-value">{{ l.quantity | faNum }}</span>
+          <button type="button" class="qty-btn" aria-label="کاستن یکی" (click)="dec($event, l)">
+            <img [src]="a.iconMinus" alt="" width="14" height="14" />
+          </button>
+        </div>
+      } @else {
+        <button type="button" class="pcard__add" aria-label="افزودن به سبد خرید" (click)="add($event)">
+          <img [src]="a.iconPlus" alt="" width="12" height="12" />
+        </button>
+      }
+
+      <span class="price">
+        @if (wasToman()) {
+          <span class="price__old">{{ wasToman() }}</span>
+        }
+        <span class="price__now">
+          <span class="price__amount">{{ nowToman() }}</span>
+          <span class="price__unit">تومان</span>
+        </span>
+      </span>
+    </div>
+  </div>
+</a>

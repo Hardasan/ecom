@@ -43,6 +43,12 @@ public class SearchProductResponseDto {
 
     private Integer inventoryCount;
 
+    // Review aggregate for card/list display. Derived on read from PUBLISHED product_review rows
+    // (same "derive, don't store" model as the review summary); ratingCount 0 ⇒ no rating badge.
+    private Double averageRating;
+
+    private Long ratingCount;
+
     private Date createdAt;
 
     private Date updatedAt;

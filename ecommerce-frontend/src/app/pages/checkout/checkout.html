@@ -67,16 +67,45 @@
           </div>
         </button>
 
+        <h2>کد تخفیف</h2>
+        @if (appliedDiscount(); as d) {
+          <div class="discount-applied">
+            <button type="button" class="discount-remove" (click)="removeDiscount()">حذف کد تخفیف</button>
+            <span class="discount-code">{{ d.code }}</span>
+          </div>
+          <p class="discount-note">کد تخفیف روی سبد خرید شما اعمال شد.</p>
+        } @else {
+          <div class="discount-row">
+            <button type="button" class="discount-apply" [disabled]="applyingDiscount()" (click)="applyDiscount()">
+              {{ applyingDiscount() ? '…' : 'اعمال کد' }}
+            </button>
+            <input
+              class="field discount-input"
+              [(ngModel)]="discountInput"
+              placeholder="کد تخفیف دارید؟"
+              (keyup.enter)="applyDiscount()"
+            />
+          </div>
+          @if (discountError()) {
+            <p class="field-error">{{ discountError() }}</p>
+          }
+        }
+
         <h2>روش پرداخت</h2>
         <label class="pay-option" [class.is-selected]="payment === 'bank'">
           <span>درگاه بانکی</span>
-          <input type="radio" name="pay" value="bank" [(ngModel)]="payment" />
-          <img [src]="a.iconRadio" alt="" width="20" height="20" />
+          <span class="pay-radio" [class.on]="payment === 'bank'"></span>
+          <input type="radio" name="pay" value="bank" [(ngModel)]="payment" hidden />
+        </label>
+        <label class="pay-option is-disabled">
+          <span>کیف پول <span class="pay-soon">به‌زودی</span></span>
+          <span class="pay-radio"></span>
+          <input type="radio" name="pay" value="wallet" disabled hidden />
         </label>
         <label class="pay-option" [class.is-selected]="payment === 'cod'">
           <span>پرداخت در محل</span>
-          <input type="radio" name="pay" value="cod" [(ngModel)]="payment" />
-          <span class="radio-empty"></span>
+          <span class="pay-radio" [class.on]="payment === 'cod'"></span>
+          <input type="radio" name="pay" value="cod" [(ngModel)]="payment" hidden />
         </label>
 
         <h2>روش ارسال</h2>
@@ -95,6 +124,12 @@
             <span [class.muted]="!hasShipping()">{{ shippingLabel() }}</span>
             <span>هزینه ارسال</span>
           </div>
+          @if (appliedDiscount()) {
+            <div class="cost-row">
+              <span class="saving">− {{ discountLabel() }}</span>
+              <span>تخفیف</span>
+            </div>
+          }
           <div class="cost-row cost-row--total">
             <span>{{ payableLabel() }}</span>
             <span>مبلغ قابل پرداخت</span>

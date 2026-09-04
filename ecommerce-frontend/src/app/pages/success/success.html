@@ -63,9 +63,9 @@
 
     <div class="success-actions">
       @if (order(); as o) {
-        <a [routerLink]="['/orders', o.id]" class="text-btn">پیگیری سفارش</a>
+        <a [routerLink]="['/orders', o.id]" class="btn-brand">پیگیری سفارش</a>
       } @else {
-        <a routerLink="/orders" class="text-btn">پیگیری سفارش</a>
+        <a routerLink="/orders" class="btn-brand">پیگیری سفارش</a>
       }
       <a routerLink="/" class="btn-outline">خانه</a>
     </div>

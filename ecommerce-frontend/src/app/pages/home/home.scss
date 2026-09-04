@@ -1,9 +1,15 @@
 .home-nav {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  height: 64px;
-  padding: 0 20px;
+  padding: 14px 20px 8px;
+}
+
+.home-nav__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
 }
 
 .brand {
@@ -11,10 +17,65 @@
   font-size: 22px;
   font-weight: 900;
   color: var(--brand);
+  line-height: 1;
+}
+
+// "ارسال به: <title>" chip — the selected delivery address, tappable to switch.
+.ship-to {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+
+  img {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.home-nav__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+// 40px circular icon buttons in the header (surface-tinted, per design).
+.round-btn {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  cursor: pointer;
+
+  img {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+// Flash-sale section header: «فروش ویژه» + countdown pill on the right, «مشاهده همه» on the left.
+.sale-head {
+  &__right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
 }
 
 .hero {
-  padding: 24px 16px 20px;
+  padding: 16px 16px 20px;
 }
 
 .hero-card {
@@ -92,116 +153,10 @@
   &::-webkit-scrollbar {
     display: none;
   }
-}
 
-.product-card {
-  flex: 0 0 160px;
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  color: inherit;
-
-  &__img {
-    height: 160px;
-    background: #f3f4f6;
-
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
+  &__card {
+    flex: 0 0 170px;
   }
-
-  &__body {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 0 12px 12px;
-  }
-
-  &__name {
-    margin: 0;
-    font-size: 14px;
-    font-weight: 700;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    text-align: right;
-  }
-
-  &__row {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  &__price {
-    font-size: 14px;
-    font-weight: 800;
-    text-align: right;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  &__action {
-    display: flex;
-  }
-}
-
-.add-btn {
-  width: 26px;
-  height: 26px;
-  flex-shrink: 0;
-  border: none;
-  padding: 0;
-  background: transparent;
-  cursor: pointer;
-
-  img {
-    width: 26px;
-    height: 26px;
-  }
-}
-
-.qty-stepper {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-  padding: 2px;
-  border: 1px solid var(--brand-soft);
-  border-radius: var(--radius-full);
-  background: #fff;
-}
-
-.qty-btn {
-  width: 26px;
-  height: 26px;
-  flex-shrink: 0;
-  border: none;
-  padding: 0;
-  border-radius: 50%;
-  background: var(--brand-soft);
-  color: var(--brand);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  img {
-    width: 14px;
-    height: 14px;
-  }
-}
-
-.qty-value {
-  min-width: 18px;
-  text-align: center;
-  font-size: 14px;
-  font-weight: 800;
-  color: var(--ink);
 }
 
 .promo {
@@ -311,38 +266,6 @@
   }
 }
 
-.bottom-nav {
-  display: flex;
-  background: #fff;
-  border-top: 1px solid var(--border);
-  padding: 12px 24px 8px;
-
-  &__item {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    border: none;
-    background: none;
-    color: var(--ink-muted);
-    font-size: 10px;
-    font-weight: 500;
-    cursor: pointer;
-    padding: 0;
-
-    &.is-active {
-      color: var(--brand);
-      font-weight: 700;
-    }
-
-    img {
-      width: 24px;
-      height: 24px;
-    }
-  }
-}
-
 .state {
   padding: 0 20px 24px;
   text-align: center;
@@ -368,8 +291,110 @@
   font-weight: 600;
 }
 
-/* Desktop (≥1024px, matches LayoutService.DESKTOP_MIN_WIDTH) — the page is full-width inside the
-   1200px container; the sale row becomes a grid, categories go 4-up, and the hero grows. */
+/* Address switcher bottom-sheet (opened from the "ارسال به" chip). Becomes a centred modal on
+   desktop via the global `.app-shell--desktop .page .sheet` rule. */
+.sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.sheet {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 41;
+  background: #fff;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  padding: 16px 20px calc(16px + env(safe-area-inset-bottom));
+  max-height: 80%;
+  overflow-y: auto;
+}
+
+.sheet__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+
+  h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+}
+
+.sheet__close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: var(--surface);
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.sheet__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.addr-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: #fff;
+  cursor: pointer;
+  text-align: right;
+
+  &.is-selected {
+    border-color: var(--brand);
+    background: #f6faf7;
+  }
+
+  &__radio {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    border: 2px solid var(--ink-subtle);
+    border-radius: 50%;
+  }
+
+  &.is-selected &__radio {
+    border-color: var(--brand);
+    background: radial-gradient(circle, var(--brand) 0 5px, #fff 6px 100%);
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  &__title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  &__line {
+    font-size: 12px;
+    color: var(--muted);
+  }
+}
+
+/* Desktop (≥1024px, matches LayoutService.DESKTOP_MIN_WIDTH) — full-width inside the 1200px
+   container; the sale row becomes a 5-up grid, categories go 4-up, and the hero grows. */
 @media (min-width: 1024px) {
   .hero {
     padding: 8px 0 28px;
@@ -414,25 +439,9 @@
     gap: 20px;
     overflow: visible;
     padding: 0 0 40px;
-  }
 
-  .product-card {
-    flex: initial;
-    width: auto;
-    transition: box-shadow 0.15s ease, transform 0.15s ease;
-
-    &:hover {
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
-      transform: translateY(-2px);
-    }
-
-    &__img {
-      height: 220px;
-    }
-
-    &__name,
-    &__price {
-      font-size: 15px;
+    &__card {
+      flex: initial;
     }
   }
 

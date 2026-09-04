@@ -1,23 +1,31 @@
-@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&display=swap');
 
 :root {
   --brand: #15603a;
+  --brand-mid: #459c72; // mid green used for secondary accents in the 13-Shahrivar design
   --brand-soft: #d8ece0;
   --surface: #f7f8f6;
+  --surface-2: #eff2ee; // green-tinted neutral surface (bottom-nav border, section dividers)
   --surface-card: #ffffff;
   --ink: #1f2937;
+  --ink-strong: #12181a; // near-black used for headings in the redesign
   --ink-muted: #6b7280;
+  --muted: #66726b; // the design's green-grey secondary text (most-used muted tone)
   --ink-subtle: #9ca3af;
   --ink-body: #333d38;
   --border: #e5e7eb;
+  --line: #e2e7e2; // green-tinted 1px field/card border from the design
   --accent: #3b1560;
   --danger: #c0392b;
   --info: #2563c9;
+  --sale: #ef4444; // flash-sale red (discount tags, countdown)
+  --sale-soft: #fae0dd; // pink countdown-pill background
   --cat-kitchen: #fdf6ec;
   --cat-smart: #efe9f5;
   --cat-other: #fae0dd;
   --cat-electric: #f7f8f6;
   --cat-home: #dce9fb;
+  --radius-xs: 5px;
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
@@ -164,14 +172,15 @@ img {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   width: 100%;
-  min-height: 48px;
+  min-height: 54px;
   padding: 12px 16px;
   border: none;
   border-radius: var(--radius-md);
   background: var(--brand);
   color: #fff;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 16px;
   cursor: pointer;
 
@@ -185,16 +194,44 @@ img {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   width: 100%;
-  min-height: 48px;
+  min-height: 54px;
   padding: 12px 16px;
   border: 1px solid var(--brand);
   border-radius: var(--radius-md);
   background: transparent;
   color: var(--brand);
-  font-weight: 700;
+  font-weight: 600;
   font-size: 16px;
   cursor: pointer;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// Ghost button — the design's third button type (text-only brand action, no border/fill).
+.btn-ghost {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 54px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--brand);
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 
 .btn-danger-outline {
@@ -299,6 +336,99 @@ img {
     border: none;
     cursor: pointer;
     padding: 0;
+  }
+}
+
+/* =====================================================================================
+   Commerce primitives — the design's price-group, rating-row and discount tag. These
+   recur on home, product, cart, order and success screens, so they live here as shared
+   classes (same convention as .btn-brand / .field). RTL-aware via logical properties.
+   ===================================================================================== */
+
+// Price group: struck old price stacked over «amount + تومان». Right-aligned by default.
+.price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+
+  &__old {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-subtle);
+    text-decoration: line-through;
+  }
+
+  &__now {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 2px;
+  }
+
+  &__amount {
+    font-size: 14px;
+    color: var(--ink);
+  }
+
+  &__unit {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+  }
+}
+
+// Rating row: star icon + numeric value + «(count)». Order is visually star → value → count.
+.rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+
+  img {
+    width: 16px;
+    height: 16px;
+  }
+
+  &__value {
+    color: var(--ink-body);
+  }
+
+  &__count {
+    color: var(--ink-subtle);
+  }
+}
+
+// Flash-sale discount tag (e.g. «٪۴۰-»). Red pill on product cards.
+.tag-sale {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 18px;
+  padding: 1px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--sale);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+// Countdown pill used in the flash-sale header (pink bg, red mono-ish time).
+.countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  background: var(--sale-soft);
+  color: var(--sale);
+  font-size: 12px;
+  font-weight: 500;
+
+  img {
+    width: 16px;
+    height: 16px;
   }
 }
 

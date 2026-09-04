@@ -18,19 +18,15 @@
     } @else if (!products().length) {
       <p class="state">محصولی یافت نشد</p>
     } @else {
-      <div class="list">
+      <div class="grid">
         @for (p of products(); track p.id) {
-          <a [routerLink]="['/product', p.id]" class="list-card">
-            <div class="list-card__body">
-              <h2>{{ nameOf(p) }}</h2>
-              <p class="price">{{ priceOf(p) }}</p>
-            </div>
-            @if (imgOf(p); as src) {
-              <img class="list-card__img" [src]="src" [alt]="nameOf(p)" width="88" height="88" loading="lazy" decoding="async" />
-            }
-          </a>
+          <app-product-card [product]="p" (notify)="showToast($event)" />
         }
       </div>
     }
   </div>
+
+  @if (toast()) {
+    <div class="toast">{{ toast() }}</div>
+  }
 </div>

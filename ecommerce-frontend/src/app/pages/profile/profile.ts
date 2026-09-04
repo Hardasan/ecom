@@ -10,10 +10,11 @@ import { OrderService } from '../../core/order.service';
 import { AddressDto, GeoCityDto, GeoProvinceDto, OrderDto } from '../../core/models';
 import { formatFaDate, formatPrice, imageSrc, orderItemCount, orderStatusLabel } from '../../core/format';
 import { validateAddressFields } from '../../core/address-form';
+import { BottomNav } from '../../shared/bottom-nav/bottom-nav';
 
 @Component({
   selector: 'app-profile',
-  imports: [FormsModule, RouterLink, FaNumPipe],
+  imports: [FormsModule, RouterLink, FaNumPipe, BottomNav],
   templateUrl: './profile.html',
   styleUrl: './profile.scss'
 })
@@ -29,11 +30,17 @@ export class Profile implements OnInit {
 
   readonly addresses = signal<AddressDto[]>([]);
   readonly recentOrders = signal<OrderDto[]>([]);
+  readonly ordersCount = signal(0);
   readonly showAddressSheet = signal(false);
   readonly busy = signal(false);
   readonly error = signal('');
   readonly toast = signal('');
   readonly fieldErrors = signal<Record<string, string>>({});
+
+  // The menu-hub keeps the account-edit form and the address book collapsed until their row/stat
+  // is tapped, so the landing view stays the clean list of destinations from the design.
+  readonly showAccount = signal(false);
+  readonly showAddresses = signal(false);
 
   firstName = '';
   lastName = '';
@@ -251,11 +258,29 @@ export class Profile implements OnInit {
 
   private reloadRecentOrders() {
     this.ordersApi.list().subscribe({
-      next: (list) => this.recentOrders.set((list ?? []).slice(0, 2)),
+      next: (list) => {
+        this.recentOrders.set((list ?? []).slice(0, 2));
+        this.ordersCount.set((list ?? []).length);
+      },
       error: () => {
         /* profile still usable without orders */
       }
     });
+  }
+
+  /** Shopper display name for the hub header; falls back to the mobile number. */
+  displayName(): string {
+    const name = `${this.firstName} ${this.lastName}`.trim();
+    return name || this.mobile || 'کاربر ریونی';
+  }
+
+  toggleAccount() {
+    this.showAccount.update((v) => !v);
+  }
+
+  showAddressBook() {
+    this.showAddresses.set(true);
+    this.showAccount.set(false);
   }
 
   private flash(message: string) {

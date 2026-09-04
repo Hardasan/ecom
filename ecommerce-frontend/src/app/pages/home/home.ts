@@ -1,30 +1,33 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { ASSETS } from '../../assets';
 import { AuthService } from '../../core/auth.service';
+import { AddressService } from '../../core/address.service';
 import { CartService } from '../../core/cart.service';
 import { CategoryService } from '../../core/category.service';
 import { ConfigService } from '../../core/config.service';
 import { ProductService } from '../../core/product.service';
-import { CartItemDto, ProductDto } from '../../core/models';
-import { displayName, effectiveUnitPrice, formatPrice, productImageSrc } from '../../core/format';
+import { ProductDto } from '../../core/models';
+import { displayName, productImageSrc, toFa } from '../../core/format';
+import { BottomNav } from '../../shared/bottom-nav/bottom-nav';
+import { ProductCard } from '../../shared/product-card/product-card';
 
 const CAT_TONES = ['kitchen', 'smart', 'other', 'electric', 'home'] as const;
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink],
+  imports: [RouterLink, BottomNav, ProductCard],
   templateUrl: './home.html',
   styleUrl: './home.scss'
 })
-export class Home implements OnInit {
+export class Home implements OnInit, OnDestroy {
   readonly a = ASSETS;
   readonly auth = inject(AuthService);
+  readonly address = inject(AddressService);
   private readonly productsApi = inject(ProductService);
   private readonly categoriesApi = inject(CategoryService);
   readonly cartApi = inject(CartService);
   private readonly configApi = inject(ConfigService);
-  private readonly router = inject(Router);
 
   readonly products = signal<ProductDto[]>([]);
   readonly categories = signal<{ id: number; name: string; tone: string; image: string }[]>([]);
@@ -32,8 +35,18 @@ export class Home implements OnInit {
   readonly error = signal('');
   readonly toast = signal('');
 
+  // Flash-sale countdown to end of the day (HH:MM:SS, Persian), ticked every second.
+  readonly countdown = signal('');
+  private timer?: ReturnType<typeof setInterval>;
+
+  // Address switcher sheet (opened from the "ارسال به" chip). Only relevant when signed in.
+  readonly addressSheetOpen = signal(false);
+
   ngOnInit(): void {
     this.configApi.load().subscribe({ error: () => undefined });
+
+    this.tickCountdown();
+    this.timer = setInterval(() => this.tickCountdown(), 1000);
 
     this.productsApi.specialSale().subscribe({
       next: (res) => {
@@ -69,10 +82,6 @@ export class Home implements OnInit {
     return displayName(p);
   }
 
-  priceOf(p: ProductDto): string {
-    return formatPrice(effectiveUnitPrice(p.prices));
-  }
-
   imgOf(p: ProductDto): string {
     return productImageSrc(p);
   }
@@ -82,62 +91,39 @@ export class Home implements OnInit {
     return sale.find((p) => p.url === 'converse-high-tops') ?? sale[0] ?? null;
   }
 
-  addToCart(event: Event, p: ProductDto) {
-    event.preventDefault();
-    event.stopPropagation();
-    // Guests get a local cart; they are only asked to sign in when they proceed to checkout.
-    this.cartApi
-      .addItem({
-        productId: p.id,
-        quantity: 1,
-        variantType: p.variantType,
-        variantValue: p.prices?.[0]?.variantValue ?? null
-      })
-      .subscribe({
-        next: () => {
-          this.toast.set('به سبد اضافه شد');
-          setTimeout(() => this.toast.set(''), 2000);
-        },
-        error: (err) => {
-          this.toast.set(err?.error?.message ?? 'افزودن به سبد ناموفق بود');
-          setTimeout(() => this.toast.set(''), 3000);
-        }
-      });
+  ngOnDestroy(): void {
+    if (this.timer) clearInterval(this.timer);
   }
 
-  /** The cart line for a card's product+default variant, so the card can show a stepper. */
-  cartLine(p: ProductDto): CartItemDto | undefined {
-    return this.cartApi.lineFor(p.id, p.prices?.[0]?.variantValue ?? null);
+  private tickCountdown(): void {
+    const now = new Date();
+    const end = new Date(now);
+    end.setHours(23, 59, 59, 999);
+    let s = Math.max(0, Math.floor((end.getTime() - now.getTime()) / 1000));
+    const h = Math.floor(s / 3600);
+    s %= 3600;
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    this.countdown.set(toFa(`${pad(h)}:${pad(m)}:${pad(sec)}`));
   }
 
-  faNum(n: number): string {
-    return new Intl.NumberFormat('fa-IR').format(n);
+  showToast(msg: string): void {
+    this.toast.set(msg);
+    setTimeout(() => this.toast.set(''), 2500);
   }
 
-  inc(event: Event, line: CartItemDto) {
-    event.preventDefault();
-    event.stopPropagation();
-    this.cartApi.increment(line.id).subscribe({
-      error: (err) => {
-        this.toast.set(err?.error?.message ?? 'به‌روزرسانی تعداد ناموفق بود');
-        setTimeout(() => this.toast.set(''), 2500);
-      }
-    });
+  openAddressSheet(): void {
+    this.address.refresh();
+    this.addressSheetOpen.set(true);
   }
 
-  dec(event: Event, line: CartItemDto) {
-    event.preventDefault();
-    event.stopPropagation();
-    this.cartApi.decrement(line.id).subscribe({
-      error: () => {
-        this.toast.set('به‌روزرسانی تعداد ناموفق بود');
-        setTimeout(() => this.toast.set(''), 2500);
-      }
-    });
+  chooseAddress(id: number | undefined): void {
+    if (id != null) this.address.select(id);
+    this.addressSheetOpen.set(false);
   }
 
   promoCode() {
-    this.toast.set('کد تخفیف: RIVANI40');
-    setTimeout(() => this.toast.set(''), 3000);
+    this.showToast('کد تخفیف: RIVANI40');
   }
 }

@@ -129,10 +129,22 @@
           </div>
           <div class="reviews-summary">
             <div class="reviews-score">
-              <img [src]="a.iconStar" alt="" width="18" height="18" />
               <strong>{{ ratingText() | faNum }}</strong>
+              <div class="reviews-score__stars">
+                @for (on of summaryStars(); track $index) {
+                  <img [src]="a.iconStar" alt="" width="14" height="14" [style.opacity]="on ? 1 : 0.25" />
+                }
+              </div>
+              <span class="reviews-score__total">از {{ (summary()?.totalCount ?? 0) | faNum }} رأی</span>
             </div>
-            <span class="reviews-count">{{ reviewCount() }}</span>
+            <div class="histogram">
+              @for (row of histogram(); track row.star) {
+                <div class="histogram__row">
+                  <span class="histogram__label">{{ row.star | faNum }}</span>
+                  <span class="histogram__track"><span class="histogram__fill" [style.width.%]="row.pct"></span></span>
+                </div>
+              }
+            </div>
           </div>
 
           @if (showReviewForm()) {

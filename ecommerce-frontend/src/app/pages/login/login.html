@@ -1,52 +1,58 @@
 <div class="page login">
   <div class="login-inner">
-    <div class="logo">LOGO</div>
-
-    @if (error()) {
-      <p class="form-error">{{ error() }}</p>
-    }
+    <div class="logo">RiVaNi</div>
 
     @if (step() === 'phone') {
       <div class="login-block">
         <h1>ورود/ثبت‌نام در فروشگاه</h1>
         <p class="hint">شماره موبایل خود را وارد کنید</p>
-        <input class="field" type="tel" inputmode="numeric" placeholder="شماره موبایل" [(ngModel)]="phone" />
+        <input
+          class="field ltr"
+          type="tel"
+          inputmode="numeric"
+          dir="ltr"
+          placeholder="۰۹۱۲۳۴۵۶۷۸۹"
+          [(ngModel)]="phone"
+          (keyup.enter)="sendCode()"
+        />
+        @if (error()) { <p class="field-error">{{ error() }}</p> }
         <button type="button" class="btn-brand" [disabled]="busy()" (click)="sendCode()">
-          {{ busy() ? '…' : 'ارسال کد' }}
+          {{ busy() ? '…' : 'دریافت کد' }}
         </button>
       </div>
     } @else if (step() === 'otp') {
       <div class="login-block">
         <h1>ورود/ثبت‌نام در فروشگاه</h1>
-        <p class="hint">کد ارسال‌شده به شماره {{ phone }} را وارد کنید</p>
-        <div class="otp-wrap">
-          <div class="otp-row" dir="ltr">
-            @for (i of [0, 1, 2, 3, 4, 5]; track i) {
-              <span class="field otp" [class.active]="otpCode().length === i">{{ otpCode()[i] ?? '' }}</span>
-            }
-          </div>
-          <input
-            #otpInput
-            class="otp-capture"
-            type="text"
-            inputmode="numeric"
-            autocomplete="one-time-code"
-            maxlength="6"
-            [value]="otpCode()"
-            (input)="onOtpCodeInput($event)"
-          />
+        <p class="hint">کد ارسال‌شده به شماره {{ maskedPhone() }} را وارد کنید</p>
+
+        <div class="otp-row" dir="ltr" (paste)="onOtpPaste($event)">
+          @for (d of otpDigits(); track $index) {
+            <input
+              class="otp-box"
+              type="text"
+              inputmode="numeric"
+              maxlength="1"
+              [value]="d"
+              (input)="onDigit($event, $index)"
+              (keydown)="onOtpKey($event, $index)"
+            />
+          }
         </div>
+
+        @if (error()) { <p class="field-error">{{ error() }}</p> }
+
         @if (ttl() > 0) {
-          <p class="timer">{{ ttl() | faNum }} ثانیه</p>
+          <p class="timer">{{ timerLabel() }}</p>
         } @else {
           <button type="button" class="resend" [disabled]="busy()" (click)="resendCode()">
             ارسال مجدد کد
           </button>
         }
+
         <div class="login-actions">
           <button type="button" class="btn-outline" (click)="editPhone()">ویرایش شماره</button>
           <button type="button" class="btn-brand" [disabled]="busy()" (click)="confirmOtp()">
-            {{ busy() ? '…' : 'تایید' }}
+            {{ busy() ? '…' : 'تأیید' }}
           </button>
         </div>
       </div>
@@ -56,7 +62,8 @@
         <p class="hint">اطلاعات حساب را وارد کنید</p>
         <input class="field" type="text" placeholder="نام" [(ngModel)]="firstName" />
         <input class="field" type="text" placeholder="نام خانوادگی" [(ngModel)]="lastName" />
-        <input class="field" type="password" placeholder="رمز عبور" [(ngModel)]="password" />
+        <input class="field" type="password" placeholder="رمز عبور (حداقل ۶ کاراکتر)" [(ngModel)]="password" />
+        @if (error()) { <p class="field-error">{{ error() }}</p> }
         <button type="button" class="btn-brand" [disabled]="busy()" (click)="completeSignup()">
           {{ busy() ? '…' : 'ثبت‌نام و ورود' }}
         </button>

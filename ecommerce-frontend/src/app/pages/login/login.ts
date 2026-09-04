@@ -1,6 +1,6 @@
-import { Component, DestroyRef, ElementRef, OnInit, inject, signal, viewChild } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { FaNumPipe } from '../../core/fa-num.pipe';
+import { toFa } from '../../core/format';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { CartService } from '../../core/cart.service';
@@ -10,7 +10,7 @@ type Step = 'phone' | 'otp' | 'signup';
 
 @Component({
   selector: 'app-login',
-  imports: [FormsModule, FaNumPipe],
+  imports: [FormsModule],
   templateUrl: './login.html',
   styleUrl: './login.scss'
 })
@@ -28,11 +28,12 @@ export class Login implements OnInit {
   readonly ttl = signal(0);
 
   phone = '';
-  readonly otpCode = signal('');
+  // OTP entered as six per-digit boxes; otpCode is their concatenation.
+  readonly otpDigits = signal<string[]>(['', '', '', '', '', '']);
+  readonly otpCode = computed(() => this.otpDigits().join(''));
   firstName = '';
   lastName = '';
   password = '';
-  private readonly otpInput = viewChild<ElementRef<HTMLInputElement>>('otpInput');
   private registered = false;
   private signupToken = '';
   private returnUrl = '/';
@@ -69,7 +70,7 @@ export class Login implements OnInit {
         req$.subscribe({
           next: (ticket) => {
             this.startTimer(ticket.ticketTTLInSecond ?? this.configApi.otpTtlSeconds());
-            this.otpCode.set('');
+            this.otpDigits.set(['', '', '', '', '', '']);
             this.step.set('otp');
             this.busy.set(false);
             this.focusOtp();
@@ -94,11 +95,50 @@ export class Login implements OnInit {
     this.error.set('');
   }
 
-  onOtpCodeInput(event: Event) {
+  /** Resend countdown as mm:ss (Persian digits), matching the design's «01:30». */
+  timerLabel(): string {
+    const s = this.ttl();
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return toFa(`${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`);
+  }
+
+  /** Masked recipient for the OTP subtitle, e.g. 0912****6789 (Persian digits). */
+  maskedPhone(): string {
+    const p = this.phone;
+    if (p.length < 11) return toFa(p);
+    return toFa(`${p.slice(0, 4)}****${p.slice(8)}`);
+  }
+
+  /** Handle typing into a single OTP box: keep the last digit and auto-advance. */
+  onDigit(event: Event, index: number) {
     const input = event.target as HTMLInputElement;
-    const digits = input.value.replace(/\D/g, '').slice(0, 6);
-    this.otpCode.set(digits);
-    input.value = digits;
+    const digit = input.value.replace(/\D/g, '').slice(-1);
+    const digits = [...this.otpDigits()];
+    digits[index] = digit;
+    this.otpDigits.set(digits);
+    input.value = digit;
+    if (digit && index < 5) {
+      (input.nextElementSibling as HTMLInputElement | null)?.focus();
+    }
+  }
+
+  /** Backspace on an empty box steps back to the previous one. */
+  onOtpKey(event: KeyboardEvent, index: number) {
+    if (event.key === 'Backspace' && !this.otpDigits()[index] && index > 0) {
+      const input = event.target as HTMLInputElement;
+      (input.previousElementSibling as HTMLInputElement | null)?.focus();
+    }
+  }
+
+  /** Paste a full code into the boxes at once. */
+  onOtpPaste(event: ClipboardEvent) {
+    const text = (event.clipboardData?.getData('text') ?? '').replace(/\D/g, '').slice(0, 6);
+    if (!text) return;
+    event.preventDefault();
+    const digits = ['', '', '', '', '', ''];
+    for (let i = 0; i < text.length; i++) digits[i] = text[i];
+    this.otpDigits.set(digits);
   }
 
   confirmOtp() {
@@ -165,7 +205,7 @@ export class Login implements OnInit {
   }
 
   private focusOtp() {
-    setTimeout(() => this.otpInput()?.nativeElement.focus());
+    setTimeout(() => document.querySelector<HTMLInputElement>('.otp-box')?.focus());
   }
 
   private startTimer(seconds: number) {

@@ -1,16 +1,30 @@
 <div class="page home">
   <div class="page-scroll">
     <header class="home-nav">
-      <a routerLink="/cart" class="icon-btn" aria-label="سبد خرید">
-        <img [src]="a.iconCart" alt="" width="20" height="20" />
-        @if (cartApi.totalQuantity() > 0) {
-          <span class="cart-badge">{{ cartApi.badge() }}</span>
+      <div class="home-nav__brand">
+        <p class="brand">RiVaNi</p>
+        @if (auth.isLoggedIn() && address.selected(); as addr) {
+          <button type="button" class="ship-to" (click)="openAddressSheet()" aria-haspopup="dialog">
+            <img [src]="a.iconMapPin" alt="" width="14" height="14" />
+            <span>ارسال به: {{ addr.title || addr.city || 'آدرس من' }}</span>
+          </button>
         }
-      </a>
-      <p class="brand">RiVaNi</p>
-      <a routerLink="/search" class="icon-btn" aria-label="جستجو">
-        <img [src]="a.iconSearch" alt="" width="20" height="20" />
-      </a>
+      </div>
+
+      <div class="home-nav__actions">
+        <a routerLink="/search" class="round-btn" aria-label="جستجو">
+          <img [src]="a.iconSearch" alt="" width="20" height="20" />
+        </a>
+        <a routerLink="/profile" class="round-btn" aria-label="اعلان‌ها">
+          <img [src]="a.iconNotif" alt="" width="20" height="20" />
+        </a>
+        <a routerLink="/cart" class="round-btn" aria-label="سبد خرید">
+          <img [src]="a.iconCart" alt="" width="20" height="20" />
+          @if (cartApi.totalQuantity() > 0) {
+            <span class="cart-badge">{{ cartApi.badge() }}</span>
+          }
+        </a>
+      </div>
     </header>
 
     <section class="hero">
@@ -28,9 +42,15 @@
     </section>
 
     <section>
-      <div class="section-head">
+      <div class="section-head sale-head">
         <a routerLink="/products" [queryParams]="{ title: 'فروش ویژه' }" class="link">مشاهده همه</a>
-        <h2>فروش ویژه</h2>
+        <div class="sale-head__right">
+          <h2>فروش ویژه</h2>
+          <span class="countdown">
+            <img [src]="a.iconClock" alt="" width="16" height="16" />
+            <span>{{ countdown() }}</span>
+          </span>
+        </div>
       </div>
 
       @if (loading()) {
@@ -42,51 +62,7 @@
       } @else {
         <div class="sale-row">
           @for (p of products(); track p.id) {
-            <a [routerLink]="['/product', p.id]" class="product-card">
-              <div class="product-card__img">
-                @if (imgOf(p); as src) {
-                  <img [src]="src" [alt]="nameOf(p)" width="160" height="160" loading="lazy" decoding="async" />
-                }
-              </div>
-              <div class="product-card__body">
-                <p class="product-card__name">{{ nameOf(p) }}</p>
-                <div class="product-card__row">
-                  <span class="product-card__price">{{ priceOf(p) }}</span>
-                  <div class="product-card__action">
-                    @if (cartLine(p); as line) {
-                      <div class="qty-stepper">
-                        <button
-                          type="button"
-                          class="qty-btn"
-                          aria-label="افزودن یکی"
-                          (click)="inc($event, line)"
-                        >
-                          <img [src]="a.iconPlus" alt="" width="14" height="14" />
-                        </button>
-                        <span class="qty-value">{{ faNum(line.quantity) }}</span>
-                        <button
-                          type="button"
-                          class="qty-btn"
-                          aria-label="کاستن یکی"
-                          (click)="dec($event, line)"
-                        >
-                          <img [src]="a.iconMinus" alt="" width="14" height="14" />
-                        </button>
-                      </div>
-                    } @else {
-                      <button
-                        type="button"
-                        class="add-btn"
-                        aria-label="افزودن به سبد"
-                        (click)="addToCart($event, p)"
-                      >
-                        <img [src]="a.iconAdd" alt="" width="26" height="26" />
-                      </button>
-                    }
-                  </div>
-                </div>
-              </div>
-            </a>
+            <app-product-card class="sale-row__card" [product]="p" (notify)="showToast($event)" />
           }
         </div>
       }
@@ -130,26 +106,34 @@
     <div class="toast">{{ toast() }}</div>
   }
 
-  <nav class="bottom-nav" aria-label="منوی اصلی">
-    <a routerLink="/" class="bottom-nav__item is-active">
-      <img [src]="a.iconHome" alt="" width="24" height="24" />
-      <span>خانه</span>
-    </a>
-    <a routerLink="/search" class="bottom-nav__item">
-      <img [src]="a.iconSearchNav" alt="" width="24" height="24" />
-      <span>جستجو</span>
-    </a>
-    <a routerLink="/categories" class="bottom-nav__item">
-      <img [src]="a.iconGrid" alt="" width="24" height="24" />
-      <span>دسته‌بندی</span>
-    </a>
-    <a
-      [routerLink]="auth.isLoggedIn() ? '/profile' : '/login'"
-      [queryParams]="auth.isLoggedIn() ? null : { returnUrl: '/profile' }"
-      class="bottom-nav__item"
-    >
-      <img [src]="a.iconUser" alt="" width="24" height="24" />
-      <span>پروفایل</span>
-    </a>
-  </nav>
+  <app-bottom-nav active="home" />
+
+  @if (addressSheetOpen()) {
+    <div class="sheet-backdrop" (click)="addressSheetOpen.set(false)"></div>
+    <div class="sheet" role="dialog" aria-label="انتخاب آدرس">
+      <div class="sheet__head">
+        <button type="button" class="sheet__close" (click)="addressSheetOpen.set(false)" aria-label="بستن">
+          <img [src]="a.iconClose" alt="" width="16" height="16" />
+        </button>
+        <h3>انتخاب آدرس</h3>
+      </div>
+      <div class="sheet__body">
+        @for (addr of address.addresses(); track addr.id) {
+          <button
+            type="button"
+            class="addr-option"
+            [class.is-selected]="address.selected()?.id === addr.id"
+            (click)="chooseAddress(addr.id)"
+          >
+            <span class="addr-option__radio"></span>
+            <span class="addr-option__text">
+              <span class="addr-option__title">{{ addr.title || 'آدرس' }}</span>
+              <span class="addr-option__line">{{ addr.addressLine }}</span>
+            </span>
+          </button>
+        }
+        <a routerLink="/profile" class="btn-outline">مدیریت آدرس‌ها</a>
+      </div>
+    </div>
+  }
 </div>

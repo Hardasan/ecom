@@ -1,0 +1,39 @@
+<div class="page returns">
+  <div class="page-scroll">
+    <header class="top-bar">
+      <a routerLink="/profile" class="icon-btn" aria-label="بازگشت">
+        <img [src]="a.iconBack" alt="" width="8" height="16" />
+      </a>
+      <p class="top-bar__title">مرجوعی سفارش</p>
+      <span class="spacer"></span>
+    </header>
+
+    <div class="returns-body">
+      <p class="returns-hint">سفارش‌های قابل مرجوعی (تا ۷ روز پس از تحویل)</p>
+
+      @if (loading()) {
+        <p class="state">در حال بارگذاری…</p>
+      } @else if (error()) {
+        <p class="state error">{{ error() }}</p>
+      } @else if (!orders().length) {
+        <p class="state">در حال حاضر سفارشی برای مرجوعی ندارید.</p>
+      } @else {
+        @for (o of orders(); track o.id) {
+          <a class="ret-order" [routerLink]="['/returns/new', o.id]">
+            <div class="ret-order__top">
+              <span class="ret-order__total">{{ total(o) }}</span>
+              <span class="ret-order__code">کد سفارش: {{ code(o) }}</span>
+            </div>
+            <div class="ret-order__meta">
+              <span class="ret-order__go">
+                ثبت درخواست مرجوعی
+                <img [src]="a.iconBack" alt="" width="6" height="12" class="chev" />
+              </span>
+              <span>{{ count(o) }} کالا • {{ date(o) }}</span>
+            </div>
+          </a>
+        }
+      }
+    </div>
+  </div>
+</div>

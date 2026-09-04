@@ -12,6 +12,7 @@ import {
   AddressDto,
   CartItemDto,
   CheckoutQuoteDto,
+  DiscountPreviewDto,
   GeoCityDto,
   GeoProvinceDto,
   PaymentMethod
@@ -48,6 +49,12 @@ export class Checkout implements OnInit {
   readonly busy = signal(false);
   readonly error = signal('');
   readonly fieldErrors = signal<Record<string, string>>({});
+
+  // Discount code (کد تخفیف): the typed code, the applied preview, and inline apply state.
+  discountInput = '';
+  readonly appliedDiscount = signal<DiscountPreviewDto | null>(null);
+  readonly applyingDiscount = signal(false);
+  readonly discountError = signal('');
 
   readonly selectedAddress = computed(() => {
     const id = this.selectedAddressId();
@@ -205,10 +212,46 @@ export class Checkout implements OnInit {
     return q ? formatPrice(q.shippingCost) : 'پس از انتخاب آدرس';
   }
 
-  /** The amount actually charged: items + shipping once quoted, else the items subtotal. */
+  /** Applied discount amount (Rial), 0 when no valid code is applied. */
+  private discountValue(): number {
+    return toNumber(this.appliedDiscount()?.discountAmount ?? 0);
+  }
+
+  discountLabel(): string {
+    return formatPrice(this.discountValue());
+  }
+
+  applyDiscount() {
+    const code = this.discountInput.trim();
+    if (!code || this.applyingDiscount()) {
+      return;
+    }
+    this.applyingDiscount.set(true);
+    this.discountError.set('');
+    this.ordersApi.previewDiscount(code).subscribe({
+      next: (d) => {
+        this.appliedDiscount.set(d);
+        this.applyingDiscount.set(false);
+      },
+      error: (err) => {
+        this.applyingDiscount.set(false);
+        this.appliedDiscount.set(null);
+        this.discountError.set(err?.error?.message ?? 'کد تخفیف نامعتبر است');
+      }
+    });
+  }
+
+  removeDiscount() {
+    this.appliedDiscount.set(null);
+    this.discountInput = '';
+    this.discountError.set('');
+  }
+
+  /** The amount actually charged: items + shipping (once quoted) minus any applied discount. */
   payableLabel(): string {
     const q = this.quote();
-    return formatPrice(q ? q.totalCost : this.cartTotal());
+    const base = q ? toNumber(q.totalCost) : this.cartTotal();
+    return formatPrice(Math.max(0, base - this.discountValue()));
   }
 
   payButtonLabel(): string {
@@ -293,7 +336,7 @@ export class Checkout implements OnInit {
     this.error.set('');
 
     const method: PaymentMethod = this.payment === 'cod' ? 'CASH_ON_DELIVERY' : 'ONLINE';
-    this.ordersApi.checkout(addressId, method).subscribe({
+    this.ordersApi.checkout(addressId, method, this.appliedDiscount()?.code).subscribe({
       next: (order) => {
         if (method === 'CASH_ON_DELIVERY') {
           // Cash on delivery: the order is placed; no online payment step.

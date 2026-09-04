@@ -85,6 +85,11 @@ export class AuthService {
     return this.http.put<UserProfileDto>(`${API_BASE_URL}/user/me`, body);
   }
 
+  /** The shopper's saved شبا (IBAN), used to prefill the returns refund form. */
+  getIban(): Observable<{ iban: string | null }> {
+    return this.http.get<{ iban: string | null }>(`${API_BASE_URL}/user/iban`);
+  }
+
   private persist(res: LoginResponse): void {
     localStorage.setItem(TOKEN_KEY, res.token);
     localStorage.setItem(ROLE_KEY, res.role);

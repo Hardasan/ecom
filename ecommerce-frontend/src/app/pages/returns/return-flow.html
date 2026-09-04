@@ -1,0 +1,187 @@
+<div class="page returns">
+  @if (loading()) {
+    <div class="page-scroll"><p class="state">در حال بارگذاری…</p></div>
+  } @else if (!order()) {
+    <div class="page-scroll"><p class="state error">{{ error() || 'سفارش پیدا نشد' }}</p></div>
+  } @else {
+
+    <!-- ========================= STEP: SELECT ITEMS (screen 29) ========================= -->
+    @if (step() === 'select') {
+      <div class="page-scroll">
+        <header class="top-bar">
+          <a routerLink="/returns" class="icon-btn" aria-label="بازگشت">
+            <img [src]="a.iconBack" alt="" width="8" height="16" />
+          </a>
+          <p class="top-bar__title">انتخاب کالا برای مرجوعی</p>
+          <span class="spacer"></span>
+        </header>
+
+        <div class="returns-body">
+          <div class="row-between">
+            <span class="muted">{{ items().length | faNum }} کالا در این سفارش ثبت شده است</span>
+            <span class="strong-sm">کد سفارش: {{ orderCode() }}</span>
+          </div>
+
+          <button type="button" class="select-all" (click)="toggleAll()">
+            <span class="check" [class.on]="allSelected()">
+              @if (allSelected()) { <img [src]="a.iconCheck" alt="" width="12" height="12" /> }
+            </span>
+            انتخاب همه
+          </button>
+
+          @for (it of items(); track it.id) {
+            <div class="ret-item" [class.is-selected]="isSelected(it)">
+              <div class="ret-item__main">
+                <button type="button" class="check" [class.on]="isSelected(it)" (click)="toggle(it)" [attr.aria-pressed]="isSelected(it)" aria-label="انتخاب برای مرجوعی">
+                  @if (isSelected(it)) { <img [src]="a.iconCheck" alt="" width="12" height="12" /> }
+                </button>
+                <div class="ret-item__info">
+                  <p class="ret-item__name">{{ it.productName }}</p>
+                  <p class="ret-item__meta">
+                    @if (itemVariant(it)) { <span>{{ itemVariant(it) }}</span> }
+                  </p>
+                  <p class="ret-item__price">{{ linePrice(it) }}</p>
+                </div>
+                @if (itemImage(it); as src) {
+                  <img class="ret-item__img" [src]="src" [alt]="it.productName" width="64" height="64" />
+                }
+              </div>
+
+              @if (isSelected(it)) {
+                <label class="reason">
+                  <span class="reason__label">علت مرجوعی</span>
+                  <select
+                    class="reason__select"
+                    [ngModel]="reasonOf(it)"
+                    (ngModelChange)="setReason(it, $event)"
+                    [ngModelOptions]="{ standalone: true }"
+                  >
+                    <option [ngValue]="null" disabled>انتخاب کنید…</option>
+                    @for (r of reasons; track r.value) {
+                      <option [ngValue]="r.value">{{ r.label }}</option>
+                    }
+                  </select>
+                </label>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="bottom-bar">
+        <button type="button" class="btn-brand" [disabled]="!canContinue()" (click)="goConfirm()">ادامه</button>
+      </div>
+    }
+
+    <!-- ========================= STEP: CONFIRM (screen 30) ========================= -->
+    @if (step() === 'confirm') {
+      <div class="page-scroll">
+        <header class="top-bar">
+          <button type="button" class="icon-btn" aria-label="بازگشت" (click)="back()">
+            <img [src]="a.iconBack" alt="" width="8" height="16" />
+          </button>
+          <p class="top-bar__title">تأیید درخواست مرجوعی</p>
+          <span class="spacer"></span>
+        </header>
+
+        <div class="returns-body">
+          <div class="field-group">
+            <p class="muted">کالاهای مرجوعی انتخاب شده</p>
+            @for (it of selectedItems(); track it.id) {
+              <div class="confirm-item">
+                @if (itemImage(it); as src) {
+                  <img [src]="src" [alt]="it.productName" width="48" height="48" />
+                }
+                <div>
+                  <p class="confirm-item__name">{{ it.productName }}</p>
+                  <p class="confirm-item__reason">علت: {{ reasonLabel(selections()[it.id]!.reason!) }}</p>
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="refund-card">
+            <p class="strong-sm">جزئیات بازگشت وجه</p>
+            <div class="row-between">
+              <span class="refund-amount">{{ refundText() }}</span>
+              <span class="muted">مبلغ قابل بازگشت</span>
+            </div>
+          </div>
+
+          <label class="field-group">
+            <span class="field-label">شماره شبا برای بازگشت وجه</span>
+            <input class="field ltr" name="iban" [(ngModel)]="iban" placeholder="IR + ۲۴ رقم" dir="ltr" />
+          </label>
+
+          <label class="field-group">
+            <span class="field-label muted">توضیحات (اختیاری)</span>
+            <textarea class="field" name="note" [(ngModel)]="note" rows="3" placeholder="در صورت نیاز، توضیحات خود را بنویسید."></textarea>
+          </label>
+
+          <p class="info-banner">
+            پس از ثبت درخواست، کارشناسان ما آن را بررسی می‌کنند و نتیجه را به شما اطلاع می‌دهند. در صورت تأیید، مراحل بعدی به شما اطلاع‌رسانی می‌شود.
+          </p>
+
+          @if (error()) { <p class="field-error">{{ error() }}</p> }
+        </div>
+      </div>
+
+      <div class="bottom-bar">
+        <button type="button" class="btn-brand" [disabled]="submitting()" (click)="submit()">
+          {{ submitting() ? '…' : 'ثبت درخواست مرجوعی' }}
+        </button>
+      </div>
+    }
+
+    <!-- ========================= STEP: SUCCESS (screen 31) ========================= -->
+    @if (step() === 'success' && created(); as req) {
+      <div class="page-scroll">
+        <div class="returns-body success">
+          <div class="success-badge"><img [src]="a.iconCheck" alt="" width="28" height="28" /></div>
+          <h2 class="success-title">درخواست اولیه مرجوعی برای شما ثبت شد</h2>
+
+          <div class="receipt">
+            <div class="row-between">
+              <span class="strong-sm">{{ req.id | faNum }}</span>
+              <span class="muted">کد پیگیری</span>
+            </div>
+            <div class="row-between">
+              <span>{{ createdDate() }}</span>
+              <span class="muted">تاریخ ثبت</span>
+            </div>
+            <div class="row-between">
+              <span class="refund-amount">{{ refundText() }}</span>
+              <span class="muted">مبلغ قابل بازگشت</span>
+            </div>
+            @if (req.iban) {
+              <div class="row-between">
+                <span class="ltr">{{ req.iban }}</span>
+                <span class="muted">شماره شبا برای بازگشت وجه</span>
+              </div>
+            }
+          </div>
+
+          <p class="info-banner">
+            کارشناسان ما درخواست شما را بررسی می‌کنند و نتیجه را به شما اطلاع می‌دهند. در صورت تأیید، مراحل بعدی به شما اطلاع‌رسانی می‌شود.
+          </p>
+
+          <div class="field-group">
+            <p class="muted">کالاهای مرجوعی انتخاب شده</p>
+            @for (it of req.items; track it.orderItemId) {
+              <div class="confirm-item">
+                <div>
+                  <p class="confirm-item__name">{{ it.productName }}</p>
+                  <p class="confirm-item__reason">علت: {{ reasonLabel(it.reason) }}</p>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-bar">
+        <a routerLink="/orders" class="btn-outline">بازگشت به سفارش‌ها</a>
+      </div>
+    }
+  }
+</div>

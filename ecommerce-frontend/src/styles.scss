@@ -96,6 +96,10 @@ img {
   min-height: 0;
   background: var(--surface);
   overflow-x: hidden;
+  // Installed-PWA safe areas: on iOS standalone the web view fills the whole screen (status bar /
+  // Dynamic Island overlay the top), so reserve the top inset here and the bottom inset on the
+  // bottom-nav / bottom-bar. `box-sizing: border-box` keeps the page at 100dvh including the pad.
+  padding-top: env(safe-area-inset-top);
 }
 
 .page-scroll {
@@ -311,7 +315,8 @@ img {
   background: #fff;
   border-top: 1px solid var(--border);
   box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.03);
-  padding: 16px 20px;
+  // Extend the white bar into the iOS home-indicator area so it doesn't float above a gap.
+  padding: 16px 20px calc(16px + env(safe-area-inset-bottom));
 }
 
 .section-head {

@@ -316,3 +316,56 @@ select.field {
   font-size: 13px;
   font-weight: 600;
 }
+
+.profile-heading {
+  display: none;
+}
+
+/* Desktop (≥1024px) — a constrained account page; order/address lists become two-column grids
+   and the account form lays its fields side by side. */
+@media (min-width: 1024px) {
+  .profile {
+    max-width: 900px;
+  }
+
+  .profile-heading {
+    display: block;
+    margin: 4px 0 24px;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--ink);
+  }
+
+  .profile-body {
+    padding: 0 0 40px;
+  }
+
+  .card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    padding: 24px;
+
+    h2 {
+      grid-column: 1 / -1;
+    }
+
+    .btn-brand {
+      grid-column: 1 / -1;
+      justify-self: start;
+      width: auto;
+      min-width: 220px;
+    }
+  }
+
+  .order-list,
+  .address-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .logout {
+    align-self: flex-start;
+  }
+}

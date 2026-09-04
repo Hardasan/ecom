@@ -367,3 +367,125 @@
   font-size: 13px;
   font-weight: 600;
 }
+
+/* Desktop (≥1024px, matches LayoutService.DESKTOP_MIN_WIDTH) — the page is full-width inside the
+   1200px container; the sale row becomes a grid, categories go 4-up, and the hero grows. */
+@media (min-width: 1024px) {
+  .hero {
+    padding: 8px 0 28px;
+  }
+
+  .hero-card {
+    height: 360px;
+    border-radius: 28px;
+    padding: 44px;
+  }
+
+  .hero-copy {
+    gap: 12px;
+
+    h1 {
+      font-size: 46px;
+    }
+  }
+
+  .hero-cta {
+    font-size: 15px;
+    padding: 10px 20px;
+    border-radius: var(--radius-md);
+  }
+
+  .section-head {
+    padding: 24px 0 16px;
+
+    h2 {
+      font-size: 24px;
+    }
+
+    a,
+    .link {
+      font-size: 15px;
+    }
+  }
+
+  .sale-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 20px;
+    overflow: visible;
+    padding: 0 0 40px;
+  }
+
+  .product-card {
+    flex: initial;
+    width: auto;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+
+    &:hover {
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+      transform: translateY(-2px);
+    }
+
+    &__img {
+      height: 220px;
+    }
+
+    &__name,
+    &__price {
+      font-size: 15px;
+    }
+  }
+
+  .promo {
+    border-radius: var(--radius-xl);
+    padding: 28px 40px;
+  }
+
+  .promo-title {
+    font-size: 20px;
+  }
+
+  .promo-sub {
+    font-size: 14px;
+  }
+
+  .cats {
+    padding-bottom: 8px;
+  }
+
+  .cat-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    padding: 0 0 24px;
+  }
+
+  .cat-card {
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+
+    &:hover {
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+      transform: translateY(-2px);
+    }
+
+    &--wide {
+      grid-column: auto;
+
+      .cat-card__img img {
+        height: 220px;
+      }
+    }
+
+    &__img img {
+      height: 220px;
+    }
+
+    p {
+      font-size: 16px;
+      padding: 12px 4px;
+    }
+  }
+
+  .state {
+    padding: 48px 0;
+  }
+}

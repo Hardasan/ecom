@@ -67,6 +67,31 @@
             }
           </div>
         }
+
+        <!-- Desktop buy box — the phone shows the fixed .product-bar instead; this is hidden on
+             mobile via CSS (.buy-box { display: none }) and shown at ≥1024px. -->
+        <div class="buy-box">
+          <div class="buy-box__price">
+            <div class="price-now">
+              <strong>{{ currentPrice().replace(' تومان', '') }}</strong>
+              <span class="unit">تومان</span>
+            </div>
+            @if (oldPrice(); as old) {
+              <div class="price-old">
+                @if (discountPercent(); as pct) {
+                  <span class="badge">{{ pct | faNum }}</span>
+                }
+                <span class="strike">{{ old }}</span>
+              </div>
+            }
+          </div>
+          @if (error()) {
+            <p class="inline-error">{{ error() }}</p>
+          }
+          <button type="button" class="btn-brand" [disabled]="buying()" (click)="buy()">
+            {{ buying() ? '…' : 'افزودن به سبد خرید' }}
+          </button>
+        </div>
       </div>
 
       <div class="tabs" #tabsBar>

@@ -8,6 +8,9 @@
       <span class="spacer"></span>
     </header>
 
+    <!-- Desktop heading — the phone top-bar is hidden at ≥1024px. -->
+    <h1 class="cart-heading">سبد خرید</h1>
+
     @if (loading()) {
       <p class="state">در حال بارگذاری…</p>
     } @else if (error()) {
@@ -16,58 +19,71 @@
       <p class="state">سبد خرید شما خالی است. کالاهای مورد علاقه‌تان را از فروشگاه اضافه کنید.</p>
     } @else {
       <div class="cart-body">
-        @for (item of items(); track item.id) {
-          <article class="cart-card">
-            <div class="cart-card__content">
-              <h2>{{ item.productName }}</h2>
-              <p class="meta">
-                @if (variantHex(item); as hex) {
-                  <span class="color-dot" [style.background]="hex"></span>
-                }
-                {{ variantText(item) || item.productCode || '—' }}
-              </p>
-              <p class="price">
-                <span class="unit">تومان</span>
-                <strong>{{ unitPrice(item).replace(' تومان', '') }}</strong>
-              </p>
-              <div class="cart-card__actions">
-                <div class="qty">
-                  <button type="button" (click)="dec(item)" aria-label="کاهش">
-                    <img [src]="a.iconMinus" alt="" width="14" height="14" />
-                  </button>
-                  <span>{{ item.quantity | faNum }}</span>
-                  <button type="button" (click)="inc(item)" aria-label="افزایش">
-                    <img [src]="a.iconPlus" alt="" width="14" height="14" />
+        <div class="cart-items">
+          @for (item of items(); track item.id) {
+            <article class="cart-card">
+              <div class="cart-card__content">
+                <h2>{{ item.productName }}</h2>
+                <p class="meta">
+                  @if (variantHex(item); as hex) {
+                    <span class="color-dot" [style.background]="hex"></span>
+                  }
+                  {{ variantText(item) || item.productCode || '—' }}
+                </p>
+                <p class="price">
+                  <span class="unit">تومان</span>
+                  <strong>{{ unitPrice(item).replace(' تومان', '') }}</strong>
+                </p>
+                <div class="cart-card__actions">
+                  <div class="qty">
+                    <button type="button" (click)="dec(item)" aria-label="کاهش">
+                      <img [src]="a.iconMinus" alt="" width="14" height="14" />
+                    </button>
+                    <span>{{ item.quantity | faNum }}</span>
+                    <button type="button" (click)="inc(item)" aria-label="افزایش">
+                      <img [src]="a.iconPlus" alt="" width="14" height="14" />
+                    </button>
+                  </div>
+                  <button type="button" class="trash" (click)="remove(item)" aria-label="حذف">
+                    <img [src]="a.iconTrash" alt="" width="20" height="20" />
                   </button>
                 </div>
-                <button type="button" class="trash" (click)="remove(item)" aria-label="حذف">
-                  <img [src]="a.iconTrash" alt="" width="20" height="20" />
-                </button>
               </div>
+              @if (imgOf(item); as src) {
+                <img class="cart-card__img" [src]="src" [alt]="item.productName" width="88" height="88" />
+              } @else {
+                <div class="cart-card__img placeholder"></div>
+              }
+            </article>
+          }
+        </div>
+
+        <aside class="cart-aside">
+          <div class="coupon">
+            <button type="button" class="coupon-apply">اعمال کد</button>
+            <span>کد تخفیف دارید؟</span>
+          </div>
+
+          <div class="summary">
+            <div class="summary-row">
+              <span>{{ total() }}</span>
+              <span class="muted">جمع کالاها</span>
             </div>
-            @if (imgOf(item); as src) {
-              <img class="cart-card__img" [src]="src" [alt]="item.productName" width="88" height="88" />
-            } @else {
-              <div class="cart-card__img placeholder"></div>
-            }
-          </article>
-        }
-
-        <div class="coupon">
-          <button type="button" class="coupon-apply">اعمال کد</button>
-          <span>کد تخفیف دارید؟</span>
-        </div>
-
-        <div class="summary">
-          <div class="summary-row">
-            <span>{{ total() }}</span>
-            <span class="muted">جمع کالاها</span>
+            <div class="summary-row">
+              <span class="saving">{{ saving() }}</span>
+              <span class="muted">سود شما از خرید</span>
+            </div>
           </div>
-          <div class="summary-row">
-            <span class="saving">{{ saving() }}</span>
-            <span class="muted">سود شما از خرید</span>
-          </div>
-        </div>
+
+          <button
+            type="button"
+            class="btn-brand cart-aside__checkout"
+            [disabled]="!items().length"
+            (click)="checkout()"
+          >
+            ادامه و پرداخت
+          </button>
+        </aside>
       </div>
     }
   </div>

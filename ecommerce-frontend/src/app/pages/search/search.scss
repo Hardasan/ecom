@@ -12,6 +12,28 @@
   font-size: 13px;
 }
 
+.search-heading {
+  display: none;
+}
+
+/* Desktop (≥1024px) — a centred search panel (the header also carries a search box). */
+@media (min-width: 1024px) {
+  .search-heading {
+    display: block;
+    margin: 32px 0 20px;
+    text-align: center;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--ink);
+  }
+
+  .search-form {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 0 0 48px;
+  }
+}
+
 .bottom-nav {
   display: flex;
   background: #fff;

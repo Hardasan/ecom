@@ -597,3 +597,86 @@ textarea.field {
     grid-template-columns: 1fr;
   }
 }
+
+/* =====================================================================================
+   Storefront desktop — at desktop width the shopper UI leaves the 390px phone frame and
+   renders full-width with a global site header + footer (App.showDesktopChrome, keyed off
+   LayoutService.isDesktop / DESKTOP_MIN_WIDTH = 1024px). Everything here is scoped under
+   `.app-shell--desktop`, which is set ONLY for the storefront at desktop width — the phone/PWA
+   UI (< 1024px) and the admin/warehouse dashboards are completely untouched.
+
+   Per-page desktop layouts live in each page's own SCSS behind `@media (min-width: 1024px)`
+   (kept in sync with the 1024px breakpoint above).
+   ===================================================================================== */
+
+.app-shell--desktop {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--surface);
+
+  // Drop the phone frame: full width, document scroll (not the inner .page-scroll), auto height.
+  // The flex item here is the page component's host element (<app-home> …); leave it at the default
+  // `stretch` so it fills the width, and centre the inner .page container with auto margins.
+  .app-frame {
+    max-width: none;
+    height: auto;
+    overflow: visible;
+    flex: 1 0 auto; // grow so the footer sits at the bottom on short pages
+    background: var(--surface);
+  }
+
+  .page {
+    height: auto;
+    overflow: visible;
+    max-width: 1200px; // pages that want a narrower column override this in their own SCSS
+    margin-inline: auto;
+    padding: 28px 24px 56px;
+  }
+
+  .page-scroll {
+    flex: initial;
+    overflow: visible;
+    -webkit-overflow-scrolling: auto;
+  }
+
+  // The phone chrome is replaced by the global <app-site-header> / <app-site-footer>. The nav
+  // elements are element-qualified so they beat the equal-specificity component styles that set
+  // them to `display: flex` (`.top-bar` is a global class, so the plain selector already wins).
+  .top-bar,
+  header.home-nav,
+  nav.bottom-nav {
+    display: none;
+  }
+
+  // Toasts float over the viewport instead of the (now static) .page. The `.page` in the selector
+  // lifts specificity above the equal-weight component `.toast` rule (global CSS loads first).
+  .page .toast {
+    position: fixed;
+    left: 50%;
+    right: auto;
+    inset-inline: auto;
+    bottom: 32px;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: 90vw;
+  }
+
+  // Bottom-sheet dialogs (address / items pickers) become centred modals on desktop. Same
+  // specificity trick, and `position: fixed` overrides the components' `position: absolute`.
+  .page .sheet-backdrop {
+    position: fixed;
+    background: rgba(0, 0, 0, 0.45);
+  }
+
+  .page .sheet {
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    width: min(560px, 92vw);
+    height: max-content;
+    max-height: 88vh;
+    border-radius: var(--radius-xl);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+  }
+}

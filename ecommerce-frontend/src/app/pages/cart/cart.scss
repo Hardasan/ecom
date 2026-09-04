@@ -5,6 +5,23 @@
   padding: 20px;
 }
 
+.cart-items,
+.cart-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+// Desktop heading + desktop-only checkout button (phone uses the top-bar + fixed .bottom-bar).
+.cart-heading {
+  display: none;
+}
+
+.cart-aside__checkout {
+  display: none;
+}
+
 .cart-card {
   display: flex;
   gap: 16px;
@@ -166,5 +183,46 @@
 
   &.error {
     color: var(--danger);
+  }
+}
+
+/* Desktop (≥1024px) — items on one side, a sticky summary + checkout aside on the other. */
+@media (min-width: 1024px) {
+  .cart-heading {
+    display: block;
+    margin: 4px 0 24px;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--ink);
+  }
+
+  .cart-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    align-items: start;
+    gap: 32px;
+    padding: 0 0 40px;
+  }
+
+  .cart-aside {
+    position: sticky;
+    top: 96px;
+  }
+
+  .cart-aside__checkout {
+    display: flex;
+  }
+
+  .summary {
+    font-size: 15px;
+  }
+
+  // The phone's fixed checkout bar is replaced by the button in the aside.
+  .bottom-bar {
+    display: none;
+  }
+
+  .state {
+    padding: 64px 0;
   }
 }

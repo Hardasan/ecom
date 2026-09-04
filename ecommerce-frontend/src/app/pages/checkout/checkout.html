@@ -20,80 +20,96 @@
       <p class="form-error">{{ error() }}</p>
     }
 
-    <div class="checkout-body">
-      @if (selectedAddress(); as addr) {
-        <div class="ship-head">
-          <button type="button" class="change-addr" (click)="openSelectSheet()">تغییر آدرس</button>
-          <span class="ship-label">آدرس‌ ارسال</span>
-        </div>
-        <div class="address-card">
-          <strong>
-            {{ addr.title || 'آدرس' }}
-            <img [src]="a.iconMapPin" alt="" width="16" height="16" />
-          </strong>
-          <span>{{ addressText(addr) }}</span>
-        </div>
-      } @else {
-        <button type="button" class="address-empty" (click)="openFormSheet()">
-          <span class="address-empty__title">
-            افزودن آدرس
-            <img [src]="a.iconMapPin" alt="" width="16" height="16" />
-          </span>
-          <span class="address-empty__sub">هنوز آدرسی اضافه نکرده‌اید</span>
-        </button>
-      }
+    <!-- Desktop heading — the phone top-bar is hidden at ≥1024px. -->
+    <h1 class="checkout-heading">تأیید سفارش</h1>
 
-      <h2>خلاصه کالاها</h2>
-      <button type="button" class="summary-card" (click)="openItemsSheet()">
-        <div class="summary-card__row">
-          <span>{{ totalLabel() }}</span>
-          <span>تعداد کل کالاها: {{ cartQty() | faNum }}</span>
-        </div>
-        <div class="summary-card__thumbs">
-          <img [src]="a.iconBack" alt="" class="summary-card__more" width="20" height="20" />
-          <div class="thumbs">
-            @for (item of cartItems().slice(0, 4); track item.id) {
-              @if (itemThumb(item); as src) {
-                <img [src]="src" [alt]="item.productName" width="64" height="64" />
+    <div class="checkout-body">
+      <div class="checkout-main">
+        @if (selectedAddress(); as addr) {
+          <div class="ship-head">
+            <button type="button" class="change-addr" (click)="openSelectSheet()">تغییر آدرس</button>
+            <span class="ship-label">آدرس‌ ارسال</span>
+          </div>
+          <div class="address-card">
+            <strong>
+              {{ addr.title || 'آدرس' }}
+              <img [src]="a.iconMapPin" alt="" width="16" height="16" />
+            </strong>
+            <span>{{ addressText(addr) }}</span>
+          </div>
+        } @else {
+          <button type="button" class="address-empty" (click)="openFormSheet()">
+            <span class="address-empty__title">
+              افزودن آدرس
+              <img [src]="a.iconMapPin" alt="" width="16" height="16" />
+            </span>
+            <span class="address-empty__sub">هنوز آدرسی اضافه نکرده‌اید</span>
+          </button>
+        }
+
+        <h2>خلاصه کالاها</h2>
+        <button type="button" class="summary-card" (click)="openItemsSheet()">
+          <div class="summary-card__row">
+            <span>{{ totalLabel() }}</span>
+            <span>تعداد کل کالاها: {{ cartQty() | faNum }}</span>
+          </div>
+          <div class="summary-card__thumbs">
+            <img [src]="a.iconBack" alt="" class="summary-card__more" width="20" height="20" />
+            <div class="thumbs">
+              @for (item of cartItems().slice(0, 4); track item.id) {
+                @if (itemThumb(item); as src) {
+                  <img [src]="src" [alt]="item.productName" width="64" height="64" />
+                }
+              } @empty {
+                <p class="empty-cart">سبد خرید شما خالی است</p>
               }
-            } @empty {
-              <p class="empty-cart">سبد خرید شما خالی است</p>
-            }
+            </div>
+          </div>
+        </button>
+
+        <h2>روش پرداخت</h2>
+        <label class="pay-option" [class.is-selected]="payment === 'bank'">
+          <span>درگاه بانکی</span>
+          <input type="radio" name="pay" value="bank" [(ngModel)]="payment" />
+          <img [src]="a.iconRadio" alt="" width="20" height="20" />
+        </label>
+        <label class="pay-option" [class.is-selected]="payment === 'cod'">
+          <span>پرداخت در محل</span>
+          <input type="radio" name="pay" value="cod" [(ngModel)]="payment" />
+          <span class="radio-empty"></span>
+        </label>
+
+        <h2>روش ارسال</h2>
+        <div class="ship-option">
+          <span>پست</span>
+        </div>
+      </div>
+
+      <aside class="checkout-aside">
+        <div class="cost-summary">
+          <div class="cost-row">
+            <span>{{ itemsSubtotalLabel() }}</span>
+            <span>جمع کالاها</span>
+          </div>
+          <div class="cost-row">
+            <span [class.muted]="!hasShipping()">{{ shippingLabel() }}</span>
+            <span>هزینه ارسال</span>
+          </div>
+          <div class="cost-row cost-row--total">
+            <span>{{ payableLabel() }}</span>
+            <span>مبلغ قابل پرداخت</span>
           </div>
         </div>
-      </button>
 
-      <h2>روش پرداخت</h2>
-      <label class="pay-option" [class.is-selected]="payment === 'bank'">
-        <span>درگاه بانکی</span>
-        <input type="radio" name="pay" value="bank" [(ngModel)]="payment" />
-        <img [src]="a.iconRadio" alt="" width="20" height="20" />
-      </label>
-      <label class="pay-option" [class.is-selected]="payment === 'cod'">
-        <span>پرداخت در محل</span>
-        <input type="radio" name="pay" value="cod" [(ngModel)]="payment" />
-        <span class="radio-empty"></span>
-      </label>
-
-      <h2>روش ارسال</h2>
-      <div class="ship-option">
-        <span>پست</span>
-      </div>
-
-      <div class="cost-summary">
-        <div class="cost-row">
-          <span>{{ itemsSubtotalLabel() }}</span>
-          <span>جمع کالاها</span>
-        </div>
-        <div class="cost-row">
-          <span [class.muted]="!hasShipping()">{{ shippingLabel() }}</span>
-          <span>هزینه ارسال</span>
-        </div>
-        <div class="cost-row cost-row--total">
-          <span>{{ payableLabel() }}</span>
-          <span>مبلغ قابل پرداخت</span>
-        </div>
-      </div>
+        <button
+          type="button"
+          class="btn-brand checkout-aside__pay"
+          [disabled]="busy()"
+          (click)="placeOrder()"
+        >
+          {{ payButtonLabel() }}
+        </button>
+      </aside>
     </div>
   </div>
 

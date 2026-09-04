@@ -502,3 +502,114 @@
   font-size: 13px;
   font-weight: 600;
 }
+
+// Desktop buy box lives inside .info; hidden on the phone (which uses the fixed .product-bar).
+.buy-box {
+  display: none;
+}
+
+/* Desktop (≥1024px) — a two-column fold (gallery on the right, details + buy box on the left in
+   RTL), then the description / spec / reviews sections as full-width cards. The phone's sticky tab
+   bar and fixed buy bar are replaced, so the scroll-spy is not needed here. */
+@media (min-width: 1024px) {
+  .page-scroll {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    column-gap: 48px;
+  }
+
+  .gallery {
+    grid-column: 1; // column 1 is the right side in RTL
+    grid-row: 1;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    position: sticky;
+    top: 96px;
+  }
+
+  .gallery-img {
+    height: 480px;
+  }
+
+  .info {
+    grid-column: 2;
+    grid-row: 1;
+    padding: 0;
+
+    h1 {
+      font-size: 24px;
+    }
+  }
+
+  .label {
+    margin-top: 28px;
+  }
+
+  .buy-box {
+    display: block;
+    margin-top: 28px;
+    padding: 24px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: #fff;
+
+    &__price {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .price-now strong {
+      font-size: 26px;
+    }
+
+    .btn-brand {
+      font-size: 16px;
+    }
+
+    .inline-error {
+      margin-bottom: 12px;
+    }
+  }
+
+  // The phone's fixed price/buy bar and sticky tab bar are not used on desktop.
+  .product-bar,
+  .tabs {
+    display: none;
+  }
+
+  .sections {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin-top: 44px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .section {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    scroll-margin-top: 96px;
+
+    &:not(:first-child) {
+      border-top: 1px solid var(--border); // reset the phone's 8px slab divider
+    }
+
+    &:last-child {
+      min-height: 0; // scroll-spy spacer not needed on desktop
+    }
+
+    &__title {
+      font-size: 18px;
+    }
+
+    p {
+      font-size: 14px;
+    }
+  }
+}

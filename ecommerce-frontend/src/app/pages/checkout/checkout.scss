@@ -42,6 +42,24 @@
   }
 }
 
+// The two column groups behave as plain stacks on mobile (preserving the original order/spacing).
+.checkout-main,
+.checkout-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+// Desktop heading + desktop-only place-order button (phone uses the steps + fixed .bottom-bar).
+.checkout-heading {
+  display: none;
+}
+
+.checkout-aside__pay {
+  display: none;
+}
+
 .ship-head {
   display: flex;
   align-items: center;
@@ -345,4 +363,46 @@
 
 select.field {
   appearance: none;
+}
+
+/* Desktop (≥1024px) — address / payment / shipping on one side, a sticky order-total + pay
+   button aside on the other. */
+@media (min-width: 1024px) {
+  .steps {
+    display: none; // step dots are a phone affordance; the heading carries context on desktop
+  }
+
+  .checkout-heading {
+    display: block;
+    margin: 4px 0 24px;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--ink);
+  }
+
+  .checkout-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    align-items: start;
+    gap: 32px;
+    padding: 0 0 40px;
+  }
+
+  .checkout-aside {
+    position: sticky;
+    top: 96px;
+  }
+
+  .checkout-aside__pay {
+    display: flex;
+  }
+
+  .cost-summary {
+    margin-top: 0;
+  }
+
+  // The phone's fixed pay bar is replaced by the button in the aside.
+  .bottom-bar {
+    display: none;
+  }
 }

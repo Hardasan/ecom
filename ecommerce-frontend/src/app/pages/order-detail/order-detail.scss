@@ -182,3 +182,38 @@
   text-align: center;
   z-index: 50;
 }
+
+.detail-heading {
+  display: none;
+}
+
+/* Desktop (≥1024px) — a constrained receipt column with proper card outlines. */
+@media (min-width: 1024px) {
+  .order-detail {
+    max-width: 760px;
+  }
+
+  .detail-heading {
+    display: block;
+    margin: 4px 0 24px;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--ink);
+  }
+
+  .detail-body {
+    padding: 0 0 40px;
+  }
+
+  .receipt-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+  }
+
+  .item-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+  }
+}

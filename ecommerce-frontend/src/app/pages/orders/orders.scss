@@ -70,3 +70,35 @@
   font-weight: 700;
   color: var(--brand);
 }
+
+.orders-heading {
+  display: none;
+}
+
+/* Desktop (≥1024px) — order cards in a grid instead of one column. */
+@media (min-width: 1024px) {
+  .orders-heading {
+    display: block;
+    margin: 4px 0 24px;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--ink);
+  }
+
+  .orders-body {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    align-items: start;
+    gap: 16px;
+    padding: 0 0 40px;
+  }
+
+  .order-card {
+    border: 1px solid var(--border);
+  }
+
+  .empty {
+    grid-column: 1 / -1;
+    padding: 48px 0;
+  }
+}

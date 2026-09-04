@@ -1,0 +1,69 @@
+<header class="site-header">
+  <div class="site-header__inner">
+    <a routerLink="/" class="site-brand" aria-label="RiVaNi — خانه">RiVaNi</a>
+
+    <nav class="site-nav" aria-label="ناوبری اصلی">
+      <a routerLink="/" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">خانه</a>
+
+      <div class="site-nav__group">
+        <a
+          routerLink="/categories"
+          routerLinkActive="is-active"
+          class="site-nav__trigger"
+          aria-haspopup="true"
+        >
+          دسته‌بندی‌ها
+        </a>
+        @if (rootCategories().length) {
+          <div class="site-menu" role="menu">
+            @for (c of rootCategories(); track c.id) {
+              <a
+                role="menuitem"
+                [routerLink]="['/products']"
+                [queryParams]="{ categoryId: c.id, title: c.localName || c.name }"
+              >
+                {{ c.localName || c.name }}
+              </a>
+            }
+          </div>
+        }
+      </div>
+
+      <a routerLink="/products" [queryParams]="{ title: 'فروش ویژه' }" routerLinkActive="is-active">
+        فروش ویژه
+      </a>
+    </nav>
+
+    <form class="site-search" (ngSubmit)="search()" role="search">
+      <img [src]="a.iconSearch" alt="" width="18" height="18" />
+      <input
+        type="search"
+        name="q"
+        [(ngModel)]="query"
+        placeholder="جستجوی محصول…"
+        aria-label="جستجوی محصول"
+      />
+    </form>
+
+    <div class="site-actions">
+      <a routerLink="/cart" class="site-icon" aria-label="سبد خرید">
+        <img [src]="a.iconCart" alt="" width="22" height="22" />
+        @if (cart.totalQuantity() > 0) {
+          <span class="cart-badge">{{ cart.badge() }}</span>
+        }
+      </a>
+
+      @if (auth.isLoggedIn()) {
+        <a routerLink="/profile" class="site-account" routerLinkActive="is-active">
+          <img [src]="a.iconUser" alt="" width="20" height="20" />
+          <span>حساب من</span>
+        </a>
+      } @else {
+        <a routerLink="/login" [queryParams]="{ returnUrl: '/profile' }" class="site-account">
+          <img [src]="a.iconUser" alt="" width="20" height="20" />
+          <span>ورود / ثبت‌نام</span>
+        </a>
+      }
+    </div>
+  </div>
+</header>

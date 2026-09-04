@@ -41,6 +41,10 @@
   }
 }
 
+.cat-heading {
+  display: none;
+}
+
 .state {
   padding: 40px 20px;
   text-align: center;
@@ -48,6 +52,33 @@
 
   &.error {
     color: var(--danger);
+  }
+}
+
+/* Desktop (≥1024px) — category blocks in a multi-column grid instead of one tall column. */
+@media (min-width: 1024px) {
+  .cat-heading {
+    display: block;
+    margin: 4px 0 24px;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--ink);
+  }
+
+  .cat-list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    align-items: start;
+    gap: 20px;
+    padding: 0 0 40px;
+  }
+
+  .cat-block__main {
+    font-size: 17px;
+  }
+
+  .state {
+    padding: 64px 0;
   }
 }
 

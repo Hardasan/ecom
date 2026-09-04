@@ -1,5 +1,15 @@
-<div class="app-shell" [class.app-shell--full]="isAdminRoute()">
+<div
+  class="app-shell"
+  [class.app-shell--full]="isAdminRoute()"
+  [class.app-shell--desktop]="showDesktopChrome()"
+>
+  @if (showDesktopChrome()) {
+    <app-site-header />
+  }
   <div class="app-frame">
     <router-outlet />
   </div>
+  @if (showDesktopChrome()) {
+    <app-site-footer />
+  }
 </div>

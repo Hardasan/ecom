@@ -168,3 +168,29 @@
   color: var(--danger);
   font-size: 13px;
 }
+
+/* Desktop (≥1024px) — a constrained, centred confirmation receipt. */
+@media (min-width: 1024px) {
+  .success {
+    max-width: 600px;
+  }
+
+  .success-main {
+    padding: 24px 0;
+    gap: 20px;
+  }
+
+  .message {
+    font-size: 20px;
+  }
+
+  .receipt-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+  }
+
+  .success-actions {
+    padding: 8px 0 40px;
+  }
+}

@@ -124,3 +124,28 @@
   font-size: 13px;
   text-align: center;
 }
+
+/* Desktop (≥1024px) — a centred auth card instead of the full-bleed phone screen. */
+@media (min-width: 1024px) {
+  :host {
+    display: block;
+  }
+
+  .login {
+    max-width: 460px;
+    justify-content: center;
+    min-height: calc(100dvh - 260px);
+  }
+
+  .login-inner {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: 40px;
+    box-shadow: var(--shadow-soft);
+  }
+
+  .login-block h1 {
+    font-size: 20px;
+  }
+}

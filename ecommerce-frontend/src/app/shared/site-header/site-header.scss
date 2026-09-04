@@ -1,0 +1,192 @@
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.site-header__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.site-brand {
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--brand);
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  > a,
+  &__trigger {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink-body);
+    cursor: pointer;
+
+    &:hover {
+      color: var(--brand);
+      background: var(--brand-soft);
+    }
+
+    &.is-active {
+      color: var(--brand);
+    }
+  }
+}
+
+// Hover/focus dropdown of root categories — pure CSS, no JS state needed on desktop.
+.site-nav__group {
+  position: relative;
+
+  &:hover .site-menu,
+  &:focus-within .site-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+}
+
+.site-menu {
+  position: absolute;
+  top: 100%;
+  inset-inline-start: 0;
+  margin-top: 6px;
+  min-width: 220px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(6px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+  z-index: 50;
+
+  a {
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink-body);
+    text-align: right;
+
+    &:hover {
+      background: var(--surface);
+      color: var(--brand);
+    }
+  }
+}
+
+.site-search {
+  flex: 1;
+  max-width: 460px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  height: 44px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+
+  &:focus-within {
+    border-color: var(--brand);
+  }
+
+  img {
+    opacity: 0.6;
+    flex-shrink: 0;
+  }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: 14px;
+    color: var(--ink);
+
+    &::placeholder {
+      color: var(--ink-subtle);
+    }
+  }
+}
+
+.site-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  margin-inline-start: auto;
+}
+
+.site-icon {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background: var(--surface);
+  }
+}
+
+.site-account {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-body);
+  white-space: nowrap;
+
+  &:hover,
+  &.is-active {
+    border-color: var(--brand);
+    color: var(--brand);
+  }
+}
+
+// Tablet-ish desktop: let the search shrink before the nav does.
+@media (max-width: 1100px) {
+  .site-header__inner {
+    gap: 16px;
+  }
+
+  .site-search {
+    max-width: 280px;
+  }
+
+  .site-account span {
+    display: none;
+  }
+}

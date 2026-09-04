@@ -1,0 +1,33 @@
+<footer class="site-footer">
+  <div class="site-footer__inner">
+    <div class="site-footer__brand">
+      <p class="brand">RiVaNi</p>
+      <p class="tagline">فروشگاه آنلاین ری‌وانی — خرید آسان و مطمئن</p>
+    </div>
+
+    <nav class="site-footer__col" aria-label="فروشگاه">
+      <h3>فروشگاه</h3>
+      <a routerLink="/">خانه</a>
+      <a routerLink="/categories">دسته‌بندی‌ها</a>
+      <a routerLink="/products" [queryParams]="{ title: 'فروش ویژه' }">فروش ویژه</a>
+    </nav>
+
+    <nav class="site-footer__col" aria-label="حساب کاربری">
+      <h3>حساب کاربری</h3>
+      <a routerLink="/profile">حساب من</a>
+      <a routerLink="/orders">سفارش‌ها</a>
+      <a routerLink="/cart">سبد خرید</a>
+    </nav>
+
+    <div class="site-footer__col">
+      <h3>پشتیبانی</h3>
+      <p>پاسخگویی ۹ تا ۱۸</p>
+      <p>ارسال به سراسر کشور</p>
+      <p>پرداخت امن</p>
+    </div>
+  </div>
+
+  <div class="site-footer__bar">
+    © {{ year }} RiVaNi — تمامی حقوق محفوظ است.
+  </div>
+</footer>

@@ -24,13 +24,14 @@
     }
   }
 
-  // Wishlist heart — white circle, top-start corner.
+  // Wishlist heart — white circle, physical top-LEFT corner (Figma places fav-button at x=20).
+  // Physical `left` (not inset-inline-start) so it doesn't mirror to the right in the RTL document.
   &__fav {
     position: absolute;
     top: 8px;
-    inset-inline-start: 8px;
-    width: 40px;
-    height: 40px;
+    left: 8px;
+    width: 44px;
+    height: 44px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -47,11 +48,11 @@
     }
   }
 
-  // Discount tag — top-end corner (uses the shared .tag-sale look).
+  // Discount tag — physical top-RIGHT corner (Figma places the tag at the right edge, x=127).
   &__tag {
     position: absolute;
     top: 10px;
-    inset-inline-end: 10px;
+    right: 10px;
   }
 
   &__body {

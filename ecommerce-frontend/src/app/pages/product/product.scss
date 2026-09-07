@@ -486,21 +486,30 @@
   cursor: pointer;
   font-size: 14px;
 
+  // Text variants (e.g. sizes): selected = brand-green chip (Figma uses green, not purple).
   &.is-selected {
-    background: var(--accent);
-    border-color: var(--brand-soft);
+    background: var(--brand);
+    border-color: var(--brand);
     color: #fff;
   }
 
-  // COLOR variants: a real color swatch (dot) next to its name, never the raw hex code.
+  // COLOR variants (Figma "Property Attribute"): a bare 36px colour circle, no hex text.
+  // Selected shows an offset 2px brand ring (2px pad between the swatch and the ring).
   &.is-color {
+    min-width: 0;
+    width: 36px;
+    height: 36px;
+    padding: 2px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: #fff;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding-inline-start: 10px;
+    justify-content: center;
 
-    &.is-selected .swatch-dot {
-      box-shadow: 0 0 0 2px #fff;
+    &.is-selected {
+      border-color: var(--brand);
+      background: #fff;
     }
   }
 }
@@ -511,6 +520,12 @@
   border-radius: 50%;
   border: 1px solid rgba(0, 0, 0, 0.15);
   flex: none;
+}
+
+// A colour swatch's dot fills its circle.
+.swatch-chip.is-color .swatch-dot {
+  width: 100%;
+  height: 100%;
 }
 
 .state {

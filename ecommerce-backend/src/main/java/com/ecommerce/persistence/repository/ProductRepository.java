@@ -41,6 +41,15 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     @Query("SELECT p.url FROM Product p")
     List<String> findAllUrls();
 
+    /**
+     * Active-product count grouped by direct categoryId, for the storefront category cards.
+     * One {@code [categoryId, count]} row per category that has ACTIVE products; the service rolls
+     * sub-category counts up into their parent.
+     */
+    @Query("SELECT p.categoryId, COUNT(p) FROM Product p "
+            + "WHERE p.status = 'ACTIVE' AND p.categoryId IS NOT NULL GROUP BY p.categoryId")
+    List<Object[]> countActiveByCategory();
+
     List<Product> findByCodeIn(Collection<String> codes);
 
     long countByStatus(ProductStatus status);

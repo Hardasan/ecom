@@ -198,51 +198,105 @@
 }
 
 .cats {
-  padding-bottom: 24px;
+  padding-bottom: 8px;
+}
+
+// Featured wide category card (Figma: green-tinted banner with name + count + "مشاهده دسته").
+.cat-feature {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 16px 16px;
+  padding: 20px;
+  background: #eef6f0;
+  border-radius: var(--radius-lg);
+  color: inherit;
+  overflow: hidden;
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align: right;
+  }
+
+  &__name {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--ink-body);
+  }
+
+  &__count {
+    margin: 0;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  &__link {
+    margin-top: 4px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--brand);
+  }
+
+  &__img {
+    width: 120px;
+    height: 120px;
+    flex-shrink: 0;
+    object-fit: contain;
+  }
 }
 
 .cat-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
-  padding: 0 20px 24px;
+  padding: 0 16px 24px;
 }
 
 .cat-card {
-  border: 1px solid var(--cat-smart);
+  border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  text-align: center;
   color: inherit;
-  display: block;
-
-  &--wide {
-    grid-column: 1 / -1;
-
-    .cat-card__img img {
-      height: 168px;
-    }
-  }
+  display: flex;
+  flex-direction: column;
 
   &__img {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--cat-smart);
     overflow: hidden;
 
     img {
       width: 100%;
-      height: 180px;
+      height: 150px;
       object-fit: cover;
     }
   }
 
-  p {
+  &__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px 12px;
+    text-align: right;
+  }
+
+  &__name {
     margin: 0;
-    padding: 4px;
     font-size: 16px;
     font-weight: 600;
+    color: var(--ink);
+  }
+
+  &__count {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
   }
 
   &[data-tone='kitchen'] {
@@ -257,12 +311,49 @@
     background: var(--cat-other);
   }
 
-  &[data-tone='electric'] {
-    background: var(--cat-electric);
+  &[data-tone='green'] {
+    background: #eef6f0;
+  }
+}
+
+// Mobile store footer (Figma home ends with this; desktop uses the global site-footer instead).
+.home-footer {
+  background: var(--surface-2);
+  padding: 24px 20px calc(24px + env(safe-area-inset-bottom));
+  text-align: right;
+
+  &__brand {
+    margin: 0 0 10px;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--ink-body);
   }
 
-  &[data-tone='home'] {
-    background: var(--cat-home);
+  &__blurb {
+    margin: 0 0 16px;
+    font-size: 13px;
+    line-height: 2;
+    color: var(--ink-body);
+  }
+
+  &__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    margin-bottom: 16px;
+
+    a {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--brand);
+    }
+  }
+
+  &__copy {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.9;
+    color: var(--muted);
   }
 }
 
@@ -462,6 +553,20 @@
     padding-bottom: 8px;
   }
 
+  .cat-feature {
+    margin: 0 0 20px;
+    padding: 28px 40px;
+
+    &__name {
+      font-size: 22px;
+    }
+
+    &__img {
+      width: 160px;
+      height: 160px;
+    }
+  }
+
   .cat-grid {
     grid-template-columns: repeat(4, 1fr);
     gap: 20px;
@@ -476,22 +581,14 @@
       transform: translateY(-2px);
     }
 
-    &--wide {
-      grid-column: auto;
-
-      .cat-card__img img {
-        height: 220px;
-      }
-    }
-
     &__img img {
-      height: 220px;
+      height: 200px;
     }
+  }
 
-    p {
-      font-size: 16px;
-      padding: 12px 4px;
-    }
+  // Desktop uses the global <app-site-footer>; hide the phone store-footer.
+  .home-footer {
+    display: none;
   }
 
   .state {

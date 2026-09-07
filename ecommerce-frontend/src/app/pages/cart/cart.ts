@@ -5,10 +5,11 @@ import { ASSETS } from '../../assets';
 import { CartService } from '../../core/cart.service';
 import { CartDto, CartItemDto } from '../../core/models';
 import { colorHex, formatPrice, imageSrc, toNumber, variantLabel } from '../../core/format';
+import { BottomNav } from '../../shared/bottom-nav/bottom-nav';
 
 @Component({
   selector: 'app-cart',
-  imports: [RouterLink, FaNumPipe],
+  imports: [RouterLink, FaNumPipe, BottomNav],
   templateUrl: './cart.html',
   styleUrl: './cart.scss'
 })

@@ -1,19 +1,18 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ASSETS } from '../../assets';
-import { AuthService } from '../../core/auth.service';
 import { CategoryService } from '../../core/category.service';
 import { CategoryDto, CategoryHierarchyItem } from '../../core/models';
+import { BottomNav } from '../../shared/bottom-nav/bottom-nav';
 
 @Component({
   selector: 'app-categories',
-  imports: [RouterLink],
+  imports: [RouterLink, BottomNav],
   templateUrl: './categories.html',
   styleUrl: './categories.scss'
 })
 export class Categories implements OnInit {
   readonly a = ASSETS;
-  readonly auth = inject(AuthService);
   private readonly categoriesApi = inject(CategoryService);
 
   readonly items = signal<CategoryHierarchyItem[]>([]);

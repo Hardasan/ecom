@@ -46,6 +46,14 @@
           @if (o.postalCode) { — کدپستی {{ o.postalCode }} }
         </p>
       </div>
+
+      @if (o.carrier || o.trackingNumber) {
+        <div class="admin-card">
+          <h2>اطلاعات ارسال</h2>
+          @if (o.carrier) { <p>شرکت پستی: <strong>{{ o.carrier }}</strong></p> }
+          @if (o.trackingNumber) { <p>کد رهگیری مرسوله: <strong>{{ o.trackingNumber }}</strong></p> }
+        </div>
+      }
     </div>
 
     <div class="admin-card">

@@ -59,11 +59,6 @@
         </div>
 
         <aside class="cart-aside">
-          <div class="coupon">
-            <button type="button" class="coupon-apply">اعمال کد</button>
-            <span>کد تخفیف دارید؟</span>
-          </div>
-
           <div class="summary">
             <div class="summary-row">
               <span>{{ total() }}</span>
@@ -88,7 +83,11 @@
     }
   </div>
 
-  <div class="bottom-bar">
-    <button type="button" class="btn-brand" [disabled]="!items().length" (click)="checkout()">ادامه و پرداخت</button>
-  </div>
+  @if (items().length) {
+    <div class="bottom-bar">
+      <button type="button" class="btn-brand" (click)="checkout()">ادامه و پرداخت</button>
+    </div>
+  }
+
+  <app-bottom-nav active="cart" />
 </div>

@@ -315,8 +315,13 @@ img {
   background: #fff;
   border-top: 1px solid var(--border);
   box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.03);
-  // Extend the white bar into the iOS home-indicator area so it doesn't float above a gap.
-  padding: 16px 20px calc(16px + env(safe-area-inset-bottom));
+  padding: 16px 20px;
+}
+
+// Only the bottom-most bar consumes the iOS home-indicator inset. When a tab-nav follows the bar
+// (e.g. the cart CTA sits above the bottom-nav), the nav owns the inset instead — so no gap.
+.bottom-bar:last-child {
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
 }
 
 .section-head {

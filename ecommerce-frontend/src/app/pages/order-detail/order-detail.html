@@ -34,6 +34,24 @@
           <span class="badge">ارسال با پست</span>
         </section>
 
+        @if (o.carrier || o.trackingNumber) {
+          <section class="receipt-card">
+            <p class="section-title">اطلاعات ارسال</p>
+            @if (o.carrier) {
+              <div class="line-meta">
+                <span class="body">{{ o.carrier }}</span>
+                <span class="muted">شرکت پستی</span>
+              </div>
+            }
+            @if (o.trackingNumber) {
+              <div class="line-meta">
+                <span class="body">{{ o.trackingNumber | faNum }}</span>
+                <span class="muted">کد رهگیری مرسوله</span>
+              </div>
+            }
+          </section>
+        }
+
         <section class="receipt-card">
           <p class="section-title">اطلاعات پرداخت</p>
           <div class="line-meta">

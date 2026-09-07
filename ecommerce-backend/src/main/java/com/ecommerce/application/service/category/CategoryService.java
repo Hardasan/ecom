@@ -10,7 +10,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,7 +25,28 @@ public class CategoryService {
 
     @Transactional(readOnly = true)
     public CategoryListResponseDto getAll() {
-        return new CategoryListResponseDto(categoryMapper.toResponseDtoList(categoryRepository.findAll()));
+        List<Category> categories = categoryRepository.findAll();
+        List<CategoryResponseDto> dtos = categoryMapper.toResponseDtoList(categories);
+
+        // Direct ACTIVE-product count per categoryId, then roll each sub-category's count up into
+        // its parent so a root card shows the total of everything browsable under it.
+        Map<Long, Long> directCount = new HashMap<>();
+        for (Object[] row : productRepository.countActiveByCategory()) {
+            directCount.put((Long) row[0], (Long) row[1]);
+        }
+        Map<Long, List<Long>> childIdsByParent = categories.stream()
+                .filter(c -> c.getParentId() != null)
+                .collect(Collectors.groupingBy(Category::getParentId,
+                        Collectors.mapping(Category::getId, Collectors.toList())));
+
+        for (CategoryResponseDto dto : dtos) {
+            long total = directCount.getOrDefault(dto.getId(), 0L);
+            for (Long childId : childIdsByParent.getOrDefault(dto.getId(), List.of())) {
+                total += directCount.getOrDefault(childId, 0L);
+            }
+            dto.setProductCount((int) total);
+        }
+        return new CategoryListResponseDto(dtos);
     }
 
     @Transactional(readOnly = true)

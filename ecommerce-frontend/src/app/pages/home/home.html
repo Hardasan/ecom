@@ -81,25 +81,64 @@
         <a routerLink="/categories" class="link">مشاهده همه</a>
         <h2>دسته‌بندی پیشنهادی</h2>
       </div>
+
+      @if (featuredCategory(); as f) {
+        <a
+          class="cat-feature"
+          [routerLink]="['/products']"
+          [queryParams]="{ categoryId: f.id, title: f.name }"
+        >
+          <div class="cat-feature__text">
+            <p class="cat-feature__name">{{ f.name }}</p>
+            @if (f.count) {
+              <p class="cat-feature__count">{{ catCount(f.count) }} کالا</p>
+            }
+            <span class="cat-feature__link">مشاهده دسته ›</span>
+          </div>
+          @if (f.image) {
+            <img class="cat-feature__img" [src]="f.image" [alt]="f.name" width="200" height="200" loading="lazy" decoding="async" />
+          }
+        </a>
+      }
+
       <div class="cat-grid">
-        @for (c of categories(); track c.id; let i = $index) {
+        @for (c of gridCategories(); track c.id) {
           <a
             class="cat-card"
-            [class.cat-card--wide]="i === categories().length - 1 && categories().length % 2 === 1"
             [attr.data-tone]="c.tone"
             [routerLink]="['/products']"
             [queryParams]="{ categoryId: c.id, title: c.name }"
           >
             <div class="cat-card__img">
               @if (c.image) {
-                <img [src]="c.image" [alt]="c.name" width="480" height="640" loading="lazy" decoding="async" />
+                <img [src]="c.image" [alt]="c.name" width="480" height="480" loading="lazy" decoding="async" />
               }
             </div>
-            <p>{{ c.name }}</p>
+            <div class="cat-card__meta">
+              <p class="cat-card__name">{{ c.name }}</p>
+              @if (c.count) {
+                <p class="cat-card__count">{{ catCount(c.count) }} کالا</p>
+              }
+            </div>
           </a>
         }
       </div>
     </section>
+
+    <footer class="home-footer">
+      <p class="home-footer__brand">فروشگاه بزرگ ریونی</p>
+      <p class="home-footer__blurb">
+        ریونی همواره در تلاش است تا باکیفیت‌ترین کالاهای لوکس و مدرن منزل را با مناسب‌ترین قیمت به دست
+        شما مشتریان وفادار برساند. لذت خریدی آسان و مطمئن را با ما تجربه کنید.
+      </p>
+      <div class="home-footer__links">
+        <a routerLink="/products" [queryParams]="{ title: 'فروش ویژه' }">فروش ویژه</a>
+        <a routerLink="/categories">دسته‌بندی‌ها</a>
+        <a routerLink="/returns">مرجوعی سفارش‌ها</a>
+        <a routerLink="/profile">حساب کاربری</a>
+      </div>
+      <p class="home-footer__copy">تمامی حقوق مادی و معنوی متعلق به فروشگاه آنلاین ریونی می‌باشد. © ۱۴۰۵</p>
+    </footer>
   </div>
 
   @if (toast()) {

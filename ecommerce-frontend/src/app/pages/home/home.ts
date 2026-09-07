@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ASSETS } from '../../assets';
 import { AuthService } from '../../core/auth.service';
@@ -12,7 +12,10 @@ import { displayName, productImageSrc, toFa } from '../../core/format';
 import { BottomNav } from '../../shared/bottom-nav/bottom-nav';
 import { ProductCard } from '../../shared/product-card/product-card';
 
-const CAT_TONES = ['kitchen', 'smart', 'other', 'electric', 'home'] as const;
+// Grid tones matching the Figma category cards (cream / lilac / pink / green).
+const CAT_TONES = ['kitchen', 'smart', 'other', 'green'] as const;
+
+type HomeCategory = { id: number; name: string; tone: string; image: string; count: number };
 
 @Component({
   selector: 'app-home',
@@ -30,7 +33,10 @@ export class Home implements OnInit, OnDestroy {
   private readonly configApi = inject(ConfigService);
 
   readonly products = signal<ProductDto[]>([]);
-  readonly categories = signal<{ id: number; name: string; tone: string; image: string }[]>([]);
+  readonly categories = signal<HomeCategory[]>([]);
+  // First category is the featured wide card; the next four fill the 2×2 grid (Figma layout).
+  readonly featuredCategory = computed(() => this.categories()[0] ?? null);
+  readonly gridCategories = computed(() => this.categories().slice(1, 5));
   readonly loading = signal(true);
   readonly error = signal('');
   readonly toast = signal('');
@@ -55,15 +61,17 @@ export class Home implements OnInit, OnDestroy {
         this.loading.set(false);
         this.categoriesApi.list().subscribe({
           next: (catRes) => {
-            const roots = (catRes.categories ?? []).filter((c) => !c.parentId).slice(0, 4);
+            const roots = (catRes.categories ?? []).filter((c) => !c.parentId).slice(0, 5);
             this.categories.set(
               roots.map((c, i) => {
                 const match = sale.find((p) => p.categoryId === c.id || p.subCategoryId === c.id);
                 return {
                   id: c.id,
                   name: c.localName || c.name,
-                  tone: CAT_TONES[i % CAT_TONES.length],
-                  image: match ? productImageSrc(match) : ''
+                  // index 0 is the featured card (own style); the rest cycle the grid tones.
+                  tone: i === 0 ? 'feature' : CAT_TONES[(i - 1) % CAT_TONES.length],
+                  image: match ? productImageSrc(match) : '',
+                  count: c.productCount ?? 0
                 };
               })
             );
@@ -106,6 +114,11 @@ export class Home implements OnInit, OnDestroy {
     const sec = s % 60;
     const pad = (n: number) => String(n).padStart(2, '0');
     this.countdown.set(toFa(`${pad(h)}:${pad(m)}:${pad(sec)}`));
+  }
+
+  /** Category item count with Persian digits + thousands grouping (e.g. ۱٬۲۴۰). */
+  catCount(n: number): string {
+    return new Intl.NumberFormat('fa-IR').format(n);
   }
 
   showToast(msg: string): void {

@@ -58,6 +58,7 @@ export type CategoryDto = {
   name: string;
   localName: string;
   parentId?: number | null;
+  productCount?: number | null;
 };
 
 export type CategoryHierarchyItem = {

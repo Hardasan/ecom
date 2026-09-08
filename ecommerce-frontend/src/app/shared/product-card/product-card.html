@@ -25,13 +25,17 @@
   <div class="pcard__body">
     <p class="pcard__name">{{ name() }}</p>
 
-    @if (ratingCount() > 0) {
-      <span class="rating">
-        <img [src]="a.iconStar" alt="" width="16" height="16" />
-        <span class="rating__value">{{ ratingValue() }}</span>
-        <span class="rating__count">({{ ratingCount() | faNum }})</span>
-      </span>
-    }
+    <!-- Always-present rating slot: reserving its height (even when empty) keeps every card the same
+         natural height, so a rated card next to an unrated one never leaves a stretch gap. -->
+    <div class="pcard__rating">
+      @if (ratingCount() > 0) {
+        <span class="rating">
+          <img [src]="a.iconStar" alt="" width="16" height="16" />
+          <span class="rating__value">{{ ratingValue() }}</span>
+          <span class="rating__count">({{ ratingCount() | faNum }})</span>
+        </span>
+      }
+    </div>
 
     <div class="pcard__foot">
       @if (line(); as l) {

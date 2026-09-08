@@ -14,7 +14,8 @@
 
   &__img {
     position: relative;
-    aspect-ratio: 170 / 150;
+    aspect-ratio: 1 / 1;
+    flex-shrink: 0; // never let the image well collapse when the card is stretched to a row height
     background: #f9fafb;
 
     img {
@@ -70,11 +71,22 @@
     color: var(--ink);
     text-align: right;
     line-height: 1.5;
-    // clamp to two lines so cards keep a consistent height
+    // Clamp to two lines AND reserve their height (min-height = 2 × line-height). This is the fix
+    // for the ragged-card bug: a horizontal/grid row stretches every card to its tallest sibling,
+    // so a one-line title next to a two-line one used to leave a big empty gap above the price.
+    // Reserving two lines makes every card the same natural height, so the stretch adds nothing.
+    min-height: 3em;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  // Reserved rating row — fixed height whether or not the product has reviews (see the html note).
+  &__rating {
+    display: flex;
+    align-items: center;
+    min-height: 20px;
   }
 
   &__foot {

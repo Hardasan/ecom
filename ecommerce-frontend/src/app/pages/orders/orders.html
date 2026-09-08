@@ -11,6 +11,28 @@
     <!-- Desktop heading — the phone top-bar is hidden at ≥1024px. -->
     <h1 class="orders-heading">سفارش‌ها</h1>
 
+    <!-- Status filter tabs (جاری / تکمیل شده / لغو شده / مرجوع شده). -->
+    <div class="order-tabs" role="tablist">
+      @for (t of tabs; track t.key; let i = $index) {
+        @if (i > 0) {
+          <span class="order-tabs__dot" aria-hidden="true">•</span>
+        }
+        <button
+          type="button"
+          class="order-tab"
+          role="tab"
+          [class.is-active]="activeTab() === t.key"
+          [attr.aria-selected]="activeTab() === t.key"
+          (click)="setTab(t.key)"
+        >
+          <span>{{ t.label }}</span>
+          @if (count(t.key) > 0) {
+            <span class="order-tab__count">{{ count(t.key) | faNum }}</span>
+          }
+        </button>
+      }
+    </div>
+
     @if (error()) {
       <p class="form-error">{{ error() }}</p>
     }
@@ -18,28 +40,30 @@
     <div class="orders-body">
       @if (loading()) {
         <p class="empty">در حال بارگذاری…</p>
-      } @else if (!orders().length) {
-        <p class="empty">هنوز سفارشی ثبت نکرده‌اید</p>
+      } @else if (!filtered().length) {
+        <p class="empty">{{ emptyLabel() }}</p>
       } @else {
-        @for (order of orders(); track order.id) {
+        @for (order of filtered(); track order.id) {
           <a class="order-card" [routerLink]="['/orders', order.id]">
             <div class="order-card__row">
-              <span>{{ dateLabel(order) }}</span>
+              <span class="order-card__muted">{{ dateLabel(order) }}</span>
               <strong>{{ tracking(order) | faNum }}</strong>
             </div>
             <div class="order-card__row">
-              <span>{{ total(order) }}</span>
-              <span>{{ qty(order) | faNum }}</span>
+              <span class="order-card__price">{{ total(order) }}</span>
+              <span class="order-card__muted">{{ qty(order) | faNum }}</span>
             </div>
             <div class="order-card__thumbs">
-              <img [src]="a.iconBack" alt="" class="order-card__more" width="20" height="20" />
               <div class="thumbs">
                 @for (src of thumbs(order); track $index) {
-                  <img [src]="src" alt="" width="64" height="64" />
+                  <img [src]="src" alt="" width="60" height="60" />
+                }
+                @if (extraCount(order) > 0) {
+                  <span class="thumbs__more">+{{ extraCount(order) | faNum }}</span>
                 }
               </div>
+              <img [src]="a.iconBack" alt="" class="order-card__more" width="18" height="18" />
             </div>
-            <span class="status">{{ status(order) }}</span>
           </a>
         }
       }

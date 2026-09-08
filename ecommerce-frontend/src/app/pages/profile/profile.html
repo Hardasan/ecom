@@ -1,14 +1,6 @@
 <div class="page profile">
   <div class="page-scroll">
-    <header class="top-bar">
-      <a routerLink="/" class="icon-btn" aria-label="بازگشت">
-        <img [src]="a.iconBack" alt="" width="8" height="16" />
-      </a>
-      <p class="top-bar__title">پروفایل</p>
-      <span class="spacer"></span>
-    </header>
-
-    <!-- Desktop heading — the phone top-bar is hidden at ≥1024px. -->
+    <!-- Desktop heading — the phone view is a clean tab root (no top-bar, per the design). -->
     <h1 class="profile-heading">حساب کاربری</h1>
 
     @if (error()) {
@@ -17,59 +9,56 @@
 
     <div class="profile-body">
       <header class="hub-head">
-        <span class="avatar"><img [src]="a.iconUser" alt="" width="32" height="32" /></span>
-        <p class="hub-name">{{ displayName() | faNum }}</p>
+        <span class="avatar"><img [src]="a.iconUser" alt="" width="40" height="40" /></span>
+        <p class="hub-phone">{{ (mobile || displayName()) | faNum }}</p>
       </header>
 
       <div class="stat-row">
         <a routerLink="/orders" class="stat-card">
-          <span class="stat-card__value">{{ ordersCount() | faNum }}</span>
-          <span class="stat-card__label">سفارش‌ها</span>
+          <span class="stat-card__head">
+            <span class="stat-card__label">سفارش‌های جاری</span>
+            <span class="stat-ic"><i class="pic pic--hourglass"></i></span>
+          </span>
+          <span class="stat-card__value">{{ currentOrdersCount() | faNum }}</span>
         </a>
-        <button type="button" class="stat-card" (click)="showAddressBook()">
-          <span class="stat-card__value">{{ addresses().length | faNum }}</span>
-          <span class="stat-card__label">آدرس‌ها</span>
+        <button type="button" class="stat-card" (click)="comingSoon()">
+          <span class="stat-card__head">
+            <span class="stat-card__label">علاقه‌مندی‌ها</span>
+            <span class="stat-ic"><i class="pic pic--heart"></i></span>
+          </span>
+          <span class="stat-card__value">{{ wishlistCount() | faNum }}</span>
         </button>
       </div>
 
       <nav class="menu">
-        <button type="button" class="menu-row" [class.is-open]="showAccount()" (click)="toggleAccount()">
-          <span class="menu-row__main">
-            <img [src]="a.iconUser" alt="" width="20" height="20" />
-            <span>اطلاعات حساب</span>
-          </span>
-          <img [src]="a.iconBack" alt="" width="7" height="14" class="menu-row__chev" />
-        </button>
-
         <a routerLink="/orders" class="menu-row">
-          <span class="menu-row__main">
-            <img [src]="a.iconCart" alt="" width="20" height="20" />
-            <span>سفارش‌های من</span>
-          </span>
-          <img [src]="a.iconBack" alt="" width="7" height="14" class="menu-row__chev" />
+          <span class="menu-row__ic"><i class="pic pic--orders"></i></span>
+          <span class="menu-row__label">سفارشات</span>
+          <span class="menu-row__chev" aria-hidden="true">‹</span>
         </a>
-
-        <button type="button" class="menu-row" (click)="showAddressBook()">
-          <span class="menu-row__main">
-            <img [src]="a.iconMapPin" alt="" width="20" height="20" />
-            <span>آدرس‌های من</span>
-          </span>
-          <img [src]="a.iconBack" alt="" width="7" height="14" class="menu-row__chev" />
+        <button type="button" class="menu-row" (click)="comingSoon()">
+          <span class="menu-row__ic"><i class="pic pic--reviews"></i></span>
+          <span class="menu-row__label">نظرات</span>
+          <span class="menu-row__chev" aria-hidden="true">‹</span>
         </button>
-
-        <a routerLink="/returns" class="menu-row">
-          <span class="menu-row__main">
-            <img [src]="a.iconReturn" alt="" width="20" height="20" />
-            <span>مرجوعی سفارش‌ها</span>
-          </span>
-          <img [src]="a.iconBack" alt="" width="7" height="14" class="menu-row__chev" />
-        </a>
-
+        <button type="button" class="menu-row" (click)="comingSoon()">
+          <span class="menu-row__ic"><i class="pic pic--bell"></i></span>
+          <span class="menu-row__label">یادآوری‌ها</span>
+          <span class="menu-row__chev" aria-hidden="true">‹</span>
+        </button>
+        <button type="button" class="menu-row" (click)="showAddressBook()">
+          <span class="menu-row__ic"><i class="pic pic--address"></i></span>
+          <span class="menu-row__label">آدرس‌ها</span>
+          <span class="menu-row__chev" aria-hidden="true">‹</span>
+        </button>
+        <button type="button" class="menu-row" (click)="toggleAccount()">
+          <span class="menu-row__ic"><i class="pic pic--settings"></i></span>
+          <span class="menu-row__label">تنظیمات کاربری</span>
+          <span class="menu-row__chev" aria-hidden="true">‹</span>
+        </button>
         <button type="button" class="menu-row menu-row--danger" (click)="logout()">
-          <span class="menu-row__main">
-            <img [src]="a.iconLogout" alt="" width="20" height="20" />
-            <span>خروج از حساب</span>
-          </span>
+          <span class="menu-row__ic"><i class="pic pic--logout"></i></span>
+          <span class="menu-row__label">خروج</span>
         </button>
       </nav>
 

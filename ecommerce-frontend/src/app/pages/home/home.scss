@@ -1,8 +1,86 @@
+// Sticky top region: the brand/icon row + the collapsible search box. Pinned so the shopper can
+// always reach search + cart while scrolling the feed (matches the phone design/prototype).
+.home-top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--surface);
+  transition: box-shadow 0.2s ease;
+
+  &.is-collapsed {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  }
+}
+
 .home-nav {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   padding: 14px 20px 8px;
+}
+
+// Full-width search box under the header — "ready to use" at the top of the page. On scroll the
+// whole box collapses to nothing and the compact search icon takes over in the header row.
+.home-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 46px;
+  margin: 4px 20px 12px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: #fff;
+  overflow: hidden;
+  transition: height 0.28s ease, margin 0.28s ease, border-width 0.28s ease, opacity 0.18s ease;
+
+  img {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    opacity: 0.55;
+  }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    border: none;
+    background: none;
+    outline: none;
+    text-align: right;
+    font-size: 14px;
+    color: var(--ink);
+
+    &::placeholder {
+      color: var(--ink-subtle);
+    }
+  }
+}
+
+.home-top.is-collapsed .home-search {
+  height: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  border-width: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+// The compact search button only exists in the header once the big box has collapsed; fade it in.
+.round-btn--search {
+  animation: home-search-in 0.2s ease;
+}
+
+@keyframes home-search-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .home-nav__brand {
@@ -154,8 +232,10 @@
     display: none;
   }
 
+  // Fluid card width so ~2 cards + a peek show on every phone size (small Androids → large phones),
+  // instead of a fixed 170px that crowds narrow screens.
   &__card {
-    flex: 0 0 170px;
+    flex: 0 0 clamp(150px, 44vw, 178px);
   }
 }
 
@@ -316,47 +396,6 @@
   }
 }
 
-// Mobile store footer (Figma home ends with this; desktop uses the global site-footer instead).
-.home-footer {
-  background: var(--surface-2);
-  padding: 24px 20px calc(24px + env(safe-area-inset-bottom));
-  text-align: right;
-
-  &__brand {
-    margin: 0 0 10px;
-    font-size: 18px;
-    font-weight: 800;
-    color: var(--ink-body);
-  }
-
-  &__blurb {
-    margin: 0 0 16px;
-    font-size: 13px;
-    line-height: 2;
-    color: var(--ink-body);
-  }
-
-  &__links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 20px;
-    margin-bottom: 16px;
-
-    a {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--brand);
-    }
-  }
-
-  &__copy {
-    margin: 0;
-    font-size: 11px;
-    line-height: 1.9;
-    color: var(--muted);
-  }
-}
-
 .state {
   padding: 0 20px 24px;
   text-align: center;
@@ -487,6 +526,11 @@
 /* Desktop (≥1024px, matches LayoutService.DESKTOP_MIN_WIDTH) — full-width inside the 1200px
    container; the sale row becomes a 5-up grid, categories go 4-up, and the hero grows. */
 @media (min-width: 1024px) {
+  // Desktop uses the global <app-site-header> (with its own search); hide the phone sticky header.
+  .home-top {
+    display: none;
+  }
+
   .hero {
     padding: 8px 0 28px;
   }
@@ -586,8 +630,8 @@
     }
   }
 
-  // Desktop uses the global <app-site-footer>; hide the phone store-footer.
-  .home-footer {
+  // Desktop uses the global <app-site-footer> rendered by App; hide this page-embedded one.
+  app-site-footer {
     display: none;
   }
 

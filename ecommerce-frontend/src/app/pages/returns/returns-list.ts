@@ -1,9 +1,10 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ASSETS } from '../../assets';
+import { FaNumPipe } from '../../core/fa-num.pipe';
 import { OrderDto } from '../../core/models';
 import { ReturnService } from '../../core/return.service';
-import { formatFaDate, formatPrice, orderItemCount, toFa } from '../../core/format';
+import { formatFaDate, formatPrice, imageSrc, orderItemCount, toFa } from '../../core/format';
 
 /**
  * Returns — step 1 (screen «مرجوعی سفارش»): the shopper's orders still eligible to return
@@ -11,7 +12,7 @@ import { formatFaDate, formatPrice, orderItemCount, toFa } from '../../core/form
  */
 @Component({
   selector: 'app-returns-list',
-  imports: [RouterLink],
+  imports: [RouterLink, FaNumPipe],
   templateUrl: './returns-list.html',
   styleUrl: './returns.scss'
 })
@@ -50,5 +51,19 @@ export class ReturnsList implements OnInit {
 
   date(o: OrderDto): string {
     return formatFaDate(o.deliveredAt || o.createdAt);
+  }
+
+  /** First three product thumbnails for the order card. */
+  thumbs(o: OrderDto): string[] {
+    return (o.items ?? [])
+      .map((item) => imageSrc(item.mainImage))
+      .filter((src) => !!src)
+      .slice(0, 3);
+  }
+
+  /** Remaining product images beyond the three shown — rendered as a «+N» chip. */
+  extraCount(o: OrderDto): number {
+    const withImage = (o.items ?? []).filter((item) => !!imageSrc(item.mainImage)).length;
+    return Math.max(0, withImage - 3);
   }
 }

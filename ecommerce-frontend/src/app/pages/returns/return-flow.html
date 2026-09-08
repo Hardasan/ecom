@@ -86,16 +86,16 @@
 
         <div class="returns-body">
           <div class="field-group">
-            <p class="muted">کالاهای مرجوعی انتخاب شده</p>
+            <p class="strong-sm accent">کالاهای مرجوعی انتخاب شده</p>
             @for (it of selectedItems(); track it.id) {
               <div class="confirm-item">
-                @if (itemImage(it); as src) {
-                  <img [src]="src" [alt]="it.productName" width="48" height="48" />
-                }
-                <div>
+                <div class="confirm-item__text">
                   <p class="confirm-item__name">{{ it.productName }}</p>
                   <p class="confirm-item__reason">علت: {{ reasonLabel(selections()[it.id]!.reason!) }}</p>
                 </div>
+                @if (itemImage(it); as src) {
+                  <img [src]="src" [alt]="it.productName" width="56" height="56" />
+                }
               </div>
             }
           </div>
@@ -128,7 +128,7 @@
 
       <div class="bottom-bar">
         <button type="button" class="btn-brand" [disabled]="submitting()" (click)="submit()">
-          {{ submitting() ? '…' : 'ثبت درخواست مرجوعی' }}
+          {{ submitting() ? '…' : 'ثبت درخواست اولیه' }}
         </button>
       </div>
     }
@@ -140,38 +140,37 @@
           <div class="success-badge"><img [src]="a.iconCheck" alt="" width="28" height="28" /></div>
           <h2 class="success-title">درخواست اولیه مرجوعی برای شما ثبت شد</h2>
 
+          <div class="receipt receipt--center">
+            <span class="muted">کد پیگیری</span>
+            <span class="tracking">{{ req.id | faNum }}</span>
+            <span class="muted">{{ createdDate() }}</span>
+          </div>
+
           <div class="receipt">
-            <div class="row-between">
-              <span class="strong-sm">{{ req.id | faNum }}</span>
-              <span class="muted">کد پیگیری</span>
-            </div>
-            <div class="row-between">
-              <span>{{ createdDate() }}</span>
-              <span class="muted">تاریخ ثبت</span>
-            </div>
             <div class="row-between">
               <span class="refund-amount">{{ refundText() }}</span>
               <span class="muted">مبلغ قابل بازگشت</span>
             </div>
             @if (req.iban) {
               <div class="row-between">
-                <span class="ltr">{{ req.iban }}</span>
+                <span class="ltr strong-sm">{{ req.iban }}</span>
                 <span class="muted">شماره شبا برای بازگشت وجه</span>
               </div>
             }
           </div>
 
           <p class="info-banner">
-            کارشناسان ما درخواست شما را بررسی می‌کنند و نتیجه را به شما اطلاع می‌دهند. در صورت تأیید، مراحل بعدی به شما اطلاع‌رسانی می‌شود.
+            درخواست شما توسط کارشناسان بررسی شده و نتیجه به شما اطلاع داده خواهد شد. در صورت تأیید
+            درخواست، ادامه مراحل به شما اطلاع‌رسانی خواهد شد.
           </p>
 
-          <div class="field-group">
-            <p class="muted">کالاهای مرجوعی انتخاب شده</p>
+          <div class="field-group items-block">
+            <p class="strong-sm accent">کالاهای مرجوعی انتخاب شده</p>
             @for (it of req.items; track it.orderItemId) {
               <div class="confirm-item">
                 <div>
                   <p class="confirm-item__name">{{ it.productName }}</p>
-                  <p class="confirm-item__reason">علت: {{ reasonLabel(it.reason) }}</p>
+                  <p class="confirm-item__reason">{{ reasonLabel(it.reason) }}</p>
                 </div>
               </div>
             }
@@ -180,7 +179,7 @@
       </div>
 
       <div class="bottom-bar">
-        <a routerLink="/orders" class="btn-outline">بازگشت به سفارش‌ها</a>
+        <a routerLink="/" class="btn-outline">خانه</a>
       </div>
     }
   }

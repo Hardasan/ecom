@@ -7,6 +7,7 @@ import { AddressService } from '../../core/address.service';
 import { AuthService } from '../../core/auth.service';
 import { GeoService } from '../../core/geo.service';
 import { OrderService } from '../../core/order.service';
+import { WishlistService } from '../../core/wishlist.service';
 import { AddressDto, GeoCityDto, GeoProvinceDto, OrderDto } from '../../core/models';
 import { formatFaDate, formatPrice, imageSrc, orderItemCount, orderStatusLabel } from '../../core/format';
 import { validateAddressFields } from '../../core/address-form';
@@ -26,11 +27,15 @@ export class Profile implements OnInit {
   private readonly addressesApi = inject(AddressService);
   private readonly geoApi = inject(GeoService);
   private readonly ordersApi = inject(OrderService);
+  private readonly wishlistApi = inject(WishlistService);
   private readonly router = inject(Router);
 
   readonly addresses = signal<AddressDto[]>([]);
   readonly recentOrders = signal<OrderDto[]>([]);
   readonly ordersCount = signal(0);
+  // Ongoing orders (RESERVED/PAID/PROCESSING/SENDING) and wishlist size — the two profile stat cards.
+  readonly currentOrdersCount = signal(0);
+  readonly wishlistCount = signal(0);
   readonly showAddressSheet = signal(false);
   readonly busy = signal(false);
   readonly error = signal('');
@@ -72,6 +77,10 @@ export class Profile implements OnInit {
     });
     this.reloadAddresses();
     this.reloadRecentOrders();
+    this.wishlistApi.list().subscribe({
+      next: (w) => this.wishlistCount.set((w?.items ?? []).length),
+      error: () => undefined
+    });
     this.geoApi.listProvinces().subscribe({
       next: (res) => this.provinces.set(res.provinces ?? []),
       error: () => this.error.set('لیست استان‌ها خوانده نشد')
@@ -259,13 +268,21 @@ export class Profile implements OnInit {
   private reloadRecentOrders() {
     this.ordersApi.list().subscribe({
       next: (list) => {
-        this.recentOrders.set((list ?? []).slice(0, 2));
-        this.ordersCount.set((list ?? []).length);
+        const all = list ?? [];
+        this.recentOrders.set(all.slice(0, 2));
+        this.ordersCount.set(all.length);
+        const ongoing = ['RESERVED', 'PAID', 'PROCESSING', 'SENDING'];
+        this.currentOrdersCount.set(all.filter((o) => ongoing.includes(o.status)).length);
       },
       error: () => {
         /* profile still usable without orders */
       }
     });
+  }
+
+  /** Placeholder rows whose dedicated page isn't built yet (نظرات / یادآوری‌ها / علاقه‌مندی‌ها). */
+  comingSoon() {
+    this.flash('این بخش به‌زودی اضافه می‌شود');
   }
 
   /** Shopper display name for the hub header; falls back to the mobile number. */

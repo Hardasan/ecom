@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { ASSETS } from '../../assets';
 import { AuthService } from '../../core/auth.service';
 import { AddressService } from '../../core/address.service';
@@ -11,6 +12,7 @@ import { ProductDto } from '../../core/models';
 import { displayName, productImageSrc, toFa } from '../../core/format';
 import { BottomNav } from '../../shared/bottom-nav/bottom-nav';
 import { ProductCard } from '../../shared/product-card/product-card';
+import { SiteFooter } from '../../shared/site-footer/site-footer';
 
 // Grid tones matching the Figma category cards (cream / lilac / pink / green).
 const CAT_TONES = ['kitchen', 'smart', 'other', 'green'] as const;
@@ -19,7 +21,7 @@ type HomeCategory = { id: number; name: string; tone: string; image: string; cou
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, BottomNav, ProductCard],
+  imports: [RouterLink, FormsModule, BottomNav, ProductCard, SiteFooter],
   templateUrl: './home.html',
   styleUrl: './home.scss'
 })
@@ -31,6 +33,12 @@ export class Home implements OnInit, OnDestroy {
   private readonly categoriesApi = inject(CategoryService);
   readonly cartApi = inject(CartService);
   private readonly configApi = inject(ConfigService);
+  private readonly router = inject(Router);
+
+  // Header search box: "ready to use" at the top, then collapses to a compact icon once the shopper
+  // scrolls the feed (the icon lives in the sticky header row). Hysteresis avoids flicker at the seam.
+  searchQuery = '';
+  readonly searchCollapsed = signal(false);
 
   readonly products = signal<ProductDto[]>([]);
   readonly categories = signal<HomeCategory[]>([]);
@@ -121,6 +129,25 @@ export class Home implements OnInit, OnDestroy {
     return new Intl.NumberFormat('fa-IR').format(n);
   }
 
+  /**
+   * Collapse the big search box into the header icon once the feed is scrolled, and re-expand it at
+   * the very top. Two thresholds (hysteresis) so a scroll resting near the seam can't flip-flop.
+   */
+  onScroll(event: Event): void {
+    const y = (event.target as HTMLElement).scrollTop;
+    if (!this.searchCollapsed() && y > 40) {
+      this.searchCollapsed.set(true);
+    } else if (this.searchCollapsed() && y < 8) {
+      this.searchCollapsed.set(false);
+    }
+  }
+
+  submitSearch(): void {
+    const q = this.searchQuery.trim();
+    if (!q) return;
+    void this.router.navigate(['/products'], { queryParams: { q, title: `جستجو: ${q}` } });
+  }
+
   showToast(msg: string): void {
     this.toast.set(msg);
     setTimeout(() => this.toast.set(''), 2500);
@@ -137,6 +164,6 @@ export class Home implements OnInit, OnDestroy {
   }
 
   promoCode() {
-    this.showToast('کد تخفیف: RIVANI40');
+    this.showToast('کد تخفیف: RIVANY40');
   }
 }

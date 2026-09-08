@@ -21,15 +21,23 @@
         @for (o of orders(); track o.id) {
           <a class="ret-order" [routerLink]="['/returns/new', o.id]">
             <div class="ret-order__top">
-              <span class="ret-order__total">{{ total(o) }}</span>
+              <span class="badge-delivered">تحویل داده شده</span>
               <span class="ret-order__code">کد سفارش: {{ code(o) }}</span>
             </div>
-            <div class="ret-order__meta">
-              <span class="ret-order__go">
-                ثبت درخواست مرجوعی
-                <img [src]="a.iconBack" alt="" width="6" height="12" class="chev" />
-              </span>
-              <span>{{ count(o) }} کالا • {{ date(o) }}</span>
+            <div class="ret-order__rows">
+              <span class="ret-order__total">{{ total(o) }}</span>
+              <span class="ret-order__meta">{{ count(o) }} کالا • {{ date(o) }}</span>
+            </div>
+            <div class="ret-order__thumbs">
+              <div class="thumbs">
+                @for (src of thumbs(o); track $index) {
+                  <img [src]="src" alt="" width="56" height="56" />
+                }
+                @if (extraCount(o) > 0) {
+                  <span class="thumbs__more">+{{ extraCount(o) | faNum }}</span>
+                }
+              </div>
+              <img [src]="a.iconBack" alt="" class="ret-order__more" width="16" height="16" />
             </div>
           </a>
         }

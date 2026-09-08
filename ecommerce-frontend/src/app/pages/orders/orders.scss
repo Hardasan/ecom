@@ -1,5 +1,51 @@
+// Status filter tabs — active tab is a soft-green pill, the rest are muted text separated by dots.
+.order-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  &__dot {
+    color: var(--ink-subtle);
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+}
+
+.order-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  color: var(--ink-muted);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &__count {
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  &.is-active {
+    background: var(--brand-soft);
+    color: var(--brand);
+  }
+}
+
 .orders-body {
-  padding: 20px;
+  padding: 16px 20px 20px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -40,6 +86,15 @@
     }
   }
 
+  &__muted {
+    color: var(--ink-muted);
+  }
+
+  &__price {
+    font-weight: 700;
+    color: var(--ink);
+  }
+
   &__thumbs {
     display: flex;
     align-items: center;
@@ -47,8 +102,7 @@
   }
 
   &__more {
-    opacity: 0.45;
-    transform: scaleX(-1);
+    opacity: 0.4;
   }
 }
 
@@ -58,10 +112,25 @@
   justify-content: flex-end;
 
   img {
-    width: 64px;
-    height: 64px;
+    width: 60px;
+    height: 60px;
     border-radius: var(--radius-md);
     object-fit: cover;
+  }
+
+  // «+N» overflow chip, same footprint as a thumbnail (sits to the left of the images).
+  &__more {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    flex-shrink: 0;
+    border-radius: var(--radius-md);
+    background: var(--surface-2);
+    color: var(--ink-muted);
+    font-size: 14px;
+    font-weight: 700;
   }
 }
 

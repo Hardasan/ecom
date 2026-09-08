@@ -28,5 +28,11 @@ export const ASSETS = {
   iconNotif: `${BASE}/icon-notif.svg`,
   iconClock: `${BASE}/icon-clock.svg`,
   iconReturn: `${BASE}/icon-return.svg`,
-  iconLogout: `${BASE}/icon-logout.svg`
+  iconLogout: `${BASE}/icon-logout.svg`,
+  iconChat: `${BASE}/icon-chat.svg`,
+  iconSettings: `${BASE}/icon-settings.svg`,
+  iconHourglass: `${BASE}/icon-hourglass.svg`,
+  iconTelegram: `${BASE}/icon-telegram.svg`,
+  iconWhatsapp: `${BASE}/icon-whatsapp.svg`,
+  iconInstagram: `${BASE}/icon-instagram.svg`
 } as const;

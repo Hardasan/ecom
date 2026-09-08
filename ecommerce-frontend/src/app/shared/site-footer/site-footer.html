@@ -1,33 +1,53 @@
 <footer class="site-footer">
   <div class="site-footer__inner">
-    <div class="site-footer__brand">
-      <p class="brand">RiVaNi</p>
-      <p class="tagline">فروشگاه آنلاین ری‌وانی — خرید آسان و مطمئن</p>
+    <div class="foot-brand">
+      <p class="foot-brand__name">فروشگاه بزرگ ریونی</p>
+      <p class="foot-brand__blurb">
+        ریونی همواره در تلاش است تا باکیفیت‌ترین کالاهای لوکس و مدرن منزل را با مناسب‌ترین قیمت به دست
+        شما مشتریان وفادار برساند. لذت خریدی آسان و مطمئن را با ما تجربه کنید.
+      </p>
+      <div class="foot-social">
+        <a href="https://t.me/rivany" target="_blank" rel="noopener" aria-label="تلگرام">
+          <img [src]="a.iconTelegram" alt="" width="22" height="22" />
+        </a>
+        <a href="https://wa.me/989110000000" target="_blank" rel="noopener" aria-label="واتساپ">
+          <img [src]="a.iconWhatsapp" alt="" width="22" height="22" />
+        </a>
+        <a href="https://instagram.com/rivany" target="_blank" rel="noopener" aria-label="اینستاگرام">
+          <img [src]="a.iconInstagram" alt="" width="22" height="22" />
+        </a>
+      </div>
     </div>
 
-    <nav class="site-footer__col" aria-label="فروشگاه">
-      <h3>فروشگاه</h3>
-      <a routerLink="/">خانه</a>
-      <a routerLink="/categories">دسته‌بندی‌ها</a>
-      <a routerLink="/products" [queryParams]="{ title: 'فروش ویژه' }">فروش ویژه</a>
-    </nav>
-
-    <nav class="site-footer__col" aria-label="حساب کاربری">
-      <h3>حساب کاربری</h3>
-      <a routerLink="/profile">حساب من</a>
-      <a routerLink="/orders">سفارش‌ها</a>
-      <a routerLink="/cart">سبد خرید</a>
-    </nav>
-
-    <div class="site-footer__col">
-      <h3>پشتیبانی</h3>
-      <p>پاسخگویی ۹ تا ۱۸</p>
-      <p>ارسال به سراسر کشور</p>
-      <p>پرداخت امن</p>
+    <div class="foot-sections">
+      @for (s of sections; track s.key) {
+        <div class="foot-panel" [class.is-open]="isOpen(s.key)">
+          <button
+            type="button"
+            class="foot-panel__head"
+            (click)="toggle(s.key)"
+            [attr.aria-expanded]="isOpen(s.key)"
+          >
+            <span>{{ s.title }}</span>
+            <span class="foot-panel__chev" aria-hidden="true"></span>
+          </button>
+          <ul class="foot-panel__body">
+            @for (l of s.links; track l.label) {
+              <li>
+                @if (l.route) {
+                  <a [routerLink]="l.route">{{ l.label }}</a>
+                } @else {
+                  <span>{{ l.label }}</span>
+                }
+              </li>
+            }
+          </ul>
+        </div>
+      }
     </div>
   </div>
 
   <div class="site-footer__bar">
-    © {{ year }} RiVaNi — تمامی حقوق محفوظ است.
+    تمامی حقوق مادی و معنوی متعلق به فروشگاه آنلاین ریونی می‌باشد. © {{ year }}
   </div>
 </footer>

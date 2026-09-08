@@ -7,6 +7,11 @@ import { API_BASE_URL } from '../api.config';
 export class WishlistService {
   private readonly http = inject(HttpClient);
 
+  /** The current user's wishlist. Used for the profile «علاقه‌مندی‌ها» count. */
+  list(): Observable<{ items?: unknown[] }> {
+    return this.http.get<{ items?: unknown[] }>(`${API_BASE_URL}/wishlist`);
+  }
+
   contains(productId: number): Observable<{ inWishlist: boolean }> {
     return this.http.get<{ inWishlist: boolean }>(`${API_BASE_URL}/wishlist/products/${productId}`);
   }

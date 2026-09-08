@@ -1,31 +1,47 @@
 <div class="page home">
-  <div class="page-scroll">
-    <header class="home-nav">
-      <div class="home-nav__brand">
-        <p class="brand">RiVaNi</p>
-        @if (auth.isLoggedIn() && address.selected(); as addr) {
-          <button type="button" class="ship-to" (click)="openAddressSheet()" aria-haspopup="dialog">
-            <img [src]="a.iconMapPin" alt="" width="14" height="14" />
-            <span>ارسال به: {{ addr.title || addr.city || 'آدرس من' }}</span>
-          </button>
-        }
-      </div>
-
-      <div class="home-nav__actions">
-        <a routerLink="/search" class="round-btn" aria-label="جستجو">
-          <img [src]="a.iconSearch" alt="" width="20" height="20" />
-        </a>
-        <a routerLink="/profile" class="round-btn" aria-label="اعلان‌ها">
-          <img [src]="a.iconNotif" alt="" width="20" height="20" />
-        </a>
-        <a routerLink="/cart" class="round-btn" aria-label="سبد خرید">
-          <img [src]="a.iconCart" alt="" width="20" height="20" />
-          @if (cartApi.totalQuantity() > 0) {
-            <span class="cart-badge">{{ cartApi.badge() }}</span>
+  <div class="page-scroll" (scroll)="onScroll($event)">
+    <div class="home-top" [class.is-collapsed]="searchCollapsed()">
+      <header class="home-nav">
+        <div class="home-nav__brand">
+          <p class="brand">RiVaNy</p>
+          @if (auth.isLoggedIn() && address.selected(); as addr) {
+            <button type="button" class="ship-to" (click)="openAddressSheet()" aria-haspopup="dialog">
+              <img [src]="a.iconMapPin" alt="" width="14" height="14" />
+              <span>ارسال به: {{ addr.title || addr.city || 'آدرس من' }}</span>
+            </button>
           }
-        </a>
-      </div>
-    </header>
+        </div>
+
+        <div class="home-nav__actions">
+          @if (searchCollapsed()) {
+            <a routerLink="/search" class="round-btn round-btn--search" aria-label="جستجو">
+              <img [src]="a.iconSearch" alt="" width="20" height="20" />
+            </a>
+          }
+          <a routerLink="/profile" class="round-btn" aria-label="اعلان‌ها">
+            <img [src]="a.iconNotif" alt="" width="20" height="20" />
+          </a>
+          <a routerLink="/cart" class="round-btn" aria-label="سبد خرید">
+            <img [src]="a.iconCart" alt="" width="20" height="20" />
+            @if (cartApi.totalQuantity() > 0) {
+              <span class="cart-badge">{{ cartApi.badge() }}</span>
+            }
+          </a>
+        </div>
+      </header>
+
+      <form class="home-search" (ngSubmit)="submitSearch()" role="search">
+        <img [src]="a.iconSearch" alt="" width="18" height="18" />
+        <input
+          type="search"
+          name="q"
+          [(ngModel)]="searchQuery"
+          placeholder="جستجوی محصول، برند یا دسته‌بندی"
+          aria-label="جستجوی محصول"
+          enterkeyhint="search"
+        />
+      </form>
+    </div>
 
     <section class="hero">
       @if (heroProduct(); as hero) {
@@ -125,20 +141,7 @@
       </div>
     </section>
 
-    <footer class="home-footer">
-      <p class="home-footer__brand">فروشگاه بزرگ ریونی</p>
-      <p class="home-footer__blurb">
-        ریونی همواره در تلاش است تا باکیفیت‌ترین کالاهای لوکس و مدرن منزل را با مناسب‌ترین قیمت به دست
-        شما مشتریان وفادار برساند. لذت خریدی آسان و مطمئن را با ما تجربه کنید.
-      </p>
-      <div class="home-footer__links">
-        <a routerLink="/products" [queryParams]="{ title: 'فروش ویژه' }">فروش ویژه</a>
-        <a routerLink="/categories">دسته‌بندی‌ها</a>
-        <a routerLink="/returns">مرجوعی سفارش‌ها</a>
-        <a routerLink="/profile">حساب کاربری</a>
-      </div>
-      <p class="home-footer__copy">تمامی حقوق مادی و معنوی متعلق به فروشگاه آنلاین ریونی می‌باشد. © ۱۴۰۵</p>
-    </footer>
+    <app-site-footer />
   </div>
 
   @if (toast()) {

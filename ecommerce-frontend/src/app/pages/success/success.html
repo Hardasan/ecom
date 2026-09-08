@@ -20,16 +20,16 @@
         <section class="receipt-card">
           <p class="muted">تحویل به</p>
           <p class="body">{{ recipientName() }}</p>
-          <p class="body">{{ recipientMobile() }}</p>
+          <p class="body">{{ recipientMobile() | faNum }}</p>
           <p class="body address">{{ deliveryAddress() }}</p>
-          <span class="badge">ارسال با پست</span>
+          <span class="badge">ارسال با {{ o.carrier || 'پست' }}</span>
         </section>
 
         <section class="receipt-card">
           <p class="section-title">اطلاعات پرداخت</p>
           <div class="line-meta">
             <span class="amount">{{ total() }}</span>
-            <span class="muted">پرداخت با درگاه بانکی</span>
+            <span class="muted">پرداخت با درگاه سپ</span>
           </div>
           @if (savings(); as save) {
             <div class="line-meta">
@@ -63,9 +63,9 @@
 
     <div class="success-actions">
       @if (order(); as o) {
-        <a [routerLink]="['/orders', o.id]" class="btn-brand">پیگیری سفارش</a>
+        <a [routerLink]="['/orders', o.id]" class="text-btn">پیگیری سفارش</a>
       } @else {
-        <a routerLink="/orders" class="btn-brand">پیگیری سفارش</a>
+        <a routerLink="/orders" class="text-btn">پیگیری سفارش</a>
       }
       <a routerLink="/" class="btn-outline">خانه</a>
     </div>

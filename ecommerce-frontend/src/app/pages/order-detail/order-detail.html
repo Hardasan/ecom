@@ -29,9 +29,9 @@
         <section class="receipt-card">
           <p class="muted">تحویل به</p>
           <p class="body">{{ recipientName() }}</p>
-          <p class="body">{{ recipientMobile() }}</p>
+          <p class="body">{{ recipientMobile() | faNum }}</p>
           <p class="body address">{{ deliveryAddress() }}</p>
-          <span class="badge">ارسال با پست</span>
+          <span class="badge">ارسال با {{ o.carrier || 'پست' }}</span>
         </section>
 
         @if (o.carrier || o.trackingNumber) {
@@ -57,7 +57,7 @@
           <div class="line-meta">
             <span class="amount">{{ total() }}</span>
             <span class="muted">{{
-              o.paymentMethod === 'CASH_ON_DELIVERY' ? 'پرداخت در محل' : 'پرداخت با درگاه بانکی'
+              o.paymentMethod === 'CASH_ON_DELIVERY' ? 'پرداخت در محل' : 'پرداخت با درگاه سپ'
             }}</span>
           </div>
           @if (savings(); as save) {

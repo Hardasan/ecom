@@ -33,7 +33,6 @@
   --radius-full: 100px;
   --shadow-btn: 0 4px 6px rgba(0, 0, 0, 0.06);
   --shadow-soft: 0 4px 6px rgba(0, 0, 0, 0.03);
-  --app-max: 390px;
 }
 
 *,
@@ -79,7 +78,6 @@ img {
 
 .app-frame {
   width: 100%;
-  max-width: var(--app-max);
   height: 100dvh;
   background: var(--surface);
   position: relative;

@@ -37,6 +37,7 @@ for _ in $(seq 1 36); do
   if [ "$status" = "healthy" ]; then
     echo "app is healthy ($IMAGE)"
     docker image prune -f >/dev/null
+    docker image prune -a -f >/dev/null
     exit 0
   fi
   if [ "$status" = "exited" ] || [ "$status" = "dead" ]; then

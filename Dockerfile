@@ -30,9 +30,8 @@ ENV TZ=Asia/Tehran
 
 WORKDIR /usr/local/app/
 
-COPY --from=build-env /app/ecommerce-backend/target/*.jar /usr/local/app/
-
-RUN mv /usr/local/app/ecommerce-backend-*.jar /usr/local/app/ecom.jar
+# Single COPY into the final name — a follow-up `RUN mv` would duplicate the ~100MB jar layer.
+COPY --from=build-env /app/ecommerce-backend/target/ecommerce-backend-*.jar /usr/local/app/ecom.jar
 
 EXPOSE 8080
 

@@ -24,6 +24,7 @@ export class AdminShell {
     { path: '/admin/categories', label: 'دسته‌بندی‌ها', exact: false },
     { path: '/admin/discounts', label: 'کدهای تخفیف', exact: false },
     { path: '/admin/orders', label: 'سفارش‌ها', exact: false },
+    { path: '/admin/returns', label: 'مرجوعی‌ها', exact: false },
     { path: '/admin/reviews', label: 'نظرات', exact: false },
     { path: '/admin/staff', label: 'کارکنان انبار', exact: false }
   ];

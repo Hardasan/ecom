@@ -28,13 +28,13 @@
         <section class="receipt-card">
           <p class="section-title">اطلاعات پرداخت</p>
           <div class="line-meta">
-            <span class="amount">{{ total() }}</span>
             <span class="muted">پرداخت با درگاه سپ</span>
+            <span class="amount">{{ total() }}</span>
           </div>
           @if (savings(); as save) {
             <div class="line-meta">
-              <span class="amount amount--sale">{{ save }}</span>
               <span class="muted">سود شما از خرید</span>
+              <span class="amount amount--sale">{{ save }}</span>
             </div>
           }
         </section>

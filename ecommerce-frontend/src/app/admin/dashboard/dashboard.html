@@ -29,6 +29,10 @@
         <span class="admin-stat__value">{{ s.refundableOrders }}</span>
         <span class="admin-stat__label">در انتظار بازپرداخت</span>
       </a>
+      <a class="admin-stat" routerLink="/admin/returns">
+        <span class="admin-stat__value">{{ s.pendingReturns }}</span>
+        <span class="admin-stat__label">مرجوعی در انتظار بررسی</span>
+      </a>
       <a class="admin-stat" routerLink="/admin/products">
         <span class="admin-stat__value">{{ s.totalProducts }}</span>
         <span class="admin-stat__label">محصولات — {{ s.outOfStockProducts }} ناموجود</span>

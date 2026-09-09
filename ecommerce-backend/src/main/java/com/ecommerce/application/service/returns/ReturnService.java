@@ -3,18 +3,24 @@ package com.ecommerce.application.service.returns;
 import com.ecommerce.application.api.dto.order.OrderResponseDto;
 import com.ecommerce.application.api.dto.returns.CreateReturnItemDto;
 import com.ecommerce.application.api.dto.returns.CreateReturnRequestDto;
+import com.ecommerce.application.api.dto.returns.ReturnRefundRequestDto;
 import com.ecommerce.application.api.dto.returns.ReturnRequestItemResponseDto;
 import com.ecommerce.application.api.dto.returns.ReturnRequestResponseDto;
 import com.ecommerce.application.api.exception.ECOMErrorType;
 import com.ecommerce.application.api.exception.EcommerceException;
 import com.ecommerce.application.service.order.OrderMapper;
+import com.ecommerce.persistence.entity.AppUser;
 import com.ecommerce.persistence.entity.Order;
 import com.ecommerce.persistence.entity.OrderItem;
 import com.ecommerce.persistence.entity.ReturnRequest;
 import com.ecommerce.persistence.entity.ReturnRequestItem;
+import com.ecommerce.persistence.entity.Transaction;
 import com.ecommerce.persistence.entity.enumeration.OrderStatus;
+import com.ecommerce.persistence.entity.enumeration.ReturnStatus;
+import com.ecommerce.persistence.entity.enumeration.TransactionType;
 import com.ecommerce.persistence.repository.AppUserRepository;
 import com.ecommerce.persistence.repository.OrderRepository;
+import com.ecommerce.persistence.repository.ProductRepository;
 import com.ecommerce.persistence.repository.ReturnRequestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -45,6 +51,7 @@ public class ReturnService {
     private final ReturnRequestRepository returnRequestRepository;
     private final OrderRepository orderRepository;
     private final AppUserRepository appUserRepository;
+    private final ProductRepository productRepository;
     private final OrderMapper orderMapper;
 
     /** Orders the shopper can still return: RECEIVED, within the window, and not already requested. */
@@ -118,6 +125,95 @@ public class ReturnService {
         return toDto(returnRequestRepository.save(request));
     }
 
+    // ---- admin moderation --------------------------------------------------------------------------
+
+    /** Admin queue: every return request (optionally filtered by status), newest first, buyer-enriched. */
+    @Transactional(readOnly = true)
+    public List<ReturnRequestResponseDto> listAllReturns(ReturnStatus status) {
+        List<ReturnRequest> requests = status != null
+                ? returnRequestRepository.findByStatusOrderByCreatedAtDesc(status)
+                : returnRequestRepository.findAllByOrderByCreatedAtDesc();
+        Map<Long, AppUser> customers = appUserRepository.findAllById(
+                        requests.stream().map(ReturnRequest::getUserId).distinct().toList())
+                .stream()
+                .collect(Collectors.toMap(AppUser::getId, Function.identity()));
+        return requests.stream()
+                .map(request -> toDto(request, customers.get(request.getUserId())))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public ReturnRequestResponseDto getReturnAdmin(Long id) {
+        ReturnRequest request = returnRequestRepository.findById(id)
+                .orElseThrow(() -> new EcommerceException(ECOMErrorType.RETURN_REQUEST_NOT_FOUND));
+        return toDto(request, customer(request.getUserId()));
+    }
+
+    /** Approve a pending return so it becomes eligible for refund. REQUESTED -> APPROVED. */
+    @Transactional
+    public ReturnRequestResponseDto approve(Long id) {
+        return transition(id, ReturnStatus.REQUESTED, ReturnStatus.APPROVED);
+    }
+
+    /** Reject a pending return (terminal, no money moves). REQUESTED -> REJECTED. */
+    @Transactional
+    public ReturnRequestResponseDto reject(Long id) {
+        return transition(id, ReturnStatus.REQUESTED, ReturnStatus.REJECTED);
+    }
+
+    /**
+     * Record the bank transfer that pays back an APPROVED return. Restocks the returned lines (the
+     * goods are physically back), posts a REFUND transaction on the order ledger for the return's
+     * snapshotted amount, and stamps the reference. APPROVED -> REFUNDED.
+     */
+    @Transactional
+    public ReturnRequestResponseDto refund(Long id, ReturnRefundRequestDto dto) {
+        ReturnRequest request = returnRequestRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new EcommerceException(ECOMErrorType.RETURN_REQUEST_NOT_FOUND));
+        if (request.getStatus() != ReturnStatus.APPROVED) {
+            throw new EcommerceException(ECOMErrorType.RETURN_INVALID_STATUS);
+        }
+        Order order = orderRepository.findByIdForUpdate(request.getOrderId())
+                .orElseThrow(() -> new EcommerceException(ECOMErrorType.ORDER_NOT_FOUND));
+
+        Map<Long, OrderItem> orderItems = order.getItems().stream()
+                .collect(Collectors.toMap(OrderItem::getId, Function.identity()));
+        for (ReturnRequestItem item : request.getItems()) {
+            OrderItem orderItem = orderItems.get(item.getOrderItemId());
+            if (orderItem != null) {
+                productRepository.incrementInventory(orderItem.getProduct().getProductId(), item.getQuantity());
+            }
+        }
+
+        String iban = dto.getIban() != null ? dto.getIban() : request.getIban();
+        Transaction transaction = new Transaction();
+        transaction.setType(TransactionType.REFUND);
+        transaction.setAmount(request.getRefundAmount());
+        transaction.setReference(dto.getReference());
+        transaction.setIban(iban);
+        order.addTransaction(transaction);
+        orderRepository.save(order);
+
+        request.setStatus(ReturnStatus.REFUNDED);
+        request.setRefundReference(dto.getReference());
+        request.setIban(iban);
+        return toDto(returnRequestRepository.save(request), customer(request.getUserId()));
+    }
+
+    private ReturnRequestResponseDto transition(Long id, ReturnStatus from, ReturnStatus to) {
+        ReturnRequest request = returnRequestRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new EcommerceException(ECOMErrorType.RETURN_REQUEST_NOT_FOUND));
+        if (request.getStatus() != from) {
+            throw new EcommerceException(ECOMErrorType.RETURN_INVALID_STATUS);
+        }
+        request.setStatus(to);
+        return toDto(returnRequestRepository.save(request), customer(request.getUserId()));
+    }
+
+    private AppUser customer(Long userId) {
+        return appUserRepository.findById(userId).orElse(null);
+    }
+
     // ---- helpers ---------------------------------------------------------------------------------
 
     private boolean isWithinReturnWindow(Order order) {
@@ -138,7 +234,17 @@ public class ReturnService {
         return appUserRepository.findById(userId).map(user -> user.getIban()).orElse(null);
     }
 
+    private String fullName(AppUser user) {
+        return ((user.getFirstName() == null ? "" : user.getFirstName()) + " "
+                + (user.getLastName() == null ? "" : user.getLastName())).trim();
+    }
+
     private ReturnRequestResponseDto toDto(ReturnRequest request) {
+        return toDto(request, null);
+    }
+
+    /** {@code customer} is only supplied on the admin views, which surface the buyer's name + mobile. */
+    private ReturnRequestResponseDto toDto(ReturnRequest request, AppUser customer) {
         ReturnRequestResponseDto dto = new ReturnRequestResponseDto();
         dto.setId(request.getId());
         dto.setOrderId(request.getOrderId());
@@ -146,6 +252,11 @@ public class ReturnService {
         dto.setRefundAmount(request.getRefundAmount());
         dto.setIban(request.getIban());
         dto.setNote(request.getNote());
+        dto.setRefundReference(request.getRefundReference());
+        if (customer != null) {
+            dto.setCustomerName(fullName(customer));
+            dto.setMobile(customer.getMobile());
+        }
         dto.setCreatedAt(request.getCreatedAt());
         dto.setUpdatedAt(request.getUpdatedAt());
         List<ReturnRequestItemResponseDto> items = new ArrayList<>();

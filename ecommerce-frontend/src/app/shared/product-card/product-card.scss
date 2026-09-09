@@ -16,9 +16,19 @@
     position: relative;
     aspect-ratio: 1 / 1;
     flex-shrink: 0; // never let the image well collapse when the card is stretched to a row height
+    overflow: hidden;
     background: #f9fafb;
 
+    // Absolutely-positioned cover image so the SOURCE image's own proportions can never drive the
+    // well's height. In-flow, an `<img height:100%>` can't resolve its percentage height against an
+    // aspect-ratio-derived box, so Blink (Chrome) and Gecko (Firefox) fall back to the image's
+    // intrinsic height and — because the well is `flex-shrink: 0` — let a portrait photo stretch the
+    // whole card taller than its 1:1 square, while WebKit (Safari) clamps to the ratio. That is the
+    // cross-browser "ragged cards" bug. Out of flow, `aspect-ratio` is the sole author of the well's
+    // height, so every card is an identical square in every engine.
     img {
+      position: absolute;
+      inset: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;

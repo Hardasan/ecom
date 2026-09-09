@@ -45,4 +45,7 @@ public class AdminStatsResponseDto {
 
     /** Reviews awaiting moderation. */
     private long pendingReviews;
+
+    /** Return (مرجوعی) requests awaiting admin review. */
+    private long pendingReturns;
 }

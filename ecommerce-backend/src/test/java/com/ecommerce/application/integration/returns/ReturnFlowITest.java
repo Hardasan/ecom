@@ -12,6 +12,8 @@ import org.springframework.test.web.servlet.ResultActions;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -21,7 +23,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * End-to-end customer returns (مرجوعی) over the real HTTP layer: a delivered order becomes
  * returnable, a request snapshots the chosen lines + refund amount + شبا, and the invariants
- * (one-per-order, RECEIVED-only, per-user ownership, item/quantity validation) hold.
+ * (one-per-order, RECEIVED-only, per-user ownership, item/quantity validation) hold. Also covers
+ * the admin moderation queue (approve / reject / refund) and its restock + refund-ledger effects.
  */
 class ReturnFlowITest extends AbstractCheckoutITest {
 
@@ -91,6 +94,137 @@ class ReturnFlowITest extends AbstractCheckoutITest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.refundAmount").value(600)) // discountPrice wins
                 .andExpect(jsonPath("$.iban").value("IR062960000000100324200001"));
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Admin moderation: approve / reject / refund
+    // ---------------------------------------------------------------------------------------------
+
+    @Test
+    void admin_approves_then_refunds_which_restocks_and_posts_a_refund_transaction() throws Exception {
+        Long productId = createActiveProduct("ret-admin", 10, 500); // unit 100 Rial, 10 in stock
+        long orderId = receivedOrder(userToken, productId, 2);       // buys 2 → 8 left
+        long itemId = firstItemId(userToken, orderId);
+        assertEquals(8, inventoryOf(productId));
+
+        MvcResult created = createReturn(userToken, Map.of(
+                        "orderId", orderId,
+                        "items", List.of(Map.of("orderItemId", itemId, "quantity", 2, "reason", "DEFECTIVE"))))
+                .andExpect(status().isOk()).andReturn();
+        long returnId = json(created).get("id").asLong();
+
+        // The queue lists it, enriched with the buyer's identity.
+        adminListReturns(null)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(1)))
+                .andExpect(jsonPath("$[0].id").value((int) returnId))
+                .andExpect(jsonPath("$[0].status").value("REQUESTED"))
+                .andExpect(jsonPath("$[0].customerName").value("Test User"));
+
+        adminApprove(returnId)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("APPROVED"));
+
+        adminRefund(returnId, Map.of("reference", "BANK-REF-1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("REFUNDED"))
+                .andExpect(jsonPath("$.refundReference").value("BANK-REF-1"));
+
+        // Returned goods are back in stock.
+        assertEquals(10, inventoryOf(productId));
+
+        // The order ledger now carries a REFUND transaction for the returned amount (2 × 100).
+        MvcResult adminOrder = mockMvc.perform(withAuth(get("/api/admin/orders/{id}", orderId), adminToken))
+                .andExpect(status().isOk()).andReturn();
+        boolean hasRefund = false;
+        for (JsonNode tx : json(adminOrder).get("transactions")) {
+            if ("REFUND".equals(tx.get("type").asText()) && tx.get("amount").asInt() == 200) {
+                hasRefund = true;
+            }
+        }
+        assertTrue(hasRefund, "expected a REFUND transaction of 200 on the order");
+    }
+
+    @Test
+    void admin_can_reject_a_pending_return_without_restocking() throws Exception {
+        Long productId = createActiveProduct("ret-reject", 10, 500);
+        long orderId = receivedOrder(userToken, productId, 1); // 9 left
+        long itemId = firstItemId(userToken, orderId);
+        long returnId = json(createReturn(userToken, Map.of(
+                        "orderId", orderId,
+                        "items", List.of(Map.of("orderItemId", itemId, "quantity", 1, "reason", "CHANGED_MIND"))))
+                .andExpect(status().isOk()).andReturn()).get("id").asLong();
+
+        adminReject(returnId)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("REJECTED"));
+
+        assertEquals(9, inventoryOf(productId)); // no restock on a rejected return
+    }
+
+    @Test
+    void refunding_before_approval_is_rejected() throws Exception {
+        Long productId = createActiveProduct("ret-early", 10, 500);
+        long orderId = receivedOrder(userToken, productId, 1);
+        long itemId = firstItemId(userToken, orderId);
+        long returnId = json(createReturn(userToken, Map.of(
+                        "orderId", orderId,
+                        "items", List.of(Map.of("orderItemId", itemId, "quantity", 1, "reason", "OTHER"))))
+                .andExpect(status().isOk()).andReturn()).get("id").asLong();
+
+        adminRefund(returnId, Map.of("reference", "BANK-REF-2"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.errorCode").value("RETURN_INVALID_STATUS"));
+    }
+
+    @Test
+    void approving_a_non_pending_return_is_rejected() throws Exception {
+        Long productId = createActiveProduct("ret-twice", 10, 500);
+        long orderId = receivedOrder(userToken, productId, 1);
+        long itemId = firstItemId(userToken, orderId);
+        long returnId = json(createReturn(userToken, Map.of(
+                        "orderId", orderId,
+                        "items", List.of(Map.of("orderItemId", itemId, "quantity", 1, "reason", "OTHER"))))
+                .andExpect(status().isOk()).andReturn()).get("id").asLong();
+
+        adminApprove(returnId).andExpect(status().isOk());
+        adminApprove(returnId) // already APPROVED
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.errorCode").value("RETURN_INVALID_STATUS"));
+    }
+
+    @Test
+    void the_queue_can_be_filtered_by_status() throws Exception {
+        Long productId = createActiveProduct("ret-filter", 10, 500);
+        long orderId = receivedOrder(userToken, productId, 1);
+        long itemId = firstItemId(userToken, orderId);
+        long returnId = json(createReturn(userToken, Map.of(
+                        "orderId", orderId,
+                        "items", List.of(Map.of("orderItemId", itemId, "quantity", 1, "reason", "OTHER"))))
+                .andExpect(status().isOk()).andReturn()).get("id").asLong();
+
+        // REQUESTED filter finds it; APPROVED filter does not (yet).
+        adminListReturns("REQUESTED").andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(1)));
+        adminListReturns("APPROVED").andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(0)));
+
+        adminApprove(returnId).andExpect(status().isOk());
+        adminListReturns("REQUESTED").andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(0)));
+        adminListReturns("APPROVED").andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(1)));
+    }
+
+    @Test
+    void admin_return_endpoints_are_forbidden_for_a_normal_user() throws Exception {
+        Long productId = createActiveProduct("ret-forbidden", 10, 500);
+        long orderId = receivedOrder(userToken, productId, 1);
+        long itemId = firstItemId(userToken, orderId);
+        long returnId = json(createReturn(userToken, Map.of(
+                        "orderId", orderId,
+                        "items", List.of(Map.of("orderItemId", itemId, "quantity", 1, "reason", "OTHER"))))
+                .andExpect(status().isOk()).andReturn()).get("id").asLong();
+
+        mockMvc.perform(withAuth(get("/api/admin/returns"), userToken)).andExpect(status().isForbidden());
+        mockMvc.perform(withAuth(post("/api/admin/returns/{id}/approve", returnId), userToken))
+                .andExpect(status().isForbidden());
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -233,5 +367,27 @@ class ReturnFlowITest extends AbstractCheckoutITest {
 
     private ResultActions listReturns(String token) throws Exception {
         return mockMvc.perform(withAuth(get("/api/returns"), token));
+    }
+
+    private ResultActions adminListReturns(String status) throws Exception {
+        var request = get("/api/admin/returns");
+        if (status != null) {
+            request = request.param("status", status);
+        }
+        return mockMvc.perform(withAuth(request, adminToken));
+    }
+
+    private ResultActions adminApprove(long returnId) throws Exception {
+        return mockMvc.perform(withAuth(post("/api/admin/returns/{id}/approve", returnId), adminToken));
+    }
+
+    private ResultActions adminReject(long returnId) throws Exception {
+        return mockMvc.perform(withAuth(post("/api/admin/returns/{id}/reject", returnId), adminToken));
+    }
+
+    private ResultActions adminRefund(long returnId, Map<String, Object> body) throws Exception {
+        return mockMvc.perform(withAuth(post("/api/admin/returns/{id}/refund", returnId), adminToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(body)));
     }
 }

@@ -121,6 +121,7 @@ export class Login implements OnInit {
     if (digit && index < 5) {
       (input.nextElementSibling as HTMLInputElement | null)?.focus();
     }
+    this.maybeAutoConfirm();
   }
 
   /** Backspace on an empty box steps back to the previous one. */
@@ -139,6 +140,18 @@ export class Login implements OnInit {
     const digits = ['', '', '', '', '', ''];
     for (let i = 0; i < text.length; i++) digits[i] = text[i];
     this.otpDigits.set(digits);
+    this.maybeAutoConfirm();
+  }
+
+  /**
+   * Submit the ticket automatically once all six boxes are filled, so the shopper doesn't have to
+   * reach for the «تأیید» button. The `busy` guard makes this idempotent — a completed code that is
+   * still in flight (or being edited after a failure) won't fire a second request.
+   */
+  private maybeAutoConfirm() {
+    if (this.otpCode().length === 6 && !this.busy()) {
+      this.confirmOtp();
+    }
   }
 
   confirmOtp() {

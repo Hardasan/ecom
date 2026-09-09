@@ -1,0 +1,111 @@
+<div class="admin-page">
+  <div class="admin-page__head">
+    <h1>مرجوعی‌ها</h1>
+  </div>
+
+  @if (error()) {
+    <p class="admin-error">{{ error() }}</p>
+  }
+
+  <div class="admin-tabs">
+    @for (f of filters; track f.key) {
+      <button type="button" class="admin-tab" [class.is-active]="filter() === f.key" (click)="select(f.key)">
+        {{ f.label }}
+      </button>
+    }
+  </div>
+
+  @if (loading()) {
+    <p class="admin-empty">در حال بارگذاری…</p>
+  } @else if (!returns().length) {
+    <p class="admin-empty">درخواست مرجوعی در این دسته نیست</p>
+  } @else {
+    <div class="returns">
+      @for (r of returns(); track r.id) {
+        <div class="admin-card ret">
+          <div class="ret__head">
+            <div class="ret__meta">
+              <strong>{{ r.customerName || 'مشتری' }}</strong>
+              @if (r.mobile) { <span class="admin-muted">{{ r.mobile }}</span> }
+              <a class="ret__order" [routerLink]="['/admin/orders', r.orderId]">سفارش #{{ r.orderId }}</a>
+              <span [class]="'badge ' + tone(r.status)">{{ statusLabel(r.status) }}</span>
+            </div>
+            @if (r.createdAt) { <span class="admin-muted">{{ date(r.createdAt) }}</span> }
+          </div>
+
+          <div class="ret__amount">
+            <span class="admin-muted">مبلغ قابل بازپرداخت</span>
+            <strong>{{ money(r.refundAmount) }}</strong>
+          </div>
+
+          <div class="ret__items">
+            @for (it of r.items; track it.orderItemId) {
+              <div class="ret__item">
+                <span class="ret__item-name">
+                  {{ it.productName }}
+                  @if (it.variantValue) { <span class="admin-muted">({{ it.variantValue }})</span> }
+                </span>
+                <span class="admin-muted">{{ it.quantity }} عدد — {{ reasonLabel(it.reason) }}</span>
+                <span class="ret__item-refund">{{ money(it.lineRefund) }}</span>
+              </div>
+            }
+          </div>
+
+          @if (r.note) {
+            <p class="ret__note admin-muted">یادداشت مشتری: {{ r.note }}</p>
+          }
+          @if (r.iban) {
+            <p class="ret__iban admin-muted">شبای مقصد: {{ r.iban }}</p>
+          }
+          @if (r.status === 'REFUNDED' && r.refundReference) {
+            <p class="ret__ref">کد پیگیری بازپرداخت: <strong>{{ r.refundReference }}</strong></p>
+          }
+
+          <div class="ret__actions">
+            @switch (r.status) {
+              @case ('REQUESTED') {
+                <button type="button" class="admin-btn" [disabled]="busy()" (click)="approve(r)">تأیید مرجوعی</button>
+                <button type="button" class="admin-btn admin-btn--danger" [disabled]="busy()" (click)="reject(r)">
+                  رد درخواست
+                </button>
+              }
+              @case ('APPROVED') {
+                <button type="button" class="admin-btn" [disabled]="busy()" (click)="openRefund(r)">ثبت بازپرداخت</button>
+              }
+              @default {
+                <span class="admin-muted">اقدامی برای این وضعیت در دسترس نیست</span>
+              }
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  @if (refundTarget(); as r) {
+    <div class="modal-backdrop" (click)="refundTarget.set(null)"></div>
+    <div class="modal" role="dialog" aria-label="ثبت بازپرداخت مرجوعی">
+      <h2>ثبت بازپرداخت</h2>
+      <p class="admin-muted">
+        مبلغ {{ money(r.refundAmount) }} را خارج از سامانه به شبای مشتری واریز کنید، سپس کد پیگیری تراکنش را
+        اینجا ثبت کنید. با ثبت، موجودی اقلام برگشتی به انبار بازمی‌گردد و تراکنش بازپرداخت روی سفارش ثبت می‌شود.
+      </p>
+      <label>
+        <span>کد پیگیری تراکنش</span>
+        <input class="field" [(ngModel)]="refReference" />
+      </label>
+      <label>
+        <span>شبای مقصد</span>
+        <input class="field ltr" [(ngModel)]="refIban" placeholder="IR + ۲۴ رقم" />
+      </label>
+      <div class="modal__actions">
+        <button type="button" class="admin-btn admin-btn--ghost" (click)="refundTarget.set(null)">انصراف</button>
+        <button type="button" class="admin-btn" [disabled]="busy()" (click)="submitRefund()">ثبت بازپرداخت</button>
+      </div>
+    </div>
+  }
+
+  @if (toast()) {
+    <div class="admin-toast">{{ toast() }}</div>
+  }
+</div>

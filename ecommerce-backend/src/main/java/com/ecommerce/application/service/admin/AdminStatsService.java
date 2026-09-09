@@ -3,12 +3,14 @@ package com.ecommerce.application.service.admin;
 import com.ecommerce.application.api.dto.admin.AdminStatsResponseDto;
 import com.ecommerce.persistence.entity.enumeration.OrderStatus;
 import com.ecommerce.persistence.entity.enumeration.ProductStatus;
+import com.ecommerce.persistence.entity.enumeration.ReturnStatus;
 import com.ecommerce.persistence.entity.enumeration.ReviewStatus;
 import com.ecommerce.persistence.repository.CategoryRepository;
 import com.ecommerce.persistence.repository.DiscountRepository;
 import com.ecommerce.persistence.repository.OrderRepository;
 import com.ecommerce.persistence.repository.ProductRepository;
 import com.ecommerce.persistence.repository.ProductReviewRepository;
+import com.ecommerce.persistence.repository.ReturnRequestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +38,7 @@ public class AdminStatsService {
     private final ProductReviewRepository productReviewRepository;
     private final CategoryRepository categoryRepository;
     private final DiscountRepository discountRepository;
+    private final ReturnRequestRepository returnRequestRepository;
 
     @Transactional(readOnly = true)
     public AdminStatsResponseDto getStats() {
@@ -71,6 +74,7 @@ public class AdminStatsService {
         dto.setTotalCategories(categoryRepository.count());
         dto.setTotalDiscounts(discountRepository.count());
         dto.setPendingReviews(productReviewRepository.countByStatus(ReviewStatus.PENDING));
+        dto.setPendingReturns(returnRequestRepository.countByStatus(ReturnStatus.REQUESTED));
         return dto;
     }
 }

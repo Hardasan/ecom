@@ -3,12 +3,14 @@ package com.ecommerce.application.service.admin;
 import com.ecommerce.application.api.dto.admin.AdminStatsResponseDto;
 import com.ecommerce.persistence.entity.enumeration.OrderStatus;
 import com.ecommerce.persistence.entity.enumeration.ProductStatus;
+import com.ecommerce.persistence.entity.enumeration.ReturnStatus;
 import com.ecommerce.persistence.entity.enumeration.ReviewStatus;
 import com.ecommerce.persistence.repository.CategoryRepository;
 import com.ecommerce.persistence.repository.DiscountRepository;
 import com.ecommerce.persistence.repository.OrderRepository;
 import com.ecommerce.persistence.repository.ProductRepository;
 import com.ecommerce.persistence.repository.ProductReviewRepository;
+import com.ecommerce.persistence.repository.ReturnRequestRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,13 +36,15 @@ class AdminStatsServiceUTest {
     private CategoryRepository categoryRepository;
     @Mock
     private DiscountRepository discountRepository;
+    @Mock
+    private ReturnRequestRepository returnRequestRepository;
 
     private AdminStatsService service;
 
     @BeforeEach
     void setUp() {
         service = new AdminStatsService(orderRepository, productRepository, productReviewRepository,
-                categoryRepository, discountRepository);
+                categoryRepository, discountRepository, returnRequestRepository);
     }
 
     @Test
@@ -57,6 +61,7 @@ class AdminStatsServiceUTest {
         when(categoryRepository.count()).thenReturn(4L);
         when(discountRepository.count()).thenReturn(5L);
         when(productReviewRepository.countByStatus(ReviewStatus.PENDING)).thenReturn(6L);
+        when(returnRequestRepository.countByStatus(ReturnStatus.REQUESTED)).thenReturn(8L);
 
         AdminStatsResponseDto dto = service.getStats();
 
@@ -78,6 +83,7 @@ class AdminStatsServiceUTest {
         assertEquals(4, dto.getTotalCategories());
         assertEquals(5, dto.getTotalDiscounts());
         assertEquals(6, dto.getPendingReviews());
+        assertEquals(8, dto.getPendingReturns());
     }
 
     @Test

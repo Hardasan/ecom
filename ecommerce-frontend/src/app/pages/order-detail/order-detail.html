@@ -39,14 +39,14 @@
             <p class="section-title">اطلاعات ارسال</p>
             @if (o.carrier) {
               <div class="line-meta">
-                <span class="body">{{ o.carrier }}</span>
                 <span class="muted">شرکت پستی</span>
+                <span class="body">{{ o.carrier }}</span>
               </div>
             }
             @if (o.trackingNumber) {
               <div class="line-meta">
-                <span class="body">{{ o.trackingNumber | faNum }}</span>
                 <span class="muted">کد رهگیری مرسوله</span>
+                <span class="body">{{ o.trackingNumber | faNum }}</span>
               </div>
             }
           </section>
@@ -55,15 +55,15 @@
         <section class="receipt-card">
           <p class="section-title">اطلاعات پرداخت</p>
           <div class="line-meta">
-            <span class="amount">{{ total() }}</span>
             <span class="muted">{{
               o.paymentMethod === 'CASH_ON_DELIVERY' ? 'پرداخت در محل' : 'پرداخت با درگاه سپ'
             }}</span>
+            <span class="amount">{{ total() }}</span>
           </div>
           @if (savings(); as save) {
             <div class="line-meta">
-              <span class="amount amount--sale">{{ save }}</span>
               <span class="muted">سود شما از خرید</span>
+              <span class="amount amount--sale">{{ save }}</span>
             </div>
           }
         </section>

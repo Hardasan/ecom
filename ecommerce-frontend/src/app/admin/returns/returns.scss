@@ -1,0 +1,134 @@
+.returns {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ret {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  &__order {
+    color: var(--brand);
+    font-weight: 600;
+  }
+
+  &__amount {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+
+    strong {
+      font-size: 16px;
+    }
+  }
+
+  &__items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 13px;
+  }
+
+  &__item-name {
+    flex: 1;
+    min-width: 140px;
+  }
+
+  &__item-refund {
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  &__note,
+  &__iban {
+    margin: 0;
+    font-size: 13px;
+  }
+
+  &__ref {
+    margin: 0;
+    font-size: 13px;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding-top: 4px;
+    border-top: 1px solid var(--border);
+  }
+}
+
+/* Refund modal — mirrors the admin order-detail refund dialog. */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 60;
+}
+
+.modal {
+  position: fixed;
+  inset-inline: 0;
+  inset-block-start: 50%;
+  transform: translateY(-50%);
+  margin: auto;
+  max-width: 460px;
+  width: calc(100% - 40px);
+  background: var(--surface-card);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  z-index: 61;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--ink-muted);
+  }
+
+  .field.ltr {
+    direction: ltr;
+    text-align: left;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
+}

@@ -196,6 +196,10 @@ export type ReturnRequestDto = {
   refundAmount: number | string;
   iban?: string | null;
   note?: string | null;
+  // Set once the refund is paid; buyer identity is populated only on the admin views.
+  refundReference?: string | null;
+  customerName?: string | null;
+  mobile?: string | null;
   items: ReturnItemDto[];
   createdAt?: string;
   updatedAt?: string;
@@ -399,6 +403,7 @@ export type AdminStatsDto = {
   totalCategories: number;
   totalDiscounts: number;
   pendingReviews: number;
+  pendingReturns: number;
 };
 
 /** A warehouse-staff account as returned by the admin staff-management API. */

@@ -24,6 +24,14 @@ public class ReturnRequestResponseDto {
 
     private String note;
 
+    // Bank transfer reference, set once the refund is paid (status REFUNDED).
+    private String refundReference;
+
+    // Buyer identity — populated only on the admin views (null on the shopper's own list).
+    private String customerName;
+
+    private String mobile;
+
     private List<ReturnRequestItemResponseDto> items;
 
     private Date createdAt;

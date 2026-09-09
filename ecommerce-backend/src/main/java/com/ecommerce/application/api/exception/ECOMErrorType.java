@@ -60,7 +60,8 @@ public enum ECOMErrorType {
     ORDER_NOT_RETURNABLE(HttpStatus.CONFLICT, "error.return.order.not.returnable"),
     RETURN_ALREADY_REQUESTED(HttpStatus.CONFLICT, "error.return.already.requested"),
     RETURN_ITEM_INVALID(HttpStatus.BAD_REQUEST, "error.return.item.invalid"),
-    RETURN_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "error.return.not.found");
+    RETURN_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "error.return.not.found"),
+    RETURN_INVALID_STATUS(HttpStatus.CONFLICT, "error.return.invalid.status");
 
     private final HttpStatus httpStatus;
     private final String messageKey;

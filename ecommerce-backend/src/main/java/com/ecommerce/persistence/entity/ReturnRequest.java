@@ -50,6 +50,10 @@ public class ReturnRequest {
     @Column(name = "note", length = 1000)
     private String note;
 
+    // Bank transfer reference recorded by the admin when the refund is actually paid (status REFUNDED).
+    @Column(name = "refund_reference", length = 255)
+    private String refundReference;
+
     @OneToMany(mappedBy = "returnRequest", cascade = CascadeType.ALL, orphanRemoval = true)
     @BatchSize(size = 50)
     private List<ReturnRequestItem> items = new ArrayList<>();

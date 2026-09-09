@@ -1,4 +1,4 @@
-import { DiscountScope, DiscountType, ReviewStatus } from '../core/models';
+import { DiscountScope, DiscountType, ReturnStatus, ReviewStatus } from '../core/models';
 
 /** Persian labels + badge tones for admin-only enums (order labels live in core/format.ts). */
 
@@ -67,3 +67,29 @@ export function reviewStatusTone(status?: ReviewStatus | string | null): string 
 export const ORDER_STATUSES = [
   'RESERVED', 'PAID', 'PROCESSING', 'SENDING', 'RECEIVED', 'FAILED', 'CANCEL_BY_USER', 'CANCEL_BY_ADMIN'
 ] as const;
+
+const RETURN_STATUS_FA: Record<ReturnStatus, string> = {
+  REQUESTED: 'در انتظار بررسی',
+  APPROVED: 'تأییدشده',
+  REJECTED: 'ردشده',
+  REFUNDED: 'بازپرداخت‌شده'
+};
+
+export function returnStatusLabel(status?: ReturnStatus | string | null): string {
+  return status ? (RETURN_STATUS_FA[status as ReturnStatus] ?? status) : '';
+}
+
+export function returnStatusTone(status?: ReturnStatus | string | null): string {
+  switch (status) {
+    case 'APPROVED':
+      return 'badge--blue';
+    case 'REFUNDED':
+      return 'badge--green';
+    case 'REQUESTED':
+      return 'badge--amber';
+    case 'REJECTED':
+      return 'badge--red';
+    default:
+      return 'badge--gray';
+  }
+}

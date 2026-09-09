@@ -59,7 +59,6 @@
 
     <section>
       <div class="section-head sale-head">
-        <a routerLink="/products" [queryParams]="{ title: 'فروش ویژه' }" class="link">مشاهده همه</a>
         <div class="sale-head__right">
           <h2>فروش ویژه</h2>
           <span class="countdown">
@@ -67,6 +66,7 @@
             <span>{{ countdown() }}</span>
           </span>
         </div>
+        <a routerLink="/products" [queryParams]="{ title: 'فروش ویژه' }" class="link">مشاهده همه</a>
       </div>
 
       @if (loading()) {
@@ -94,8 +94,8 @@
 
     <section class="cats">
       <div class="section-head">
-        <a routerLink="/categories" class="link">مشاهده همه</a>
         <h2>دسته‌بندی پیشنهادی</h2>
+        <a routerLink="/categories" class="link">مشاهده همه</a>
       </div>
 
       @if (featuredCategory(); as f) {

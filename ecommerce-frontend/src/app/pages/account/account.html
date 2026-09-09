@@ -1,0 +1,40 @@
+<div class="page account">
+  <div class="page-scroll">
+    <header class="top-bar">
+      <a routerLink="/profile" class="icon-btn" aria-label="بازگشت">
+        <img [src]="a.iconBack" alt="" width="8" height="16" />
+      </a>
+      <p class="top-bar__title">تنظیمات کاربری</p>
+      <span class="spacer"></span>
+    </header>
+
+    <div class="account-body">
+      @if (error()) {
+        <p class="form-error">{{ error() }}</p>
+      }
+
+      <section class="card">
+        <h2>اطلاعات حساب</h2>
+        <label>
+          <span>نام</span>
+          <input class="field" [(ngModel)]="firstName" />
+        </label>
+        <label>
+          <span>نام خانوادگی</span>
+          <input class="field" [(ngModel)]="lastName" />
+        </label>
+        <label>
+          <span>شماره موبایل</span>
+          <input class="field" type="tel" inputmode="numeric" [(ngModel)]="mobile" />
+        </label>
+        <button type="button" class="btn-brand" [disabled]="busy()" (click)="saveProfile()">
+          {{ busy() ? '…' : 'ذخیره اطلاعات' }}
+        </button>
+      </section>
+    </div>
+  </div>
+
+  @if (toast()) {
+    <div class="toast">{{ toast() }}</div>
+  }
+</div>

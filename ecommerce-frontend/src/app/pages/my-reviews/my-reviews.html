@@ -1,0 +1,63 @@
+<div class="page my-reviews">
+  <div class="page-scroll">
+    <header class="top-bar">
+      <a routerLink="/profile" class="icon-btn" aria-label="بازگشت">
+        <img [src]="a.iconBack" alt="" width="8" height="16" />
+      </a>
+      <p class="top-bar__title">نظرات من</p>
+      <span class="spacer"></span>
+    </header>
+
+    <!-- Desktop heading — the phone top-bar is hidden at ≥1024px. -->
+    <h1 class="rv-heading">نظرات من</h1>
+
+    @if (loading()) {
+      <p class="state">در حال بارگذاری…</p>
+    } @else if (error()) {
+      <p class="state error">{{ error() }}</p>
+    } @else if (!reviews().length) {
+      <div class="empty">
+        <span class="empty__icon"><img [src]="a.iconChat" alt="" width="30" height="30" /></span>
+        <p class="empty__title">هنوز نظری ثبت نکرده‌اید</p>
+        <p class="empty__sub">پس از خرید، دیدگاه خود را درباره‌ی محصولات ثبت کنید تا اینجا نمایش داده شود.</p>
+        <a routerLink="/products" [queryParams]="{ title: 'فروش ویژه' }" class="btn-brand empty__cta">
+          مشاهده محصولات
+        </a>
+      </div>
+    } @else {
+      <div class="rv-body">
+        @for (r of reviews(); track r.id) {
+          <article class="rv-card">
+            <div class="rv-card__head">
+              <span [class]="statusClass(r)">{{ statusLabel(r) }}</span>
+              <a class="rv-card__product" [routerLink]="['/product', r.productId]">{{ productName(r) }}</a>
+            </div>
+
+            <div class="rv-card__stars" [attr.aria-label]="'امتیاز ' + r.rating + ' از ۵'">
+              @for (on of stars(r); track $index) {
+                <img [src]="a.iconStar" alt="" width="16" height="16" [class.off]="!on" />
+              }
+            </div>
+
+            @if (r.title) {
+              <p class="rv-card__title">{{ r.title }}</p>
+            }
+            @if (r.comment) {
+              <p class="rv-card__comment">{{ r.comment }}</p>
+            }
+
+            <div class="rv-card__foot">
+              @if (r.verifiedPurchase) {
+                <span class="rv-verified">
+                  <img [src]="a.iconCheck" alt="" width="12" height="12" />
+                  خرید تأیید‌شده
+                </span>
+              }
+              <span class="rv-card__date">{{ date(r) }}</span>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </div>
+</div>

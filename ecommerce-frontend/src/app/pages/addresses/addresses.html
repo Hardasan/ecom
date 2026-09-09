@@ -1,0 +1,166 @@
+<div class="page addresses">
+  <div class="page-scroll">
+    <header class="top-bar">
+      <a routerLink="/profile" class="icon-btn" aria-label="بازگشت">
+        <img [src]="a.iconBack" alt="" width="8" height="16" />
+      </a>
+      <p class="top-bar__title">آدرس‌ها</p>
+      <span class="spacer"></span>
+    </header>
+
+    <div class="addr-body">
+      @if (error()) {
+        <p class="form-error">{{ error() }}</p>
+      }
+
+      @if (loading()) {
+        <p class="state">در حال بارگذاری…</p>
+      } @else if (addresses().length) {
+        <div class="address-list">
+          @for (addr of addresses(); track addr.id) {
+            <div class="address-card">
+              <div class="address-card__text">
+                <strong>{{ addr.title || 'آدرس' }} @if (addr.isDefault) {
+                  <span class="badge">پیش‌فرض</span>
+                }</strong>
+                <span>{{ addr.city }}، {{ addr.addressLine }}</span>
+              </div>
+              <div class="address-card__actions">
+                <button type="button" class="link-btn" (click)="openEditAddress(addr)">ویرایش</button>
+                <button type="button" class="icon-btn" (click)="deleteAddress(addr, $event)" aria-label="حذف">
+                  <img [src]="a.iconTrash" alt="" width="18" height="18" />
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+        <button type="button" class="btn-outline add-btn" (click)="openNewAddress()">افزودن آدرس جدید</button>
+      } @else {
+        <button type="button" class="address-empty" (click)="openNewAddress()">
+          <span class="address-empty__title">
+            افزودن آدرس
+            <img [src]="a.iconMapPin" alt="" width="16" height="16" />
+          </span>
+          <span class="address-empty__sub">هنوز آدرسی اضافه نکرده‌اید</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (toast()) {
+    <div class="toast">{{ toast() }}</div>
+  }
+
+  @if (showAddressSheet()) {
+    <div class="sheet-backdrop" (click)="closeSheet()"></div>
+    <div class="sheet" role="dialog" [attr.aria-label]="editingAddressId ? 'ویرایش آدرس' : 'آدرس جدید'">
+      <div class="sheet-head">{{ editingAddressId ? 'ویرایش آدرس' : 'آدرس جدید' }}</div>
+      <div class="sheet-body">
+        <div class="row-2">
+          <label>
+            <span>استان <span class="req">*</span></span>
+            <select class="field" [(ngModel)]="province" (ngModelChange)="onProvinceChange()">
+              @for (p of provinces(); track p.code) {
+                <option [value]="p.code">{{ p.name }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            <span>شهر <span class="req">*</span></span>
+            <select
+              class="field"
+              [class.invalid]="fieldErrors()['city']"
+              [(ngModel)]="city"
+              (ngModelChange)="clearFieldError('city')"
+            >
+              @for (c of cities(); track c.id) {
+                <option [value]="c.name">{{ c.name }}</option>
+              }
+            </select>
+            @if (fieldErrors()['city']; as msg) {
+              <span class="field-error">{{ msg }}</span>
+            }
+          </label>
+        </div>
+        <label>
+          <span>آدرس کامل <span class="req">*</span></span>
+          <input
+            class="field"
+            [class.invalid]="fieldErrors()['addressLine']"
+            [(ngModel)]="addressLine"
+            (ngModelChange)="clearFieldError('addressLine')"
+            placeholder="خیابان، کوچه، پلاک"
+          />
+          @if (fieldErrors()['addressLine']; as msg) {
+            <span class="field-error">{{ msg }}</span>
+          }
+        </label>
+        <label>
+          <span>عنوان آدرس</span>
+          <input class="field" [(ngModel)]="title" placeholder="خانه" />
+        </label>
+        <div class="row-2">
+          <label>
+            <span>نام <span class="req">*</span></span>
+            <input
+              class="field"
+              [class.invalid]="fieldErrors()['recipientFirstName']"
+              [(ngModel)]="recipientFirstName"
+              (ngModelChange)="clearFieldError('recipientFirstName')"
+            />
+            @if (fieldErrors()['recipientFirstName']; as msg) {
+              <span class="field-error">{{ msg }}</span>
+            }
+          </label>
+          <label>
+            <span>نام خانوادگی <span class="req">*</span></span>
+            <input
+              class="field"
+              [class.invalid]="fieldErrors()['recipientLastName']"
+              [(ngModel)]="recipientLastName"
+              (ngModelChange)="clearFieldError('recipientLastName')"
+            />
+            @if (fieldErrors()['recipientLastName']; as msg) {
+              <span class="field-error">{{ msg }}</span>
+            }
+          </label>
+        </div>
+        <label>
+          <span>موبایل گیرنده <span class="req">*</span></span>
+          <input
+            class="field"
+            [class.invalid]="fieldErrors()['recipientMobile']"
+            [(ngModel)]="recipientMobile"
+            (ngModelChange)="clearFieldError('recipientMobile')"
+            placeholder="۰۹۱۲…"
+          />
+          @if (fieldErrors()['recipientMobile']; as msg) {
+            <span class="field-error">{{ msg }}</span>
+          }
+        </label>
+        <label>
+          <span>کد پستی <span class="req">*</span></span>
+          <input
+            class="field"
+            [class.invalid]="fieldErrors()['postalCode']"
+            [(ngModel)]="postalCode"
+            (ngModelChange)="clearFieldError('postalCode')"
+            inputmode="numeric"
+          />
+          @if (fieldErrors()['postalCode']; as msg) {
+            <span class="field-error">{{ msg }}</span>
+          }
+        </label>
+        <label>
+          <span>پلاک</span>
+          <input class="field" [(ngModel)]="plaque" />
+        </label>
+      </div>
+      <div class="bottom-bar">
+        <button type="button" class="btn-brand" [disabled]="busy()" (click)="saveAddress()">
+          {{ busy() ? '…' : 'ذخیره آدرس' }}
+        </button>
+      </div>
+    </div>
+  }
+</div>

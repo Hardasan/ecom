@@ -1,0 +1,71 @@
+<div class="page wishlist">
+  <div class="page-scroll">
+    <header class="top-bar">
+      <a routerLink="/profile" class="icon-btn" aria-label="بازگشت">
+        <img [src]="a.iconBack" alt="" width="8" height="16" />
+      </a>
+      <p class="top-bar__title">علاقه‌مندی‌ها</p>
+      <span class="spacer"></span>
+    </header>
+
+    <!-- Desktop heading — the phone top-bar is hidden at ≥1024px. -->
+    <h1 class="wl-heading">علاقه‌مندی‌ها</h1>
+
+    @if (loading()) {
+      <p class="state">در حال بارگذاری…</p>
+    } @else if (error()) {
+      <p class="state error">{{ error() }}</p>
+    } @else if (!items().length) {
+      <div class="empty">
+        <span class="empty__icon"><img [src]="a.iconHeart" alt="" width="30" height="30" /></span>
+        <p class="empty__title">لیست علاقه‌مندی‌ها خالی است</p>
+        <p class="empty__sub">محصولاتی که می‌پسندید را با زدن ❤ ذخیره کنید تا بعداً به آن‌ها سر بزنید.</p>
+        <a routerLink="/products" [queryParams]="{ title: 'فروش ویژه' }" class="btn-brand empty__cta">
+          مشاهده محصولات
+        </a>
+      </div>
+    } @else {
+      <div class="grid">
+        @for (it of items(); track it.productId) {
+          <a class="wcard" [routerLink]="['/product', it.productId]">
+            <div class="wcard__img">
+              @if (image(it); as src) {
+                <img [src]="src" [alt]="name(it)" width="170" height="170" loading="lazy" decoding="async" />
+              }
+              <button
+                type="button"
+                class="wcard__fav"
+                (click)="remove(it, $event)"
+                aria-label="حذف از علاقه‌مندی‌ها"
+              >
+                <img [src]="a.iconHeartFill" alt="" width="20" height="20" />
+              </button>
+              @if (percentOff(it) > 0) {
+                <span class="tag-sale wcard__tag">٪{{ percentOff(it) | faNum }}</span>
+              }
+              @if (!it.available) {
+                <span class="wcard__soldout">ناموجود</span>
+              }
+            </div>
+            <div class="wcard__body">
+              <p class="wcard__name">{{ name(it) }}</p>
+              <span class="price">
+                @if (wasToman(it)) {
+                  <span class="price__old">{{ wasToman(it) }}</span>
+                }
+                <span class="price__now">
+                  <span class="price__amount">{{ nowToman(it) }}</span>
+                  <span class="price__unit">تومان</span>
+                </span>
+              </span>
+            </div>
+          </a>
+        }
+      </div>
+    }
+  </div>
+
+  @if (toast()) {
+    <div class="toast">{{ toast() }}</div>
+  }
+</div>

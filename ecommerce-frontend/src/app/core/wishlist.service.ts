@@ -2,14 +2,15 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_BASE_URL } from '../api.config';
+import { WishlistResponseDto } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class WishlistService {
   private readonly http = inject(HttpClient);
 
-  /** The current user's wishlist. Used for the profile «علاقه‌مندی‌ها» count. */
-  list(): Observable<{ items?: unknown[] }> {
-    return this.http.get<{ items?: unknown[] }>(`${API_BASE_URL}/wishlist`);
+  /** The current user's wishlist (newest bookmark first). Used by the wishlist page + profile count. */
+  list(): Observable<WishlistResponseDto> {
+    return this.http.get<WishlistResponseDto>(`${API_BASE_URL}/wishlist`);
   }
 
   contains(productId: number): Observable<{ inWishlist: boolean }> {

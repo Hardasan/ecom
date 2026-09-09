@@ -67,4 +67,14 @@ public interface ProductReviewRepository
     @Query(value = ADMIN_REVIEW_SELECT + " AND r.status = :status" + ADMIN_REVIEW_ORDER,
             countQuery = "SELECT COUNT(r) FROM ProductReview r WHERE r.status = :status")
     Page<AdminReviewResponseDto> findAdminReviewsByStatus(@Param("status") ReviewStatus status, Pageable pageable);
+
+    /**
+     * The signed-in shopper's own reviews across all products, newest first, each carrying its
+     * product's name/code (same projection as the admin queue) so a «نظرات من» list needs no per-row
+     * product lookup. Filtered by the snapshotted {@code user_id}; every status is included so the
+     * author can see their own PENDING/HIDDEN reviews too.
+     */
+    @Query(value = ADMIN_REVIEW_SELECT + " AND r.userId = :userId" + ADMIN_REVIEW_ORDER,
+            countQuery = "SELECT COUNT(r) FROM ProductReview r WHERE r.userId = :userId")
+    Page<AdminReviewResponseDto> findMyReviews(@Param("userId") Long userId, Pageable pageable);
 }

@@ -120,6 +120,13 @@ public class ProductReviewService {
                 : productReviewRepository.findAdminReviewsByStatus(status, paged);
     }
 
+    /** The signed-in shopper's own reviews (all statuses), newest first, with the product name. */
+    @Transactional(readOnly = true)
+    public Page<AdminReviewResponseDto> getMyReviews(Long userId, Pageable pageable) {
+        Pageable paged = PageRequest.of(pageable.getPageNumber(), Math.min(pageable.getPageSize(), 100));
+        return productReviewRepository.findMyReviews(userId, paged);
+    }
+
     @Transactional(readOnly = true)
     public ReviewSummaryResponseDto getSummary(Long productId) {
         requireProductExists(productId);

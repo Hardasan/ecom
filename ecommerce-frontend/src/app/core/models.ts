@@ -13,6 +13,55 @@ export type ClientConfigDto = {
   otpTtlSeconds: number;
 };
 
+// One wishlist bookmark, product-level (no variant). `available` = ACTIVE and in stock.
+export type WishlistItemDto = {
+  id: number;
+  productId: number;
+  productName: string;
+  productLocalName?: string;
+  productUrl?: string;
+  mainImage?: ProductImageDto | null;
+  prices?: PriceDto[];
+  status?: string;
+  inventoryCount?: number;
+  inStock?: boolean;
+  available?: boolean;
+  addedAt?: string;
+};
+
+export type WishlistResponseDto = {
+  userId?: number;
+  items?: WishlistItemDto[];
+  totalItems?: number;
+};
+
+// Spring Data `Page<T>` envelope (paginated endpoints).
+export type PageResponse<T> = {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+};
+
+// One of the current user's own reviews (profile «نظرات من»), carrying its product's name.
+// (ReviewStatus is defined once, further down with the product-review types.)
+export type MyReviewDto = {
+  id: number;
+  productId: number;
+  productName: string;
+  productLocalName?: string;
+  productCode?: string;
+  authorName?: string;
+  rating: number;
+  title?: string;
+  comment?: string;
+  verifiedPurchase?: boolean;
+  status: ReviewStatus;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export type UserProfileDto = {
   firstName: string;
   lastName: string;

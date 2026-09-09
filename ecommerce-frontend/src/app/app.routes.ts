@@ -62,5 +62,21 @@ export const routes: Routes = [
     path: 'returns/new/:orderId',
     loadComponent: () => import('./pages/returns/return-flow').then((m) => m.ReturnFlow)
   },
+  {
+    path: 'addresses',
+    loadComponent: () => import('./pages/addresses/addresses').then((m) => m.AddressesPage)
+  },
+  {
+    path: 'account',
+    loadComponent: () => import('./pages/account/account').then((m) => m.AccountPage)
+  },
+  {
+    path: 'wishlist',
+    loadComponent: () => import('./pages/wishlist/wishlist').then((m) => m.WishlistPage)
+  },
+  {
+    path: 'my-reviews',
+    loadComponent: () => import('./pages/my-reviews/my-reviews').then((m) => m.MyReviewsPage)
+  },
   { path: '**', redirectTo: '' }
 ];

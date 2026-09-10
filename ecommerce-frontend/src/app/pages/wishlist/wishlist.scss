@@ -32,9 +32,9 @@
     background: #f9fafb;
 
     // Out-of-flow cover image so a portrait/landscape source can't override the 1:1 square — see the
-    // detailed note in product-card.scss (`.pcard__img img`). Without this, Chrome/Firefox stretch
-    // the well to the image's intrinsic height while Safari clamps to the ratio (ragged cards).
-    img {
+    // detailed note in product-card.scss (`.pcard__img > img`). Direct child only: the `.wcard__fav`
+    // heart lives inside this well and must not inherit the absolute cover positioning.
+    > img {
       position: absolute;
       inset: 0;
       width: 100%;

@@ -10,7 +10,8 @@ import { returnStatusLabel, returnStatusTone } from '../admin-format';
 
 const FILTERS: { key: ReturnStatus | 'ALL'; label: string }[] = [
   { key: 'REQUESTED', label: 'در انتظار بررسی' },
-  { key: 'APPROVED', label: 'آماده بازپرداخت' },
+  { key: 'APPROVED', label: 'در انتظار انبار' },
+  { key: 'RECEIVED', label: 'آماده بازپرداخت' },
   { key: 'REFUNDED', label: 'بازپرداخت‌شده' },
   { key: 'REJECTED', label: 'ردشده' },
   { key: 'ALL', label: 'همه' }

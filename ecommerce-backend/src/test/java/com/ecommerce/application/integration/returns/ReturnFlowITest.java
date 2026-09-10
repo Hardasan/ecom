@@ -4,8 +4,11 @@ import com.ecommerce.application.api.dto.order.PaymentConfirmRequestDto;
 import com.ecommerce.application.integration.checkout.AbstractCheckoutITest;
 import com.ecommerce.persistence.entity.enumeration.Province;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 
@@ -27,6 +30,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * the admin moderation queue (approve / reject / refund) and its restock + refund-ledger effects.
  */
 class ReturnFlowITest extends AbstractCheckoutITest {
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    private String warehouseToken;
+
+    @BeforeEach
+    void setupWarehouseOperator() throws Exception {
+        String mobile = "09100000002";
+        jdbcTemplate.update(
+                "INSERT INTO app_user (first_name, last_name, username, mobile, password, role, is_enabled, is_registered) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                "Ware", "House", mobile, mobile,
+                passwordEncoder.encode("Ware123!"), "ROLE_WAREHOUSE", true, true);
+        warehouseToken = login(mobile, "Ware123!");
+    }
 
     // ---------------------------------------------------------------------------------------------
     // Happy path
@@ -97,23 +115,22 @@ class ReturnFlowITest extends AbstractCheckoutITest {
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Admin moderation: approve / reject / refund
+    // Moderation: admin approve/reject → warehouse accept (restock) → admin refund (money)
     // ---------------------------------------------------------------------------------------------
 
     @Test
-    void admin_approves_then_refunds_which_restocks_and_posts_a_refund_transaction() throws Exception {
+    void full_flow_admin_approves_warehouse_accepts_then_admin_refunds() throws Exception {
         Long productId = createActiveProduct("ret-admin", 10, 500); // unit 100 Rial, 10 in stock
         long orderId = receivedOrder(userToken, productId, 2);       // buys 2 → 8 left
         long itemId = firstItemId(userToken, orderId);
         assertEquals(8, inventoryOf(productId));
 
-        MvcResult created = createReturn(userToken, Map.of(
+        long returnId = json(createReturn(userToken, Map.of(
                         "orderId", orderId,
                         "items", List.of(Map.of("orderItemId", itemId, "quantity", 2, "reason", "DEFECTIVE"))))
-                .andExpect(status().isOk()).andReturn();
-        long returnId = json(created).get("id").asLong();
+                .andExpect(status().isOk()).andReturn()).get("id").asLong();
 
-        // The queue lists it, enriched with the buyer's identity.
+        // Admin queue lists it, enriched with the buyer's identity.
         adminListReturns(null)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(1)))
@@ -125,15 +142,25 @@ class ReturnFlowITest extends AbstractCheckoutITest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("APPROVED"));
 
+        // Money cannot move before the warehouse has the goods back.
+        adminRefund(returnId, Map.of("reference", "BANK-REF-1"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.errorCode").value("RETURN_INVALID_STATUS"));
+        assertEquals(8, inventoryOf(productId)); // still not restocked
+
+        // Warehouse accepts the returned goods → this is where stock is restored.
+        warehouseAccept(returnId, warehouseToken)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("RECEIVED"));
+        assertEquals(10, inventoryOf(productId));
+
+        // Now the admin pays the refund → REFUNDED + a REFUND transaction (2 × 100) on the order.
         adminRefund(returnId, Map.of("reference", "BANK-REF-1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("REFUNDED"))
                 .andExpect(jsonPath("$.refundReference").value("BANK-REF-1"));
+        assertEquals(10, inventoryOf(productId)); // not double-restocked by the refund
 
-        // Returned goods are back in stock.
-        assertEquals(10, inventoryOf(productId));
-
-        // The order ledger now carries a REFUND transaction for the returned amount (2 × 100).
         MvcResult adminOrder = mockMvc.perform(withAuth(get("/api/admin/orders/{id}", orderId), adminToken))
                 .andExpect(status().isOk()).andReturn();
         boolean hasRefund = false;
@@ -163,18 +190,37 @@ class ReturnFlowITest extends AbstractCheckoutITest {
     }
 
     @Test
-    void refunding_before_approval_is_rejected() throws Exception {
-        Long productId = createActiveProduct("ret-early", 10, 500);
-        long orderId = receivedOrder(userToken, productId, 1);
+    void warehouse_accept_before_admin_approval_is_rejected() throws Exception {
+        Long productId = createActiveProduct("ret-early-accept", 10, 500);
+        long orderId = receivedOrder(userToken, productId, 1); // 9 left
         long itemId = firstItemId(userToken, orderId);
         long returnId = json(createReturn(userToken, Map.of(
                         "orderId", orderId,
                         "items", List.of(Map.of("orderItemId", itemId, "quantity", 1, "reason", "OTHER"))))
                 .andExpect(status().isOk()).andReturn()).get("id").asLong();
 
-        adminRefund(returnId, Map.of("reference", "BANK-REF-2"))
+        // Still REQUESTED, the admin hasn't approved it — the warehouse can't accept yet.
+        warehouseAccept(returnId, warehouseToken)
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.errorCode").value("RETURN_INVALID_STATUS"));
+        assertEquals(9, inventoryOf(productId));
+    }
+
+    @Test
+    void warehouse_reject_at_inspection_does_not_restock() throws Exception {
+        Long productId = createActiveProduct("ret-ware-reject", 10, 500);
+        long orderId = receivedOrder(userToken, productId, 1); // 9 left
+        long itemId = firstItemId(userToken, orderId);
+        long returnId = json(createReturn(userToken, Map.of(
+                        "orderId", orderId,
+                        "items", List.of(Map.of("orderItemId", itemId, "quantity", 1, "reason", "DEFECTIVE"))))
+                .andExpect(status().isOk()).andReturn()).get("id").asLong();
+
+        adminApprove(returnId).andExpect(status().isOk());
+        warehouseReject(returnId, warehouseToken)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("REJECTED"));
+        assertEquals(9, inventoryOf(productId)); // goods failed inspection → never restocked
     }
 
     @Test
@@ -210,10 +256,15 @@ class ReturnFlowITest extends AbstractCheckoutITest {
         adminApprove(returnId).andExpect(status().isOk());
         adminListReturns("REQUESTED").andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(0)));
         adminListReturns("APPROVED").andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(1)));
+
+        // Warehouse acceptance moves it to RECEIVED (ready for the admin's refund).
+        warehouseAccept(returnId, warehouseToken).andExpect(status().isOk());
+        adminListReturns("APPROVED").andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(0)));
+        adminListReturns("RECEIVED").andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(1)));
     }
 
     @Test
-    void admin_return_endpoints_are_forbidden_for_a_normal_user() throws Exception {
+    void return_moderation_endpoints_enforce_their_roles() throws Exception {
         Long productId = createActiveProduct("ret-forbidden", 10, 500);
         long orderId = receivedOrder(userToken, productId, 1);
         long itemId = firstItemId(userToken, orderId);
@@ -222,8 +273,19 @@ class ReturnFlowITest extends AbstractCheckoutITest {
                         "items", List.of(Map.of("orderItemId", itemId, "quantity", 1, "reason", "OTHER"))))
                 .andExpect(status().isOk()).andReturn()).get("id").asLong();
 
+        // A shopper can touch neither the admin nor the warehouse return queues.
         mockMvc.perform(withAuth(get("/api/admin/returns"), userToken)).andExpect(status().isForbidden());
         mockMvc.perform(withAuth(post("/api/admin/returns/{id}/approve", returnId), userToken))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(withAuth(get("/api/warehouse/returns"), userToken)).andExpect(status().isForbidden());
+        mockMvc.perform(withAuth(post("/api/warehouse/returns/{id}/accept", returnId), userToken))
+                .andExpect(status().isForbidden());
+
+        // Warehouse staff may run the warehouse queue but not the admin's refund.
+        mockMvc.perform(withAuth(get("/api/warehouse/returns"), warehouseToken)).andExpect(status().isOk());
+        mockMvc.perform(withAuth(post("/api/admin/returns/{id}/refund", returnId), warehouseToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("reference", "X"))))
                 .andExpect(status().isForbidden());
     }
 
@@ -389,5 +451,13 @@ class ReturnFlowITest extends AbstractCheckoutITest {
         return mockMvc.perform(withAuth(post("/api/admin/returns/{id}/refund", returnId), adminToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(body)));
+    }
+
+    private ResultActions warehouseAccept(long returnId, String token) throws Exception {
+        return mockMvc.perform(withAuth(post("/api/warehouse/returns/{id}/accept", returnId), token));
+    }
+
+    private ResultActions warehouseReject(long returnId, String token) throws Exception {
+        return mockMvc.perform(withAuth(post("/api/warehouse/returns/{id}/reject", returnId), token));
     }
 }

@@ -70,7 +70,8 @@ export const ORDER_STATUSES = [
 
 const RETURN_STATUS_FA: Record<ReturnStatus, string> = {
   REQUESTED: 'در انتظار بررسی',
-  APPROVED: 'تأییدشده',
+  APPROVED: 'در انتظار تحویل به انبار',
+  RECEIVED: 'تحویل انبار شد',
   REJECTED: 'ردشده',
   REFUNDED: 'بازپرداخت‌شده'
 };
@@ -82,6 +83,7 @@ export function returnStatusLabel(status?: ReturnStatus | string | null): string
 export function returnStatusTone(status?: ReturnStatus | string | null): string {
   switch (status) {
     case 'APPROVED':
+    case 'RECEIVED':
       return 'badge--blue';
     case 'REFUNDED':
       return 'badge--green';

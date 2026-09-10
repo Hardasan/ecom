@@ -162,20 +162,21 @@ public class ReturnService {
     }
 
     /**
-     * Record the bank transfer that pays back an APPROVED return. Restocks the returned lines (the
-     * goods are physically back), posts a REFUND transaction on the order ledger for the return's
-     * snapshotted amount, and stamps the reference. APPROVED -> REFUNDED.
+     * Warehouse accepts the physically-returned goods for an approved return — the goods are back, so
+     * this is where their stock is restored. APPROVED -> RECEIVED. Only after this can the admin pay
+     * the refund. Warehouse staff or admins may run it (shared warehouse console).
      */
     @Transactional
-    public ReturnRequestResponseDto refund(Long id, ReturnRefundRequestDto dto) {
+    public ReturnRequestResponseDto receiveByWarehouse(Long id) {
         ReturnRequest request = returnRequestRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new EcommerceException(ECOMErrorType.RETURN_REQUEST_NOT_FOUND));
         if (request.getStatus() != ReturnStatus.APPROVED) {
             throw new EcommerceException(ECOMErrorType.RETURN_INVALID_STATUS);
         }
-        Order order = orderRepository.findByIdForUpdate(request.getOrderId())
+        // The return item snapshots only carry the order-item id, so map back through the order to the
+        // product each line belongs to, then put the returned quantity back into stock.
+        Order order = orderRepository.findById(request.getOrderId())
                 .orElseThrow(() -> new EcommerceException(ECOMErrorType.ORDER_NOT_FOUND));
-
         Map<Long, OrderItem> orderItems = order.getItems().stream()
                 .collect(Collectors.toMap(OrderItem::getId, Function.identity()));
         for (ReturnRequestItem item : request.getItems()) {
@@ -184,6 +185,31 @@ public class ReturnService {
                 productRepository.incrementInventory(orderItem.getProduct().getProductId(), item.getQuantity());
             }
         }
+
+        request.setStatus(ReturnStatus.RECEIVED);
+        return toDto(returnRequestRepository.save(request), customer(request.getUserId()));
+    }
+
+    /** Warehouse rejects the returned goods at inspection (e.g. damaged / not eligible). APPROVED -> REJECTED. */
+    @Transactional
+    public ReturnRequestResponseDto rejectByWarehouse(Long id) {
+        return transition(id, ReturnStatus.APPROVED, ReturnStatus.REJECTED);
+    }
+
+    /**
+     * Record the bank transfer that pays back a return whose goods the warehouse has already RECEIVED
+     * (stock was restored then). Posts a REFUND transaction on the order ledger for the return's
+     * snapshotted amount and stamps the reference. RECEIVED -> REFUNDED.
+     */
+    @Transactional
+    public ReturnRequestResponseDto refund(Long id, ReturnRefundRequestDto dto) {
+        ReturnRequest request = returnRequestRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new EcommerceException(ECOMErrorType.RETURN_REQUEST_NOT_FOUND));
+        if (request.getStatus() != ReturnStatus.RECEIVED) {
+            throw new EcommerceException(ECOMErrorType.RETURN_INVALID_STATUS);
+        }
+        Order order = orderRepository.findByIdForUpdate(request.getOrderId())
+                .orElseThrow(() -> new EcommerceException(ECOMErrorType.ORDER_NOT_FOUND));
 
         String iban = dto.getIban() != null ? dto.getIban() : request.getIban();
         Transaction transaction = new Transaction();

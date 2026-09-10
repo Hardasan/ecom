@@ -70,6 +70,9 @@
                 </button>
               }
               @case ('APPROVED') {
+                <span class="admin-muted">در انتظار تحویل و تأیید کالای برگشتی توسط انبار</span>
+              }
+              @case ('RECEIVED') {
                 <button type="button" class="admin-btn" [disabled]="busy()" (click)="openRefund(r)">ثبت بازپرداخت</button>
               }
               @default {

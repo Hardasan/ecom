@@ -177,7 +177,7 @@ export type ReturnReason =
   | 'CHANGED_MIND'
   | 'OTHER';
 
-export type ReturnStatus = 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'REFUNDED';
+export type ReturnStatus = 'REQUESTED' | 'APPROVED' | 'RECEIVED' | 'REJECTED' | 'REFUNDED';
 
 export type ReturnItemDto = {
   orderItemId: number;

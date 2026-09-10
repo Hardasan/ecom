@@ -1,0 +1,76 @@
+<div class="admin-page">
+  <div class="admin-page__head">
+    <h1>مرجوعی‌ها</h1>
+  </div>
+
+  @if (error()) {
+    <p class="admin-error">{{ error() }}</p>
+  }
+
+  <div class="admin-tabs">
+    @for (f of filters; track f.key) {
+      <button type="button" class="admin-tab" [class.is-active]="filter() === f.key" (click)="select(f.key)">
+        {{ f.label }}
+      </button>
+    }
+  </div>
+
+  @if (loading()) {
+    <p class="admin-empty">در حال بارگذاری…</p>
+  } @else if (!returns().length) {
+    <p class="admin-empty">مرجوعی‌ای در این دسته نیست</p>
+  } @else {
+    <div class="returns">
+      @for (r of returns(); track r.id) {
+        <div class="admin-card ret">
+          <div class="ret__head">
+            <div class="ret__meta">
+              <strong>{{ r.customerName || 'مشتری' }}</strong>
+              @if (r.mobile) { <span class="admin-muted">{{ r.mobile }}</span> }
+              <a class="ret__order" [routerLink]="['/warehouse/orders', r.orderId]">سفارش #{{ r.orderId }}</a>
+              <span [class]="'badge ' + tone(r.status)">{{ statusLabel(r.status) }}</span>
+            </div>
+            @if (r.createdAt) { <span class="admin-muted">{{ date(r.createdAt) }}</span> }
+          </div>
+
+          <div class="ret__items">
+            @for (it of r.items; track it.orderItemId) {
+              <div class="ret__item">
+                <span class="ret__item-name">
+                  {{ it.productName }}
+                  @if (it.variantValue) { <span class="admin-muted">({{ it.variantValue }})</span> }
+                </span>
+                <span class="admin-muted">{{ it.quantity }} عدد — {{ reasonLabel(it.reason) }}</span>
+              </div>
+            }
+          </div>
+
+          @if (r.note) {
+            <p class="ret__note admin-muted">یادداشت مشتری: {{ r.note }}</p>
+          }
+
+          <div class="ret__actions">
+            @switch (r.status) {
+              @case ('APPROVED') {
+                <button type="button" class="admin-btn" [disabled]="busy()" (click)="accept(r)">تأیید و ثبت در انبار</button>
+                <button type="button" class="admin-btn admin-btn--danger" [disabled]="busy()" (click)="reject(r)">
+                  رد کالا
+                </button>
+              }
+              @case ('RECEIVED') {
+                <span class="admin-muted">کالا تحویل انبار شد؛ در انتظار بازپرداخت توسط مدیر</span>
+              }
+              @default {
+                <span class="admin-muted">اقدامی برای این وضعیت در دسترس نیست</span>
+              }
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  @if (toast()) {
+    <div class="admin-toast">{{ toast() }}</div>
+  }
+</div>

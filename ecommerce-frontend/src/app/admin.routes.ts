@@ -87,6 +87,10 @@ export const adminRoutes: Routes = [
         path: 'orders/:id',
         loadComponent: () =>
           import('./warehouse/orders/order-detail').then((m) => m.WarehouseOrderDetail)
+      },
+      {
+        path: 'returns',
+        loadComponent: () => import('./warehouse/returns/returns').then((m) => m.WarehouseReturns)
       }
     ]
   },

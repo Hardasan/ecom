@@ -25,7 +25,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,9 +32,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
- * Unit coverage for the admin moderation state machine of {@link ReturnService}: the approve/reject
- * transitions, their status guards, and the refund side-effects (restock every returned line + post
- * a REFUND transaction on the order for the snapshotted amount).
+ * Unit coverage for the returns moderation state machine of {@link ReturnService}: the admin
+ * approve/reject, the warehouse accept (which restocks) / reject, and the admin refund (which posts
+ * the REFUND transaction), plus the status guards that gate each transition.
+ * <p>
+ * Lifecycle: REQUESTED → APPROVED → RECEIVED → REFUNDED (or → REJECTED).
  */
 @ExtendWith(MockitoExtension.class)
 class ReturnService_adminModerationUTest {
@@ -69,6 +70,8 @@ class ReturnService_adminModerationUTest {
         lenient().when(appUserRepository.findById(any())).thenReturn(Optional.empty());
     }
 
+    // ---- admin approve / reject ------------------------------------------------------------------
+
     @Test
     void approve_moves_a_pending_request_to_approved() {
         ReturnRequest request = requestWith(ReturnStatus.REQUESTED);
@@ -99,23 +102,11 @@ class ReturnService_adminModerationUTest {
         assertEquals(ECOMErrorType.RETURN_INVALID_STATUS, ex.getEcomErrorType());
     }
 
-    @Test
-    void refund_before_approval_is_rejected() {
-        when(returnRequestRepository.findByIdForUpdate(RETURN_ID))
-                .thenReturn(Optional.of(requestWith(ReturnStatus.REQUESTED)));
-
-        ReturnRefundRequestDto dto = new ReturnRefundRequestDto();
-        dto.setReference("BANK-1");
-
-        EcommerceException ex = assertThrows(EcommerceException.class, () -> returnService.refund(RETURN_ID, dto));
-        assertEquals(ECOMErrorType.RETURN_INVALID_STATUS, ex.getEcomErrorType());
-        verifyNoInteractions(productRepository);
-    }
+    // ---- warehouse accept (restock) / reject -----------------------------------------------------
 
     @Test
-    void refund_restocks_each_line_posts_a_refund_transaction_and_marks_refunded() {
+    void warehouse_accept_restocks_each_line_and_marks_received() {
         ReturnRequest request = requestWith(ReturnStatus.APPROVED);
-        request.setRefundAmount(BigDecimal.valueOf(300));
         request.addItem(returnItem(1L, 2)); // 2 of order item #1
         request.addItem(returnItem(2L, 1)); // 1 of order item #2
         when(returnRequestRepository.findByIdForUpdate(RETURN_ID)).thenReturn(Optional.of(request));
@@ -124,6 +115,62 @@ class ReturnService_adminModerationUTest {
         order.setId(ORDER_ID);
         order.addItem(orderItem(1L, 100L));
         order.addItem(orderItem(2L, 200L));
+        when(orderRepository.findById(ORDER_ID)).thenReturn(Optional.of(order));
+
+        ReturnRequestResponseDto dto = returnService.receiveByWarehouse(RETURN_ID);
+
+        verify(productRepository).incrementInventory(100L, 2);
+        verify(productRepository).incrementInventory(200L, 1);
+        assertEquals(ReturnStatus.RECEIVED, dto.getStatus());
+        // Accepting the goods is not the money step — no transaction is posted here.
+        assertTrue(order.getTransactions().isEmpty());
+    }
+
+    @Test
+    void warehouse_accept_on_a_non_approved_request_is_rejected() {
+        when(returnRequestRepository.findByIdForUpdate(RETURN_ID))
+                .thenReturn(Optional.of(requestWith(ReturnStatus.REQUESTED)));
+
+        EcommerceException ex =
+                assertThrows(EcommerceException.class, () -> returnService.receiveByWarehouse(RETURN_ID));
+        assertEquals(ECOMErrorType.RETURN_INVALID_STATUS, ex.getEcomErrorType());
+        verifyNoInteractions(productRepository);
+    }
+
+    @Test
+    void warehouse_reject_moves_an_approved_request_to_rejected() {
+        ReturnRequest request = requestWith(ReturnStatus.APPROVED);
+        when(returnRequestRepository.findByIdForUpdate(RETURN_ID)).thenReturn(Optional.of(request));
+
+        ReturnRequestResponseDto dto = returnService.rejectByWarehouse(RETURN_ID);
+
+        assertEquals(ReturnStatus.REJECTED, dto.getStatus());
+        verifyNoInteractions(productRepository);
+    }
+
+    // ---- admin refund ----------------------------------------------------------------------------
+
+    @Test
+    void refund_before_warehouse_receipt_is_rejected() {
+        // APPROVED but not yet RECEIVED — the money cannot move before the goods are back.
+        when(returnRequestRepository.findByIdForUpdate(RETURN_ID))
+                .thenReturn(Optional.of(requestWith(ReturnStatus.APPROVED)));
+
+        ReturnRefundRequestDto dto = new ReturnRefundRequestDto();
+        dto.setReference("BANK-1");
+
+        EcommerceException ex = assertThrows(EcommerceException.class, () -> returnService.refund(RETURN_ID, dto));
+        assertEquals(ECOMErrorType.RETURN_INVALID_STATUS, ex.getEcomErrorType());
+    }
+
+    @Test
+    void refund_posts_a_refund_transaction_and_marks_refunded_without_restocking() {
+        ReturnRequest request = requestWith(ReturnStatus.RECEIVED);
+        request.setRefundAmount(BigDecimal.valueOf(300));
+        when(returnRequestRepository.findByIdForUpdate(RETURN_ID)).thenReturn(Optional.of(request));
+
+        Order order = new Order();
+        order.setId(ORDER_ID);
         when(orderRepository.findByIdForUpdate(ORDER_ID)).thenReturn(Optional.of(order));
 
         ReturnRefundRequestDto dto = new ReturnRefundRequestDto();
@@ -131,17 +178,15 @@ class ReturnService_adminModerationUTest {
 
         ReturnRequestResponseDto result = returnService.refund(RETURN_ID, dto);
 
-        // Every returned line is put back into stock.
-        verify(productRepository).incrementInventory(100L, 2);
-        verify(productRepository).incrementInventory(200L, 1);
-
-        // The order gains exactly one REFUND transaction for the snapshotted amount + reference + شبا.
+        // One REFUND transaction for the snapshotted amount + reference + شبا; restock already happened
+        // at warehouse acceptance, so refund must NOT touch inventory again.
         assertEquals(1, order.getTransactions().size());
         Transaction tx = order.getTransactions().get(0);
         assertEquals(TransactionType.REFUND, tx.getType());
         assertEquals(0, BigDecimal.valueOf(300).compareTo(tx.getAmount()));
         assertEquals("BANK-1", tx.getReference());
         assertEquals(IBAN, tx.getIban());
+        verifyNoInteractions(productRepository);
 
         assertEquals(ReturnStatus.REFUNDED, result.getStatus());
         assertEquals("BANK-1", result.getRefundReference());

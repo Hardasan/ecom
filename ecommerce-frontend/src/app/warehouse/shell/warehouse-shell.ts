@@ -22,7 +22,10 @@ export class WarehouseShell {
   readonly menuOpen = signal(false);
   readonly shopUrl = storefrontUrl();
 
-  readonly nav: NavItem[] = [{ path: '/warehouse', label: 'صف سفارش‌ها', exact: true }];
+  readonly nav: NavItem[] = [
+    { path: '/warehouse', label: 'صف سفارش‌ها', exact: true },
+    { path: '/warehouse/returns', label: 'مرجوعی‌ها', exact: false }
+  ];
 
   toggleMenu(): void {
     this.menuOpen.update((v) => !v);

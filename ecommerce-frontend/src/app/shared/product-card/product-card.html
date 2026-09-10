@@ -34,6 +34,13 @@
           <span class="rating__value">{{ ratingValue() }}</span>
           <span class="rating__count">({{ ratingCount() | faNum }})</span>
         </span>
+      } @else {
+        <!-- No reviews yet: a neutral muted placeholder, never «۰.۰» (a literal zero reads as a
+             worst-possible score and unfairly sinks an unrated product). -->
+        <span class="rating rating--none">
+          <img [src]="a.iconStar" alt="" width="16" height="16" />
+          <span class="rating__none">بدون امتیاز</span>
+        </span>
       }
     </div>
 

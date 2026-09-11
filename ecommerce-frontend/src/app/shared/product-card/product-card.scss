@@ -106,7 +106,6 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
     margin-top: auto;
     padding-top: 6px;
   }
@@ -153,7 +152,7 @@
 .qty-stepper {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 3px;
   flex-shrink: 0;
   padding: 2px;
   border: 1px solid var(--brand-soft);

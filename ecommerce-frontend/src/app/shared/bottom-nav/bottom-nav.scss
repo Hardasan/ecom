@@ -3,9 +3,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 56px;
+  // Fixed height (not min-height) so Firefox/Chrome font metrics can't stretch the bar by 2–3px.
+  // Safe-area is added so the iOS home indicator still lifts the tabs.
+  height: calc(56px + env(safe-area-inset-bottom, 0px));
   // Bottom inset keeps the tabs above the iOS home indicator while the white bar reaches the edge.
-  padding: 6px 24px calc(6px + env(safe-area-inset-bottom));
+  padding: 6px 24px calc(6px + env(safe-area-inset-bottom, 0px));
   background: #fff;
   border-top: 1px solid var(--surface-2);
   flex-shrink: 0;
@@ -22,6 +24,8 @@
     padding: 0;
     color: var(--ink-muted);
     font-size: 10px;
+    // Explicit line-height: Vazirmatn’s default strut is taller in Firefox than Chrome.
+    line-height: 1;
     font-weight: 500;
     cursor: pointer;
 
@@ -41,6 +45,8 @@
 // Mask-based icons: the SVG is the alpha mask, `currentColor` paints it — so the active tab's
 // brand-green `color` tints the glyph as well as the label.
 .ic {
+  display: block;
+  flex-shrink: 0;
   width: 24px;
   height: 24px;
   background-color: currentColor;

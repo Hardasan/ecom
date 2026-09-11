@@ -1,10 +1,14 @@
 :host {
   display: block;
+  width: 100%;
+  min-width: 0; // allow grid/flex parents to shrink the card without content forcing growth
 }
 
 .pcard {
   display: flex;
   flex-direction: column;
+  width: 100%;
+  min-width: 0;
   height: 100%;
   background: #fff;
   border: 1px solid var(--border);
@@ -106,11 +110,25 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 8px;
     margin-top: auto;
     padding-top: 6px;
+    // Match the qty-stepper height so swapping + ↔ stepper never grows the card.
+    min-height: 32px;
   }
 
-  // Green circular add-to-cart button; the plus is masked white so it reads on the brand fill.
+  // Always reserves the stepper's footprint (82×32). The lone + sits on the outer edge of
+  // this slot so layout / price position stay identical before and after add-to-cart.
+  &__cart {
+    flex: 0 0 82px;
+    width: 82px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; // RTL: outer (right) edge — same corner as the + alone
+  }
+
+  // Green add-to-cart button; the plus is masked white so it reads on the brand fill.
   &__add {
     width: 28px;
     height: 28px;
@@ -131,6 +149,11 @@
       filter: brightness(0) invert(1);
     }
   }
+
+  // Price can shrink inside narrow cards without wrapping and bumping card height.
+  .price {
+    min-width: 0;
+  }
 }
 
 // No-reviews placeholder in the rating slot: a greyed-out star + muted «بدون امتیاز». Greyscale +
@@ -148,12 +171,14 @@
   color: var(--ink-subtle);
 }
 
-// Compact qty stepper (mirrors the home stepper) when the line is already in the cart.
+// Compact qty stepper — fills `.pcard__cart` so its size matches the reserved slot exactly.
 .qty-stepper {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  flex-shrink: 0;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
   padding: 2px;
   border: 1px solid var(--brand-soft);
   border-radius: var(--radius-full);
@@ -181,11 +206,14 @@
 }
 
 .qty-value {
-  min-width: 18px;
+  width: 20px;
+  flex-shrink: 0;
   text-align: center;
   font-size: 14px;
   font-weight: 700;
+  line-height: 1;
   color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
 
 // Desktop: slightly taller image well + hover lift, matching the home desktop treatment.

@@ -45,21 +45,23 @@
     </div>
 
     <div class="pcard__foot">
-      @if (line(); as l) {
-        <div class="qty-stepper">
-          <button type="button" class="qty-btn" aria-label="افزودن یکی" (click)="inc($event, l)">
-            <img [src]="a.iconPlus" alt="" width="14" height="14" />
+      <div class="pcard__cart">
+        @if (line(); as l) {
+          <div class="qty-stepper">
+            <button type="button" class="qty-btn" aria-label="افزودن یکی" (click)="inc($event, l)">
+              <img [src]="a.iconPlus" alt="" width="14" height="14" />
+            </button>
+            <span class="qty-value">{{ l.quantity | faNum }}</span>
+            <button type="button" class="qty-btn" aria-label="کاستن یکی" (click)="dec($event, l)">
+              <img [src]="a.iconMinus" alt="" width="14" height="14" />
+            </button>
+          </div>
+        } @else {
+          <button type="button" class="pcard__add" aria-label="افزودن به سبد خرید" (click)="add($event)">
+            <img [src]="a.iconPlus" alt="" width="12" height="12" />
           </button>
-          <span class="qty-value">{{ l.quantity | faNum }}</span>
-          <button type="button" class="qty-btn" aria-label="کاستن یکی" (click)="dec($event, l)">
-            <img [src]="a.iconMinus" alt="" width="14" height="14" />
-          </button>
-        </div>
-      } @else {
-        <button type="button" class="pcard__add" aria-label="افزودن به سبد خرید" (click)="add($event)">
-          <img [src]="a.iconPlus" alt="" width="12" height="12" />
-        </button>
-      }
+        }
+      </div>
 
       <span class="price">
         @if (wasToman()) {

@@ -106,36 +106,21 @@
   }
 
 
+  // Price group on the right (Figma price-action-row). The add button lives on the photo instead.
   &__foot {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
     margin-top: auto;
     padding-top: 6px;
-    // Match the qty-stepper height so swapping + ↔ stepper never grows the card.
-    min-height: 32px;
-  }
-
-  // Always reserves the stepper's footprint (82×32). The lone + sits on the outer edge of
-  // this slot so layout / price position stay identical before and after add-to-cart.
-  &__cart {
-    flex: 0 0 82px;
-    width: 82px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start; // RTL: outer (right) edge — same corner as the + alone
   }
 
   // Green add-to-cart button; the plus is masked white so it reads on the brand fill.
   &__add {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     flex-shrink: 0;
     border: none;
     padding: 0;
-    border-radius: var(--radius-sm);
+    border-radius: 10px;
     background: var(--brand);
     cursor: pointer;
     display: inline-flex;
@@ -148,11 +133,94 @@
       // recolour the (dark) plus glyph to white via mask
       filter: brightness(0) invert(1);
     }
+
+    &:disabled {
+      cursor: default;
+    }
+
+    // Before the first add: floats alone on the photo's bottom-left corner.
+    &--solo {
+      position: absolute;
+      left: 8px;
+      bottom: 8px;
+      box-shadow: var(--shadow-btn);
+    }
   }
 
-  // Price can shrink inside narrow cards without wrapping and bumping card height.
+  // In the cart: a white pill anchored on the same corner — the + keeps its exact spot and the pill
+  // grows to the right (LTR box) with the quantity and the trash / minus. Fixed position on the photo,
+  // so adding never resizes the card, however long the price is.
+  &__stepper {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    display: flex;
+    direction: ltr;
+    align-items: center;
+    height: 32px;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: var(--shadow-btn);
+    animation: pcard-stepper-in 0.18s ease-out;
+  }
+
+  &__qty {
+    min-width: 24px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--ink);
+  }
+
+  &__qty-btn {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border: none;
+    padding: 0;
+    border-radius: 10px;
+    background: transparent;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    &:disabled {
+      cursor: default;
+    }
+  }
+
+  // Struck price right-aligned over the current one (Figma price-group, align MAX). The global
+  // `.price` uses flex-end, which is the LEFT edge in this RTL document.
   .price {
     min-width: 0;
+    align-items: flex-start;
+  }
+
+  // Last resort for a huge price on the narrowest card: «تومان» wraps under the amount.
+  .price__now {
+    flex-wrap: wrap;
+  }
+
+  .price__old--empty {
+    visibility: hidden;
+  }
+}
+
+// The pill unrolls rightwards out of the + button.
+@keyframes pcard-stepper-in {
+  from {
+    clip-path: inset(0 calc(100% - 32px) 0 0 round 10px);
+  }
+  to {
+    clip-path: inset(0 0 0 0 round 10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pcard__stepper {
+    animation: none;
   }
 }
 
@@ -169,51 +237,6 @@
   font-size: 12px;
   font-weight: 500;
   color: var(--ink-subtle);
-}
-
-// Compact qty stepper — fills `.pcard__cart` so its size matches the reserved slot exactly.
-.qty-stepper {
-  display: inline-flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-  padding: 2px;
-  border: 1px solid var(--brand-soft);
-  border-radius: var(--radius-full);
-  background: #fff;
-}
-
-.qty-btn {
-  width: 26px;
-  height: 26px;
-  flex-shrink: 0;
-  border: none;
-  padding: 0;
-  border-radius: 50%;
-  background: var(--brand-soft);
-  color: var(--brand);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  img {
-    width: 14px;
-    height: 14px;
-  }
-}
-
-.qty-value {
-  width: 20px;
-  flex-shrink: 0;
-  text-align: center;
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
 }
 
 // Desktop: slightly taller image well + hover lift, matching the home desktop treatment.

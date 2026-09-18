@@ -96,7 +96,12 @@
             <div class="item__info">
               <strong>{{ it.productName }}</strong>
               <span class="admin-muted">
-                @if (variant(it.variantType, it.variantValue)) { {{ variant(it.variantType, it.variantValue) }} × }
+                @if (variant(it.variantType, it.variantValue); as v) {
+                  @if (swatch(it.variantType, it.variantValue); as hex) {
+                    <span class="color-dot" [style.background]="hex"></span>
+                  }
+                  {{ v }} ×
+                }
                 {{ it.quantity }}
               </span>
             </div>

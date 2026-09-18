@@ -38,7 +38,15 @@
               <div class="ret__item">
                 <span class="ret__item-name">
                   {{ it.productName }}
-                  @if (it.variantValue) { <span class="admin-muted">({{ it.variantValue }})</span> }
+                  <!-- Return items carry no variantType; variant/swatch treat a «#…» value as a colour. -->
+                  @if (variant(null, it.variantValue); as v) {
+                    <span class="admin-muted">
+                      @if (swatch(null, it.variantValue); as hex) {
+                        <span class="color-dot" [style.background]="hex"></span>
+                      }
+                      ({{ v }})
+                    </span>
+                  }
                 </span>
                 <span class="admin-muted">{{ it.quantity }} عدد — {{ reasonLabel(it.reason) }}</span>
               </div>

@@ -4,7 +4,7 @@ import { FaNumPipe } from '../../core/fa-num.pipe';
 import { ASSETS } from '../../assets';
 import { CartService } from '../../core/cart.service';
 import { CartDto, CartItemDto } from '../../core/models';
-import { colorHex, formatPrice, imageSrc, toNumber, variantLabel } from '../../core/format';
+import { formatPrice, imageSrc, toNumber, variantLabel, variantSwatch } from '../../core/format';
 import { BottomNav } from '../../shared/bottom-nav/bottom-nav';
 
 @Component({
@@ -61,12 +61,12 @@ export class Cart implements OnInit {
     return imageSrc(item.mainImage);
   }
 
-  /** CSS color for a COLOR variant line, or '' when the value is not a hex code. */
+  /** CSS color for a COLOR variant line's swatch dot, or '' when the variant is not a colour. */
   variantHex(item: CartItemDto): string {
-    return colorHex(item.variantValue);
+    return variantSwatch(item.variantType, item.variantValue);
   }
 
-  /** Readable variant label: color name (or hex) for COLOR, raw value otherwise. */
+  /** Readable variant label: Persian colour name for COLOR, raw value otherwise. */
   variantText(item: CartItemDto): string {
     return variantLabel(item.variantType, item.variantValue);
   }

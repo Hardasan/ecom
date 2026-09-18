@@ -1,18 +1,21 @@
-import { Component, ElementRef, OnInit, inject, signal, viewChild } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { Component, ElementRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Observable } from 'rxjs';
 import { FaNumPipe } from '../../core/fa-num.pipe';
 import { ASSETS } from '../../assets';
 import { AuthService } from '../../core/auth.service';
 import { CartService } from '../../core/cart.service';
 import { ProductService } from '../../core/product.service';
 import { WishlistService } from '../../core/wishlist.service';
-import { PriceDto, ProductDto, ReviewDto, ReviewSummaryDto } from '../../core/models';
+import { CartItemDto, PriceDto, ProductDto, ReviewDto, ReviewSummaryDto } from '../../core/models';
 import {
   colorHex,
   displayName,
   formatFaDate,
   formatPrice,
+  imageSrc,
   isColorVariant,
   productImageSrc,
   toNumber,
@@ -23,7 +26,7 @@ type TabKey = 'desc' | 'spec' | 'reviews';
 
 @Component({
   selector: 'app-product',
-  imports: [RouterLink, FormsModule, FaNumPipe],
+  imports: [RouterLink, FormsModule, FaNumPipe, NgTemplateOutlet],
   templateUrl: './product.html',
   styleUrl: './product.scss'
 })
@@ -42,8 +45,26 @@ export class Product implements OnInit {
   readonly activeTab = signal<TabKey>('desc');
   readonly loading = signal(true);
   readonly buying = signal(false);
+  /** A stepper request is in flight — one at a time, so a double-tap can't skip past 1 and drop the line. */
+  readonly cartBusy = signal(false);
   readonly error = signal('');
   readonly toast = signal('');
+
+  /** This product's cart line for the selected variant; once present the buy button becomes the stepper. */
+  readonly cartLine = computed<CartItemDto | undefined>(() => {
+    const p = this.product();
+    return p ? this.cartApi.lineFor(p.id, this.selectedVariant()) : undefined;
+  });
+
+  /** Main photo first, then the other gallery photos. */
+  readonly images = computed(() => {
+    const p = this.product();
+    if (!p) {
+      return [];
+    }
+    return [productImageSrc(p), ...(p.otherImages ?? []).map((img) => imageSrc(img))].filter(Boolean);
+  });
+  readonly activeImage = signal(0);
 
   readonly inWishlist = signal(false);
   readonly reviews = signal<ReviewDto[]>([]);
@@ -55,6 +76,7 @@ export class Product implements OnInit {
   reviewComment = '';
 
   private readonly scrollArea = viewChild<ElementRef<HTMLElement>>('scrollArea');
+  private readonly galleryTrack = viewChild<ElementRef<HTMLElement>>('galleryTrack');
   private readonly tabsBar = viewChild<ElementRef<HTMLElement>>('tabsBar');
   private readonly descSection = viewChild<ElementRef<HTMLElement>>('descSection');
   private readonly specSection = viewChild<ElementRef<HTMLElement>>('specSection');
@@ -81,6 +103,7 @@ export class Product implements OnInit {
     this.product.set(null);
     this.summary.set(null);
     this.activeTab.set('desc');
+    this.activeImage.set(0);
     this.inWishlist.set(false);
     this.reviews.set([]);
     this.reviewsTotal.set(0);
@@ -119,8 +142,18 @@ export class Product implements OnInit {
     return this.product() ? displayName(this.product()!) : '';
   }
 
-  image(): string {
-    return productImageSrc(this.product());
+  /** Swipe/scroll-snap gallery: the dot follows whichever photo is in view. */
+  onGalleryScroll() {
+    const track = this.galleryTrack()?.nativeElement;
+    if (track && track.clientWidth) {
+      this.activeImage.set(Math.round(track.scrollLeft / track.clientWidth));
+    }
+  }
+
+  goToImage(index: number) {
+    const track = this.galleryTrack()?.nativeElement;
+    track?.scrollTo({ left: index * track.clientWidth, behavior: 'smooth' });
+    this.activeImage.set(index);
   }
 
   variants(): PriceDto[] {
@@ -165,7 +198,7 @@ export class Product implements OnInit {
 
   ratingText(): string {
     const s = this.summary();
-    return s ? String(s.averageRating) : '—';
+    return s ? toNumber(s.averageRating).toFixed(1) : '—';
   }
 
   reviewCount(): string {
@@ -182,6 +215,17 @@ export class Product implements OnInit {
       const count = Number(counts[star] ?? 0);
       return { star, count, pct: total > 0 ? Math.round((count / total) * 100) : 0 };
     });
+  }
+
+  /** Description paragraphs — the admin's line breaks become separate paragraphs, as in the design. */
+  descriptionParagraphs(): string[] {
+    const p = this.product();
+    const text = p?.fullDescription || p?.shortDescription || '';
+    const paragraphs = text
+      .split(/\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    return paragraphs.length ? paragraphs : ['توضیحی ثبت نشده است.'];
   }
 
   specEntries(): { key: string; value: string }[] {
@@ -201,12 +245,24 @@ export class Product implements OnInit {
     return isColorVariant(this.product()?.variantType);
   }
 
-  /** The CSS color for a variant swatch, or '' when the value is not a hex code. */
+  /** The CSS color for a variant swatch, or '' when the value is not a colour. */
   variantHex(v: PriceDto): string {
     return colorHex(v.variantValue);
   }
 
-  /** Readable label for a variant: color name (or hex) for COLOR, the raw value otherwise. */
+  /** Heading above the variant picker («رنگ» in the design). */
+  variantTitle(): string {
+    const type = this.product()?.variantType;
+    return type === 'COLOR' ? 'رنگ' : type === 'SIZE' ? 'سایز' : 'تنوع';
+  }
+
+  /** The selected swatch's check is brand green; on a dark swatch it switches to white to stay visible. */
+  isDarkColor(hex: string): boolean {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)); // colorHex → "#RRGGBB"
+    return 0.299 * r + 0.587 * g + 0.114 * b < 140;
+  }
+
+  /** Readable label for a variant: Persian colour name for COLOR, the raw value otherwise. */
   variantText(v: PriceDto): string {
     return variantLabel(this.product()?.variantType, v.variantValue) || 'پیش‌فرض';
   }
@@ -402,15 +458,48 @@ export class Product implements OnInit {
         variantValue: this.selectedVariant()
       })
       .subscribe({
-        next: () => {
-          this.buying.set(false);
-          this.flash('به سبد خرید اضافه شد');
-        },
+        // No toast: the synced cart makes cartLine() non-empty, which swaps the button for the
+        // «مشاهده سبد خرید» + stepper row — that change of state is the feedback (per the design).
+        next: () => this.buying.set(false),
         error: (err) => {
           this.buying.set(false);
           this.error.set(err?.error?.message ?? 'افزودن به سبد خرید انجام نشد. لطفاً دوباره تلاش کنید.');
         }
       });
+  }
+
+  /** Stock is product-level, so the stepper stops at the inventory count the page loaded with. */
+  atStockLimit(line: CartItemDto): boolean {
+    const stock = this.product()?.inventoryCount;
+    return stock != null && line.quantity >= stock;
+  }
+
+  increment(line: CartItemDto) {
+    this.mutateCart(() => this.cartApi.increment(line.id));
+  }
+
+  decrement(line: CartItemDto) {
+    this.mutateCart(() => this.cartApi.decrement(line.id));
+  }
+
+  removeLine(line: CartItemDto) {
+    this.mutateCart(() => this.cartApi.remove(line.id));
+  }
+
+  /** Takes a factory: the guest cart writes localStorage when the method is called, not on subscribe. */
+  private mutateCart(request: () => Observable<unknown>) {
+    if (this.cartBusy()) {
+      return;
+    }
+    this.cartBusy.set(true);
+    this.error.set('');
+    request().subscribe({
+      next: () => this.cartBusy.set(false),
+      error: (err) => {
+        this.cartBusy.set(false);
+        this.error.set(err?.error?.message ?? 'تعداد به‌روزرسانی نشد. لطفاً دوباره تلاش کنید.');
+      }
+    });
   }
 
   private flash(message: string) {

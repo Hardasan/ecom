@@ -20,6 +20,32 @@
     @if (price().percentOff > 0) {
       <span class="tag-sale pcard__tag">٪{{ price().percentOff | faNum }}</span>
     }
+
+    <!-- Add-to-cart lives on the photo's bottom-left corner and grows in place into the qty pill
+         (Digikala / Amazon pattern): the card never changes size and nothing ever covers the price. -->
+    @if (line(); as l) {
+      <div class="pcard__stepper" role="group" aria-label="تعداد در سبد خرید">
+        <!-- The green + stays exactly where the add button was, so a second tap adds one more;
+             the trash sits at the far end, away from the finger. -->
+        <button type="button" class="pcard__add" aria-label="افزودن یکی" [disabled]="busy()" (click)="inc($event, l)">
+          <img [src]="a.iconPlus" alt="" width="12" height="12" />
+        </button>
+        <span class="pcard__qty">{{ l.quantity | faNum }}</span>
+        @if (l.quantity > 1) {
+          <button type="button" class="pcard__qty-btn" aria-label="کاستن یکی" [disabled]="busy()" (click)="dec($event, l)">
+            <img [src]="a.iconMinus" alt="" width="14" height="14" />
+          </button>
+        } @else {
+          <button type="button" class="pcard__qty-btn" aria-label="حذف از سبد خرید" [disabled]="busy()" (click)="remove($event, l)">
+            <img [src]="a.iconTrash" alt="" width="16" height="16" />
+          </button>
+        }
+      </div>
+    } @else {
+      <button type="button" class="pcard__add pcard__add--solo" aria-label="افزودن به سبد خرید" [disabled]="busy()" (click)="add($event)">
+        <img [src]="a.iconPlus" alt="" width="12" height="12" />
+      </button>
+    }
   </div>
 
   <div class="pcard__body">
@@ -45,27 +71,12 @@
     </div>
 
     <div class="pcard__foot">
-      <div class="pcard__cart">
-        @if (line(); as l) {
-          <div class="qty-stepper">
-            <button type="button" class="qty-btn" aria-label="افزودن یکی" (click)="inc($event, l)">
-              <img [src]="a.iconPlus" alt="" width="14" height="14" />
-            </button>
-            <span class="qty-value">{{ l.quantity | faNum }}</span>
-            <button type="button" class="qty-btn" aria-label="کاستن یکی" (click)="dec($event, l)">
-              <img [src]="a.iconMinus" alt="" width="14" height="14" />
-            </button>
-          </div>
-        } @else {
-          <button type="button" class="pcard__add" aria-label="افزودن به سبد خرید" (click)="add($event)">
-            <img [src]="a.iconPlus" alt="" width="12" height="12" />
-          </button>
-        }
-      </div>
-
       <span class="price">
         @if (wasToman()) {
           <span class="price__old">{{ wasToman() }}</span>
+        } @else {
+          <!-- Reserve the struck-price line so discounted and full-price cards keep one height. -->
+          <span class="price__old price__old--empty" aria-hidden="true">&nbsp;</span>
         }
         <span class="price__now">
           <span class="price__amount">{{ nowToman() }}</span>

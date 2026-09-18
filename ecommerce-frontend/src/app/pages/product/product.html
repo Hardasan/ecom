@@ -7,17 +7,13 @@
   } @else {
     <div class="page-scroll" #scrollArea (scroll)="onSectionsScroll()">
       <div class="gallery">
+        <!-- Figma "Top Action Bar": its own row above the photo — close on the right, share + favourite
+             on the left. (Overlaid on the photo at ≥1024px, see the SCSS.) -->
         <div class="gallery-actions">
-          <div class="gallery-actions__left">
-            <a routerLink="/cart" class="icon-btn" aria-label="سبد خرید">
-              <img [src]="a.iconCart" alt="" width="20" height="20" />
-              @if (cartApi.totalQuantity() > 0) {
-                <span class="cart-badge">{{ cartApi.badge() }}</span>
-              }
-            </a>
-            <button type="button" class="icon-btn" aria-label="اشتراک‌گذاری" (click)="share()">
-              <img [src]="a.iconShare" alt="" width="20" height="20" />
-            </button>
+          <a routerLink="/" class="icon-btn" aria-label="بستن">
+            <img [src]="a.iconClose" alt="" width="20" height="20" />
+          </a>
+          <div class="gallery-actions__group">
             <button
               type="button"
               class="icon-btn"
@@ -27,44 +23,83 @@
             >
               <img [src]="inWishlist() ? a.iconHeartFill : a.iconHeart" alt="" width="20" height="20" />
             </button>
+            <button type="button" class="icon-btn" aria-label="اشتراک‌گذاری" (click)="share()">
+              <img [src]="a.iconShare" alt="" width="20" height="20" />
+            </button>
           </div>
-          <a routerLink="/" class="icon-btn" aria-label="بستن">
-            <img [src]="a.iconClose" alt="" width="20" height="20" />
-          </a>
         </div>
-        @if (image(); as src) {
-          <img class="gallery-img" [src]="src" [alt]="name()" />
+
+        <div class="gallery-track" #galleryTrack (scroll)="onGalleryScroll()">
+          @for (src of images(); track $index) {
+            <img class="gallery-img" [src]="src" [alt]="name()" [attr.loading]="$index ? 'lazy' : null" />
+          }
+        </div>
+        @if (images().length > 1) {
+          <div class="dots">
+            @for (src of images(); track $index) {
+              <button
+                type="button"
+                class="dot"
+                [class.is-active]="activeImage() === $index"
+                [attr.aria-current]="activeImage() === $index"
+                [attr.aria-label]="'تصویر ' + ($index + 1 | faNum)"
+                (click)="goToImage($index)"
+              ></button>
+            }
+          </div>
         }
       </div>
 
       <div class="info">
         <div class="rating">
-          <span class="rating-count">{{ reviewCount() }}</span>
-          <span class="rating-score">{{ ratingText() | faNum }}</span>
-          <img [src]="a.iconStar" alt="" width="16" height="16" />
+          @if (summary(); as s) {
+            @if (s.totalCount > 0) {
+              <img [src]="a.iconStar" alt="" width="16" height="16" />
+              <span class="rating-score">{{ ratingText() | faNum }}</span>
+              <span class="rating-count">{{ reviewCount() }}</span>
+            } @else {
+              <!-- Unrated: a muted placeholder, never «۰.۰» (same convention as the product card). -->
+              <img class="rating-none__star" [src]="a.iconStar" alt="" width="16" height="16" />
+              <span class="rating-none">بدون امتیاز</span>
+            }
+          }
         </div>
         <h1>{{ name() }}</h1>
         <p class="subtitle">{{ product()!.shortDescription || name() }}</p>
 
         @if (variants().length) {
-          <p class="label">{{ product()!.variantType === 'SIZE' ? 'سایز' : 'رنگ / تنوع' }}</p>
-          <div class="swatches" [class.text-swatches]="!isColorVariant()">
+          <p class="label">{{ variantTitle() }}</p>
+          <div class="swatches">
             @for (v of variants(); track $index) {
-              <button
-                type="button"
-                class="swatch-chip"
-                [class.is-color]="isColorVariant() && variantHex(v)"
-                [class.is-selected]="selectedVariant() === v.variantValue"
-                (click)="selectVariant(v.variantValue)"
-                [attr.title]="variantText(v)"
-                [attr.aria-label]="variantText(v)"
-              >
-                @if (isColorVariant() && variantHex(v); as hex) {
-                  <span class="swatch-dot" [style.background]="hex"></span>
-                } @else {
-                  <span class="swatch-text">{{ variantText(v) }}</span>
-                }
-              </button>
+              @if (isColorVariant() && variantHex(v); as hex) {
+                <!-- Figma "Property Attribute": the colour fills the circle; the selected one carries a check. -->
+                <button
+                  type="button"
+                  class="swatch"
+                  [style.background]="hex"
+                  [class.is-dark]="isDarkColor(hex)"
+                  [attr.aria-pressed]="selectedVariant() === v.variantValue"
+                  (click)="selectVariant(v.variantValue)"
+                  [attr.title]="variantText(v)"
+                  [attr.aria-label]="variantText(v)"
+                >
+                  @if (selectedVariant() === v.variantValue) {
+                    <svg class="swatch-check" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                      <path d="M2 6L4.5 8.5L10 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                  }
+                </button>
+              } @else {
+                <button
+                  type="button"
+                  class="swatch-chip"
+                  [class.is-selected]="selectedVariant() === v.variantValue"
+                  [attr.aria-pressed]="selectedVariant() === v.variantValue"
+                  (click)="selectVariant(v.variantValue)"
+                >
+                  {{ variantText(v) }}
+                </button>
+              }
             }
           </div>
         }
@@ -89,9 +124,7 @@
           @if (error()) {
             <p class="inline-error">{{ error() }}</p>
           }
-          <button type="button" class="btn-brand" [disabled]="buying()" (click)="buy()">
-            {{ buying() ? '…' : 'افزودن به سبد خرید' }}
-          </button>
+          <ng-container [ngTemplateOutlet]="cartCta" />
         </div>
       </div>
 
@@ -102,28 +135,31 @@
       </div>
 
       <div class="sections">
-        <section class="section" #descSection>
+        <section class="section section--desc" #descSection>
+          <!-- The tab already names this block on the phone (the design has no heading); desktop shows it. -->
           <h2 class="section__title">توضیحات</h2>
-          <p>{{ product()!.fullDescription || product()!.shortDescription || 'توضیحی ثبت نشده است.' }}</p>
+          @for (paragraph of descriptionParagraphs(); track $index) {
+            <p>{{ paragraph }}</p>
+          }
         </section>
 
-        <section class="section" #specSection>
-          <h2 class="section__title">مشخصات</h2>
+        <section class="section section--spec" #specSection>
+          <h2 class="section__title">ویژگی‌ها</h2>
           @if (specEntries().length) {
             <ul class="spec-list">
               @for (s of specEntries(); track s.key) {
                 <li>
-                  <span>{{ s.key }}: {{ s.value }}</span>
                   <i class="bullet"></i>
+                  <span>{{ s.key }}: {{ s.value }}</span>
                 </li>
               }
             </ul>
           } @else {
-            <p>مشخصاتی ثبت نشده است.</p>
+            <p>ویژگی‌ای برای این کالا ثبت نشده است.</p>
           }
         </section>
 
-        <section class="section" #reviewsSection>
+        <section class="section section--reviews" #reviewsSection>
           <div class="reviews-head">
             <button type="button" class="reviews-add" (click)="openReviewForm()">ثبت نظر</button>
             <h2 class="section__title">نظرات</h2>
@@ -219,27 +255,27 @@
       </div>
     </div>
 
+    <!-- Figma "Bottom content": price row, then the add-to-cart button — or, once this variant is in the
+         cart, «مشاهده سبد خرید» beside the quantity stepper. -->
     <div class="bottom-bar product-bar">
       @if (error()) {
         <p class="inline-error">{{ error() }}</p>
       }
       <div class="price-row">
-        <div class="price-now">
-          <span class="unit">تومان</span>
-          <strong>{{ currentPrice().replace(' تومان', '') }}</strong>
-        </div>
         @if (oldPrice(); as old) {
           <div class="price-old">
-            <span class="strike">{{ old }}</span>
             @if (discountPercent(); as pct) {
               <span class="badge">{{ pct | faNum }}</span>
             }
+            <span class="strike">{{ old }}</span>
           </div>
         }
+        <div class="price-now">
+          <strong>{{ currentPrice().replace(' تومان', '') }}</strong>
+          <span class="unit">تومان</span>
+        </div>
       </div>
-      <button type="button" class="btn-brand" [disabled]="buying()" (click)="buy()">
-        {{ buying() ? '…' : 'خرید' }}
-      </button>
+      <ng-container [ngTemplateOutlet]="cartCta" />
     </div>
   }
 
@@ -247,3 +283,37 @@
     <div class="toast">{{ toast() }}</div>
   }
 </div>
+
+<!-- Shared by the phone bar and the desktop buy box. -->
+<ng-template #cartCta>
+  @if (cartLine(); as line) {
+    <div class="cart-actions">
+      <a routerLink="/cart" class="btn-outline cart-actions__view">مشاهده سبد خرید</a>
+      <div class="qty-stepper" role="group" aria-label="تعداد در سبد خرید">
+        <button
+          type="button"
+          class="qty-btn"
+          aria-label="افزودن یکی"
+          [disabled]="cartBusy() || atStockLimit(line)"
+          (click)="increment(line)"
+        >
+          <img [src]="a.iconPlusSm" alt="" width="14" height="14" />
+        </button>
+        <span class="qty-value">{{ line.quantity | faNum }}</span>
+        @if (line.quantity > 1) {
+          <button type="button" class="qty-btn" aria-label="کاستن یکی" [disabled]="cartBusy()" (click)="decrement(line)">
+            <img [src]="a.iconMinus" alt="" width="14" height="14" />
+          </button>
+        } @else {
+          <button type="button" class="qty-btn" aria-label="حذف از سبد خرید" [disabled]="cartBusy()" (click)="removeLine(line)">
+            <img [src]="a.iconTrash" alt="" width="16" height="16" />
+          </button>
+        }
+      </div>
+    </div>
+  } @else {
+    <button type="button" class="btn-brand" [disabled]="buying()" (click)="buy()">
+      {{ buying() ? '…' : 'افزودن به سبد خرید' }}
+    </button>
+  }
+</ng-template>

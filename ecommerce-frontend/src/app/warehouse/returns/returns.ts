@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 import { WarehouseReturnService } from '../services/warehouse-return.service';
 import { ReturnRequestDto, ReturnStatus } from '../../core/models';
-import { formatFaDate, formatPrice } from '../../core/format';
+import { formatFaDate, formatPrice, variantLabel, variantSwatch } from '../../core/format';
 import { returnReasonLabel } from '../../core/return.service';
 import { returnStatusLabel, returnStatusTone } from '../../admin/admin-format';
 
@@ -37,6 +37,8 @@ export class WarehouseReturns implements OnInit {
 
   readonly date = formatFaDate;
   readonly money = formatPrice;
+  readonly variant = variantLabel;
+  readonly swatch = variantSwatch;
   readonly statusLabel = returnStatusLabel;
   readonly tone = returnStatusTone;
   readonly reasonLabel = returnReasonLabel;

@@ -17,7 +17,7 @@ import {
   GeoProvinceDto,
   PaymentMethod
 } from '../../core/models';
-import { colorHex, formatPrice, imageSrc, toNumber, variantLabel } from '../../core/format';
+import { formatPrice, imageSrc, toNumber, variantLabel, variantSwatch } from '../../core/format';
 import { validateAddressFields } from '../../core/address-form';
 
 @Component({
@@ -266,7 +266,7 @@ export class Checkout implements OnInit {
   }
 
   variantHex(item: CartItemDto): string {
-    return colorHex(item.variantValue);
+    return variantSwatch(item.variantType, item.variantValue);
   }
 
   variantText(item: CartItemDto): string {

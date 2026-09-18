@@ -4,47 +4,67 @@
 
 .gallery {
   position: relative;
-  background: #fff;
 }
 
+// Figma "Top Action Bar": a 56px row above the photo (not overlaid on it).
 .gallery-actions {
-  position: absolute;
-  inset-inline: 16px;
-  top: 16px;
-  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  height: 56px;
+  padding: 0 16px;
 
-  &__left {
+  &__group {
     display: flex;
     gap: 8px;
+  }
+
+  .icon-btn {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  }
+}
+
+// Swipeable photo strip. LTR so the first photo — and its active dot — sit on the left, as in the design.
+.gallery-track {
+  display: flex;
+  direction: ltr;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  background: #fff;
+
+  &::-webkit-scrollbar {
+    display: none;
   }
 }
 
 .gallery-img {
+  flex: 0 0 100%;
   width: 100%;
   height: 400px;
   object-fit: cover;
+  scroll-snap-align: start;
 }
 
 .dots {
   position: absolute;
   left: 50%;
-  bottom: 24px;
+  bottom: 22px;
   transform: translateX(-50%);
   display: flex;
+  direction: ltr;
   gap: 8px;
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.7);
-  border-radius: var(--radius-full);
 }
 
 .dot {
   width: 8px;
   height: 8px;
+  padding: 0;
+  border: none;
   border-radius: 50%;
-  background: #d1d5db;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15); // keeps a white dot visible on a white product shot
+  cursor: pointer;
 
   &.is-active {
     background: var(--brand);
@@ -58,33 +78,52 @@
   h1 {
     margin: 0;
     font-size: 16px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.9;
     color: #12181a;
   }
 }
 
+// Star, score, «(n نظر)» — right-aligned; star first in the RTL flow. Height reserved while loading.
 .rating {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
   gap: 4px;
+  min-height: 27px;
   margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.9;
+
+  img {
+    width: 16px;
+    height: 16px;
+  }
 }
 
 .rating-count {
   color: #66726b;
-  font-size: 14px;
 }
 
 .rating-score {
   color: #1f2723;
-  font-size: 14px;
+}
+
+.rating-none {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-subtle);
+
+  &__star {
+    filter: grayscale(1);
+    opacity: 0.5;
+  }
 }
 
 .subtitle {
   margin: 4px 0 0;
   font-size: 12px;
+  font-weight: 500;
   color: #66726b;
   line-height: 1.7;
 }
@@ -92,49 +131,82 @@
 .label {
   margin: 24px 0 12px;
   font-size: 14px;
+  line-height: 1.9;
+  color: var(--ink);
 }
 
+// Right-aligned (flex-start is the right edge in RTL).
 .swatches {
   display: flex;
-  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 12px;
 }
 
+// COLOR variant: the colour fills a 36px circle with a hairline border; the selected one shows a check.
 .swatch {
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  padding: 0;
   border: 1px solid var(--border);
-  cursor: pointer;
+  border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
+  color: var(--brand);
+  cursor: pointer;
 
-  &.is-selected {
-    border: 2px solid var(--brand);
+  &.is-dark {
+    color: #fff;
   }
 }
 
+.swatch-check {
+  display: block;
+}
+
+// Text variants (e.g. sizes): selected = brand-green chip (Figma uses green, not purple).
+.swatch-chip {
+  min-width: 48px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+
+  &.is-selected {
+    background: var(--brand);
+    border-color: var(--brand);
+    color: #fff;
+  }
+}
+
+// Figma "tabs": 40px, hairline bottom border, 2px underline 8px under the active label.
 .tabs {
   position: sticky;
   top: 0;
   z-index: 5;
   display: flex;
   justify-content: space-between;
-  padding: 10px 20px 0;
+  height: 40px;
+  margin-top: 16px;
+  padding: 0 20px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
 
   button {
+    position: relative;
+    height: 39px;
     border: none;
     background: none;
-    padding: 8px 0 10px;
+    padding: 0;
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 600;
+    line-height: 27px;
     color: #66726b;
     cursor: pointer;
-    position: relative;
+    align-self: flex-start;
 
     &.is-active {
       color: var(--brand);
@@ -144,7 +216,7 @@
         position: absolute;
         left: 0;
         right: 0;
-        bottom: 0;
+        bottom: 2px;
         height: 2px;
         background: var(--brand);
       }
@@ -156,10 +228,6 @@
   padding: 20px;
   text-align: right;
   scroll-margin-top: 56px;
-
-  &:not(:first-child) {
-    border-top: 8px solid #eef1ee;
-  }
 
   // Guarantee the last section can scroll under the pinned tab bar even when its
   // content is short, so every tab can become active and the bar stays pinned.
@@ -182,6 +250,39 @@
   }
 }
 
+// Figma "main Info": description paragraphs 16px apart, then the «ویژگی‌ها» list — one continuous block.
+.section--desc {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 0;
+
+  .section__title {
+    display: none;
+  }
+
+  p {
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.7;
+  }
+}
+
+.section--spec {
+  padding-top: 40px; // the design's 16px gap + the title's 24px top pad
+
+  .section__title {
+    margin-bottom: 28px; // title's 12px bottom pad + the 16px gap
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.9;
+  }
+}
+
+.section--reviews {
+  border-top: 8px solid #eef1ee;
+}
+
 .spec-list {
   list-style: none;
   margin: 0;
@@ -192,10 +293,11 @@
 
   li {
     display: flex;
-    align-items: center;
-    justify-content: flex-end;
+    align-items: flex-start;
     gap: 8px;
     font-size: 14px;
+    line-height: 1.9;
+    color: var(--ink);
   }
 }
 
@@ -407,25 +509,33 @@
   color: var(--ink-muted);
 }
 
+// 6px brand dot, centred on the first 27px text line (Figma Item rows).
 .bullet {
   width: 6px;
   height: 6px;
+  margin-top: 10.5px;
   border-radius: 50%;
   background: var(--brand);
   flex-shrink: 0;
 }
 
+// Figma "Bottom content" wrapper: 16px padding and gaps, hairline top border, soft upward shadow.
 .product-bar {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  border-top-color: #eef6f0;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.03);
 }
 
+// RTL order, right → left: discount badge, struck price, current price, «تومان».
 .price-row {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 16px;
+  min-height: 32px;
 }
 
 .price-now {
@@ -435,12 +545,14 @@
 
   .unit {
     font-size: 12px;
+    line-height: 1;
     color: #97a29b;
   }
 
   strong {
     font-size: 19px;
     font-weight: 800;
+    line-height: 1.3;
     color: #333d38;
   }
 }
@@ -455,6 +567,7 @@
   color: var(--danger);
   text-decoration: line-through;
   font-size: 14px;
+  line-height: 1.9;
 }
 
 .badge {
@@ -464,68 +577,60 @@
   min-width: 48px;
   height: 32px;
   padding: 0 8px;
+  border: 1px solid var(--brand-soft);
   border-radius: 10px;
   background: var(--accent);
   color: #fff;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 400;
 }
 
-.text-swatches {
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
+// In-cart state (Figma): outlined «مشاهده سبد خرید» on the right, 90×54 grey stepper on the left.
+.cart-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 
-.swatch-chip {
-  min-width: 48px;
-  height: 40px;
-  padding: 0 12px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: #fff;
-  cursor: pointer;
-  font-size: 14px;
-
-  // Text variants (e.g. sizes): selected = brand-green chip (Figma uses green, not purple).
-  &.is-selected {
-    background: var(--brand);
-    border-color: var(--brand);
-    color: #fff;
-  }
-
-  // COLOR variants (Figma "Property Attribute"): a bare 36px colour circle, no hex text.
-  // Selected shows an offset 2px brand ring (2px pad between the swatch and the ring).
-  &.is-color {
+  &__view {
+    flex: 1;
     min-width: 0;
-    width: 36px;
-    height: 36px;
-    padding: 2px;
-    border-radius: 50%;
-    border: 2px solid var(--border);
-    background: #fff;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    &.is-selected {
-      border-color: var(--brand);
-      background: #fff;
-    }
   }
 }
 
-.swatch-dot {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  flex: none;
+.qty-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  min-width: 90px;
+  height: 54px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
 }
 
-// A colour swatch's dot fills its circle.
-.swatch-chip.is-color .swatch-dot {
-  width: 100%;
-  height: 100%;
+.qty-btn {
+  width: 32px;
+  height: 54px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+.qty-value {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.9;
+  color: #000;
 }
 
 .state {
@@ -550,11 +655,12 @@
   width: auto;
 }
 
+// Floats just above the bottom bar.
 .toast {
   position: absolute;
   left: 16px;
   right: 16px;
-  bottom: 100px;
+  bottom: calc(150px + env(safe-area-inset-bottom));
   z-index: 20;
   background: #1f2937;
   color: #fff;
@@ -588,6 +694,16 @@
     overflow: hidden;
     position: sticky;
     top: 96px;
+  }
+
+  // Desktop overlays the actions on the photo.
+  .gallery-actions {
+    position: absolute;
+    inset-inline: 16px;
+    top: 16px;
+    z-index: 2;
+    height: auto;
+    padding: 0;
   }
 
   .gallery-img {
@@ -658,10 +774,6 @@
     padding: 28px;
     scroll-margin-top: 96px;
 
-    &:not(:first-child) {
-      border-top: 1px solid var(--border); // reset the phone's 8px slab divider
-    }
-
     &:last-child {
       min-height: 0; // scroll-spy spacer not needed on desktop
     }
@@ -672,6 +784,24 @@
 
     p {
       font-size: 14px;
+    }
+  }
+
+  // Separate cards on desktop, each with its heading.
+  .section--desc {
+    gap: 12px;
+
+    .section__title {
+      display: block;
+      margin-bottom: 2px;
+    }
+  }
+
+  .section--spec {
+    .section__title {
+      margin-bottom: 14px;
+      font-size: 18px;
+      font-weight: 800;
     }
   }
 }

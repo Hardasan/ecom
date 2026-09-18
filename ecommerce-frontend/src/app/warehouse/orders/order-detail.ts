@@ -4,7 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 import { WarehouseOrderService } from '../services/warehouse-order.service';
 import { OrderDto } from '../../core/models';
-import { formatFaDate, formatPrice, imageSrc, orderStatusLabel, variantLabel } from '../../core/format';
+import { formatFaDate, formatPrice, imageSrc, orderStatusLabel, variantLabel, variantSwatch } from '../../core/format';
 import { orderStatusTone } from '../../admin/admin-format';
 
 /** Common Iranian carriers offered as autocomplete suggestions (staff may type any other). */
@@ -36,6 +36,7 @@ export class WarehouseOrderDetail implements OnInit {
   readonly tone = orderStatusTone;
   readonly img = imageSrc;
   readonly variant = variantLabel;
+  readonly swatch = variantSwatch;
 
   id = 0;
 

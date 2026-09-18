@@ -1,5 +1,6 @@
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { Observable } from 'rxjs';
 import { ASSETS } from '../../assets';
 import { AuthService } from '../../core/auth.service';
 import { CartService } from '../../core/cart.service';
@@ -10,8 +11,8 @@ import { FaNumPipe } from '../../core/fa-num.pipe';
 
 /**
  * Storefront product card (13-Shahrivar design): image well, wishlist heart, discount tag, title,
- * rating row, and a price-group beside a green add-to-cart button that becomes a qty stepper once
- * the line is in the cart. Shared by home / product-list / search / wishlist so the card is defined
+ * rating row and price-group. The green add-to-cart button sits on the photo's corner and grows into
+ * a qty pill once the line is in the cart. Shared by home / product-list / search / wishlist so the card is defined
  * once. Cart + wishlist mutations are handled internally; a `notify` output lets the host page show
  * its own toast for feedback.
  */
@@ -35,6 +36,7 @@ export class ProductCard {
   private readonly router = inject(Router);
 
   readonly inWishlist = signal(false);
+  readonly busy = signal(false);
 
   readonly name = computed(() => displayName(this.product()));
   readonly image = computed(() => productImageSrc(this.product()));
@@ -82,7 +84,11 @@ export class ProductCard {
   add(event: Event): void {
     event.preventDefault();
     event.stopPropagation();
+    if (this.busy()) {
+      return;
+    }
     const p = this.product();
+    this.busy.set(true);
     this.cart
       .addItem({
         productId: p.id,
@@ -91,24 +97,46 @@ export class ProductCard {
         variantValue: this.variantValue()
       })
       .subscribe({
-        next: () => this.notify.emit('به سبد خرید اضافه شد'),
-        error: (err) => this.notify.emit(err?.error?.message ?? 'افزودن به سبد خرید انجام نشد. لطفاً دوباره تلاش کنید.')
+        next: () => {
+          this.busy.set(false);
+          this.notify.emit('به سبد خرید اضافه شد');
+        },
+        error: (err) => {
+          this.busy.set(false);
+          this.notify.emit(err?.error?.message ?? 'افزودن به سبد خرید انجام نشد. لطفاً دوباره تلاش کنید.');
+        }
       });
   }
 
   inc(event: Event, line: CartItemDto): void {
-    event.preventDefault();
-    event.stopPropagation();
-    this.cart.increment(line.id).subscribe({
-      error: (err) => this.notify.emit(err?.error?.message ?? 'تعداد به‌روزرسانی نشد. لطفاً دوباره تلاش کنید.')
-    });
+    this.mutate(event, () => this.cart.increment(line.id));
   }
 
   dec(event: Event, line: CartItemDto): void {
+    this.mutate(event, () => this.cart.decrement(line.id));
+  }
+
+  remove(event: Event, line: CartItemDto): void {
+    this.mutate(event, () => this.cart.remove(line.id));
+  }
+
+  /**
+   * One stepper request at a time, so a double-tap can't decrement a line of 2 straight out of the cart.
+   * Takes a factory because the guest cart writes localStorage when the method is called, not on subscribe.
+   */
+  private mutate(event: Event, request: () => Observable<unknown>): void {
     event.preventDefault();
     event.stopPropagation();
-    this.cart.decrement(line.id).subscribe({
-      error: () => this.notify.emit('تعداد به‌روزرسانی نشد. لطفاً دوباره تلاش کنید.')
+    if (this.busy()) {
+      return;
+    }
+    this.busy.set(true);
+    request().subscribe({
+      next: () => this.busy.set(false),
+      error: (err) => {
+        this.busy.set(false);
+        this.notify.emit(err?.error?.message ?? 'تعداد به‌روزرسانی نشد. لطفاً دوباره تلاش کنید.');
+      }
     });
   }
 }

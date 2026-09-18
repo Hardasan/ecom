@@ -6,13 +6,13 @@ import { AuthService } from '../../core/auth.service';
 import { OrderService } from '../../core/order.service';
 import { OrderDto, OrderItemDto } from '../../core/models';
 import {
-  colorHex,
   formatFaDate,
   formatPrice,
   imageSrc,
   orderStatusLabel,
   toNumber,
-  variantLabel
+  variantLabel,
+  variantSwatch
 } from '../../core/format';
 
 @Component({
@@ -163,12 +163,12 @@ export class OrderDetail implements OnInit {
     return save > 0 ? formatPrice(save) : null;
   }
 
-  /** CSS color for a COLOR variant line, or '' when the value is not a hex code. */
+  /** CSS color for a COLOR variant line's swatch dot, or '' when the variant is not a colour. */
   variantHex(item: OrderItemDto): string {
-    return colorHex(item.variantValue);
+    return variantSwatch(item.variantType, item.variantValue);
   }
 
-  /** Readable variant label: color name (or hex) for COLOR, raw value otherwise. */
+  /** Readable variant label: Persian colour name for COLOR, raw value otherwise. */
   variantText(item: OrderItemDto): string {
     return variantLabel(item.variantType, item.variantValue);
   }

@@ -4,7 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 import { AdminOrderService } from '../services/admin-order.service';
 import { OrderDto } from '../../core/models';
-import { formatFaDate, formatPrice, imageSrc, orderStatusLabel } from '../../core/format';
+import { formatFaDate, formatPrice, imageSrc, orderStatusLabel, variantLabel, variantSwatch } from '../../core/format';
 import { orderStatusTone } from '../admin-format';
 
 @Component({
@@ -29,6 +29,8 @@ export class OrderDetailAdmin implements OnInit {
 
   readonly date = formatFaDate;
   readonly money = formatPrice;
+  readonly variant = variantLabel;
+  readonly swatch = variantSwatch;
   readonly statusLabel = orderStatusLabel;
   readonly tone = orderStatusTone;
   readonly img = imageSrc;

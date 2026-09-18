@@ -20,6 +20,7 @@ export const ASSETS = {
   iconBack: `${BASE}/icon-back.svg`,
   iconMinus: `${BASE}/icon-minus.svg`,
   iconPlus: `${BASE}/icon-plus.svg`,
+  iconPlusSm: `${BASE}/icon-plus-sm.svg`,
   iconTrash: `${BASE}/icon-trash.svg`,
   iconTick: `${BASE}/icon-tick.svg`,
   iconDownload: `${BASE}/icon-download.svg`,

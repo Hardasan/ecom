@@ -61,3 +61,4 @@ Processor order: `lombok` → `lombok-mapstruct-binding` → `mapstruct-processo
 - Never `import` images/fonts into TypeScript (that inlines them into the JS bundle). URLs under `/assets/…` only.
 - Catalog photos live in the API/DB, not in the frontend bundle.
 - Styles: SCSS (`styleUrl: './x.scss'`). New components use `"style": "scss"`.
+- **PWA**: `manifest.webmanifest` + `ngsw.json` must stay public (`SecurityConfiguration`) — browsers never send the JWT for them. Cache policy (`SpaWebConfig`; `/` is `SpaController`): content-hashed bundles `max-age=1y, immutable`, everything else `no-cache`. Service-worker navigations exclude `/api/**` + `/actuator/**` (`ngsw-config.json`). `AppUpdateService` swaps to a downloaded release only right after launch / on return from a long break — never a reload mid-checkout. The SW is prod-only (`ng serve` has none): verify with a prod build served from the backend jar.

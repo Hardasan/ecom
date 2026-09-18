@@ -48,6 +48,9 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET, GET_PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/", "/index.html", "/favicon.ico", "/*.js", "/*.css", "/assets/**").permitAll()
+                        // PWA files: the web-app manifest (install / home-screen app) and the Angular
+                        // service worker's manifest. Browsers never send the JWT with these.
+                        .requestMatchers(HttpMethod.GET, "/manifest.webmanifest", "/ngsw.json").permitAll()
                         .requestMatchers(HttpMethod.GET, "/{path:[^\\.]*}", "/**/{path:[^\\.]*}").permitAll()
                         .anyRequest().authenticated())
 

@@ -1,6 +1,7 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
+import { AppUpdateService } from './core/app-update.service';
 import { AuthService } from './core/auth.service';
 import { CartService } from './core/cart.service';
 import { LayoutService } from './core/layout.service';
@@ -30,6 +31,8 @@ export class App {
   readonly showDesktopChrome = computed(() => !this.isAdminRoute() && this.layout.isDesktop());
 
   constructor() {
+    inject(AppUpdateService).start();
+
     this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe((e) =>
